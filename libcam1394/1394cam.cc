@@ -2,7 +2,7 @@
   @file  lz.h 
   @brief 1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.4 2002-03-16 16:26:19 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.5 2002-04-24 10:24:15 yosimoto Exp $
  */
 // Copyright (C) 1999-2002 by YOSHIMOTO Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp> 
 //
@@ -826,6 +826,7 @@ C1394CameraNode::QueryFormat(FORMAT*    fmt,
 
     WriteReg(Addr(INITIALIZE),&tmp);
     
+    /*
     tmp=0;
     WriteReg(Addr(Cur_V_Mode),&tmp);
 
@@ -872,7 +873,7 @@ C1394CameraNode::QueryFormat(FORMAT*    fmt,
     cout <<"Feature_Hi_Inq:"<<hex<<tmp<<dec<<endl;
     ReadReg(Addr(Feature_Lo_Inq),&tmp);
     cout <<"Feature_Lo_Inq:"<<hex<<tmp<<dec<<endl;
-    
+    */    
 
     if (fmt){
 	ReadReg(Addr(Cur_V_Format),&tmp);
