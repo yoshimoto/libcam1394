@@ -3,6 +3,7 @@
 ----------------
 fix
  - support intel C++ compiler
+ - support gcc3.2
 ----------------
   libcam1394-0.1.2
 ----------------

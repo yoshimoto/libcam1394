@@ -1,10 +1,16 @@
-// xview.h - 
-//
-// Copyright (C) 2000 by Hiromasa Yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp>
-// 
+/*!
+  \file   $Id: xview.h,v 1.3 2003-01-08 17:53:24 yosimoto Exp $
+  \author YOSHIMOTO Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
+  \date   Sat Aug 31 03:58:46 2002
+  
+  \brief    
+*/
 
 #if !defined(_XVIEW_H_INCLUDED_)
 #define _XVIEW_H_INCLUDED_
+
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
 
 class CXview{
      typedef unsigned int UINT;
@@ -29,8 +35,13 @@ public:
      CXview();
      virtual ~CXview();
   
-     bool CreateWindow(int width,int height,char* strCaption);
+     bool CreateWindow(int width,int height,const char* strCaption);
      bool UpDate(RGBA*);
+#if defined(USE_OPENCV)
+     bool UpDate(IplImage*);
+#endif     
+     Display *GetDisplay() const;
+     Window  GetWindow() const;
 };
 
 #endif //#if !defined(_XVIEW_H_INCLUDED_)

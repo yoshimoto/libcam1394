@@ -1,36 +1,32 @@
 /*!
   @file    main-with-opencv.cpp
-  @brief   OpenCVを用いたサンプル
-  @version $Id: main-with-opencv.cpp,v 1.2 2002-10-31 09:49:32 yosimoto Exp $
+  @brief   sample code ( with OpenCV )
+  @version $Id: main-with-opencv.cpp,v 1.3 2003-01-08 17:53:24 yosimoto Exp $
   @author  $Author: yosimoto $
-  @date    $Date: 2002-10-31 09:49:32 $
+  @date    $Date: 2003-01-08 17:53:24 $
  */
 
-#include <cv.h>
-#include <highgui.h>
+
 #include <stdio.h>
 #include <errno.h>
-#include <libraw1394/raw1394.h>  /* libraw1394関連 */
+#include <unistd.h>
+
+#include <cv.h>       // for OpenCV
+#include <highgui.h> 
+
+#include <libraw1394/raw1394.h> // for libraw1394
 #include <libraw1394/csr.h>
 
-#include <linux/ohci1394_iso.h> /* ドライバとのインタフェイス関連 */
+#include <linux/ohci1394_iso.h> // for libcam1394
 #include <libcam1394/1394cam.h>
 #include <libcam1394/yuv.h>
 
-#include <unistd.h>
-
-#define DWFV500_MAGICNUMBER 8589965664ULL
-#define MAKE_CAMERA_ID(x) ((int64_t)(x)-DWFV500_MAGICNUMBER)
-#define MAKE_CHIP_ID(x)   ((int64_t)(x)+DWFV500_MAGICNUMBER)
-
 using namespace std;
 
-/* カメラのIDなど */
-const int format=0; 
+const int format=0;    
 const int mode=1;    
-const int frame_rate=3;
-const int camera_id=166647; /* 使用するカメラのID */
-const int channel=7;        /* チャネルは6番を使用 */
+const int frame_rate=3;     
+const int channel=7;   
 
 int 
 main(int argc, char **argv)
@@ -55,7 +51,6 @@ main(int argc, char **argv)
 	  exit(-1);
      }
      CCameraList::iterator camera;
-//  camera=find_camera_by_id(CameraList,MAKE_CHIP_ID(camera_id) );
      camera=CameraList.begin();
      if (camera==CameraList.end()){
 	  cerr << " not found camera (id:="<<camera_id<<")" << endl;
@@ -67,7 +62,7 @@ main(int argc, char **argv)
      camera->SetIsoChannel(channel);
      camera->SetFormat((FORMAT)format,(VMODE)mode,(FRAMERATE)frame_rate);
      camera->AllocateFrameBuffer();
-
+     
      /* make a buffer and window */
      cvvInitSystem(argc, argv);
      cvvNamedWindow( "win", 0 );

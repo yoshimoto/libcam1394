@@ -1,5 +1,5 @@
 /**
-   @file   $Id: xview.cc,v 1.5 2002-11-29 18:39:35 yosimoto Exp $
+   @file   $Id: xview.cc,v 1.6 2003-01-08 17:53:24 yosimoto Exp $
    @author YOSHIMOTO Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
    @date   Sat Aug 31 03:58:46 2002
    @brief    
@@ -10,7 +10,9 @@
 #include <X11/Xutil.h>
 #include <libcam1394/yuv.h>
 
+#if defined(HAVE_IPL_H)
 #include <cv.h>
+#endif
 #include "xview.h"
 
 using namespace std;
@@ -153,7 +155,7 @@ bool CXview::UpDate(RGBA* src)
 }
 
 
-#if defined(USE_OPENCV)
+#if defined(HAVE_IPL_H)
 //! combines an image with CXview
 /*! 
   
@@ -189,7 +191,7 @@ bool CXview::UpDate(IplImage *src)
 
      return true;
 }
-#endif // #if defined(USE_OPENCV)
+#endif // #if defined(HAVE_IPL_H)
 
 
 CXview::CXview():

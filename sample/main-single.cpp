@@ -31,10 +31,6 @@
 using namespace std;
 
 
-#define DWFV500_MAGICNUMBER 8589965664ULL
-#define MAKE_CAMERA_ID(x) ((int64_t)(x)-DWFV500_MAGICNUMBER)
-#define MAKE_CHIP_ID(x)   ((int64_t)(x)+DWFV500_MAGICNUMBER)
-
 /* カメラの各種定数
    これらの値を変更することで様々な形式で画像を獲得できるはずです。
    具体的な数値については1394-based Digital Camera Specや
@@ -57,89 +53,89 @@ const int mode=1;
 const int frame_rate=3;
 
 /* カメラのIDなど */
-const int camera_id=166647; /* 使用するカメラのID */
 const int channel=7;        /* チャネルは6番を使用 */
 const int buf_count=4;      /* 4フレーム分受信用バッファを確保 */
 
 int 
 main(int argc, char **argv)
 {
-  /* get handle*/
-  raw1394handle_t handle;
-  handle = raw1394_new_handle();
-  if (!handle) {
-    if (!errno) {
-      printf("not_compatible");
-    } else {
-      perror("couldn't get handle");
-      printf("driver is not loaded");
-    }
-    return false;
-  }
+     /* get handle*/
+     raw1394handle_t handle;
+     handle = raw1394_new_handle();
+     if (!handle) {
+	  if (!errno) {
+	       printf("not_compatible");
+	  } else {
+	       perror("couldn't get handle");
+	       printf("driver is not loaded");
+	  }
+	  return false;
+     }
 
-  /* list up  all cameras on bus */
-  CCameraList CameraList;
-  if (! GetCameraList(handle,&CameraList) ){
-    cout<<" there's no camera?? ."<<endl;
-    exit(-1);
-  }
-  CCameraList::iterator camera;
-//  camera=find_camera_by_id(CameraList,MAKE_CHIP_ID(camera_id) );
-  camera=CameraList.begin();
-  if (camera==CameraList.end()){
-    cerr << " not found camera (id:="<<camera_id<<")" << endl;
-    return -2;
-  }
+     /* list up  all cameras on bus */
+     CCameraList CameraList;
+     if (! GetCameraList(handle,&CameraList) ){
+	  cout<<" there's no camera?? ."<<endl;
+	  return -1;
+     }
 
-  /* set camera params */
-  camera->StopIsoTx();
-  camera->SetIsoChannel(channel);
-  camera->SetFormat((FORMAT)format,(VMODE)mode,(FRAMERATE)frame_rate);
-  camera->AllocateFrameBuffer();
+     /* select one camera */
+     CCameraList::iterator camera;
+     camera=CameraList.begin();
+     if (camera==CameraList.end()){
+	  cout<<" there's no camera?? ."<<endl;
+	  return -2;
+     }
 
-#if !0
-  camera->AutoModeOn_All();
+     /* set camera params */
+     camera->StopIsoTx();
+     camera->SetIsoChannel(channel);
+     camera->SetFormat((FORMAT)format,(VMODE)mode,(FRAMERATE)frame_rate);
+     camera->AllocateFrameBuffer();
+
+#if true
+     camera->AutoModeOn_All();
 #else
-  camera->SetParameter(BRIGHTNESS,    0x80);
-  camera->SetParameter(AUTO_EXPOSURE, 0x80);
-  camera->SetParameter(SHARPNESS,     0x80);
-  // default 0x80080
-  camera->SetParameter(WHITE_BALANCE, (0x80<<12)|0xe0);
-  camera->SetParameter(HUE,           0x80);
-  camera->SetParameter(SATURATION,    0x80);
-  camera->SetParameter(GAMMA,         0x82); // 0x82=liner
-  // shutter speed 1/30sec=0x800 1/20,000sec=0xa0d
-  camera->SetParameter(SHUTTER,       0x800); 
-  camera->SetParameter(GAIN,          0x02); // def=0x00
+     camera->SetParameter(BRIGHTNESS,    0x80);
+     camera->SetParameter(AUTO_EXPOSURE, 0x80);
+     camera->SetParameter(SHARPNESS,     0x80);
+     // default 0x80080
+     camera->SetParameter(WHITE_BALANCE, (0x80<<12)|0xe0);
+     camera->SetParameter(HUE,           0x80);
+     camera->SetParameter(SATURATION,    0x80);
+     camera->SetParameter(GAMMA,         0x82); // 0x82=liner
+     // shutter speed 1/30sec=0x800 1/20,000sec=0xa0d
+     camera->SetParameter(SHUTTER,       0x800); 
+     camera->SetParameter(GAIN,          0x02); // def=0x00
 #endif
 
 
-  /* make a Window */
-  char tmp[256];
-  sprintf(tmp,"-- Live image from #%5d/ %2dch --",
-	  (int)MAKE_CAMERA_ID(camera->m_ChipID),channel );
-  CXview xview;
-  if (!xview.CreateWindow(W,H,tmp)){
-    cerr << " failure @ create X window" << endl;
-    return -1;
-  }
+     /* make a Window */
+     char tmp[256];
+     sprintf(tmp,"-- Live image from #%8lx/ %2dch --",
+	     (long int)camera->m_ChipID, channel );
+     CXview xview;
+     if (!xview.CreateWindow(W,H,tmp)){
+	  cerr << " failure @ create X window" << endl;
+	  return -1;
+     }
 
-  /* create look-up table */
-  ::CreateYUVtoRGBAMap();
+     /* create look-up table for color space conversion */
+     ::CreateYUVtoRGBAMap();
 
-  /* start */
-  camera->StartIsoTx();
+     /* start */
+     camera->StartIsoTx();
 
-  /* show live images  */
-  int loop=0;
-  while (1){
-    RGBA tmp[W*H];
-    camera->UpDateFrameBuffer();
-    camera->CopyRGBAImage(tmp);
+     /* show live images  */
+     int loop=0;
+     while (1){
+	  RGBA tmp[W*H];
+	  camera->UpDateFrameBuffer();
+	  camera->CopyRGBAImage(tmp);
 
 
-    xview.UpDate(tmp);
-  }
+	  xview.UpDate(tmp);
+     }
 
-  exit(0);
+     exit(0);
 }  
