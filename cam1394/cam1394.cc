@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.10 2002-10-31 09:49:29 yosimoto Exp $
-  @date    $Date: 2002-10-31 09:49:29 $
+  @version $Id: cam1394.cc,v 1.11 2002-11-25 12:21:21 yosimoto Exp $
+  @date    $Date: 2002-11-25 12:21:21 $
  */
 #include <stdio.h>
 #include <unistd.h>
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]){
     char c;              /* for parse options */
     int channel=-1;      /* iso channel */
     int card_no=0;       /* oh1394 interface number */
-    int spd=2;           /* bus speed 0=100M 1=200M 2=400M */
+    int spd=-1;          /* bus speed 0=100M 1=200M 2=400M */
 
     const char *target_cameras=NULL; /* target camera(s) */
     const char *save_filename =NULL;
@@ -468,8 +468,14 @@ int main(int argc, char *argv[]){
     if ((cp_format != Format_X)
 	||(cp_mode   != Mode_X)
 	||(cp_rate   != FrameRate_X)){
-	for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++)
+	for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++){
 	    cam->SetFormat(cp_format,cp_mode,cp_rate);    
+        }
+    }
+    // set iso speed
+    if (spd!=-1) {
+	for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++)
+	    cam->SetIsoSpeed(spd);
     }
       
     // stop camere(s)
