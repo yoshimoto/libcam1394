@@ -2,7 +2,7 @@
   @file    1394cam.cc
   @brief   1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.17 2003-02-23 08:34:36 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.18 2003-03-01 13:34:06 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -99,6 +99,14 @@ static const char *feature_hi_table[]={
     NULL
 };
 
+static const char *featurestate_table[]=
+{
+  "off",
+  "auto",
+  "manual",
+  "one_push",
+  NULL
+};
 
 /** 
  * callback function for enumerating each node.
@@ -439,6 +447,152 @@ C1394CameraNode::PowerUp()
 
 //--------------------------------------------------------------------------
 
+
+/** 
+ * 
+ * 
+ * @param feat 
+ * 
+ * @return 
+ */
+bool 
+C1394CameraNode::HasFeature(C1394CAMERA_FEATURE feat)
+{
+  quadlet_t tmp=0;
+  ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
+  return (1 == GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp));
+}
+
+bool
+C1394CameraNode::HasCapability(C1394CAMERA_FEATURE feat, 
+			       C1394CAMERA_FSTATE fstate)
+{
+  quadlet_t inq=0;
+  ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&inq);
+  bool r=false;
+ 
+  if (GetParam(BRIGHTNESS_INQ, Presence_Inq, inq)){
+    switch (fstate){
+    case OFF:
+      r = (0!=GetParam(BRIGHTNESS_INQ,On_Off_Inq,inq));
+      break;
+    case MANUAL:
+      r = (0!=GetParam(BRIGHTNESS_INQ,Manual_Inq,inq));
+      break;
+    case AUTO:
+      r = (0!=GetParam(BRIGHTNESS_INQ,Auto_Inq,inq));
+      break;
+    case ONE_PUSH:
+      r = (0!=GetParam(BRIGHTNESS_INQ,One_Push_Inq,inq));
+      break;
+    }
+  }
+
+  return r;
+}
+/** 
+ * 
+ * 
+ * @param feat 
+ * @param fstate 
+ * 
+ * @return 
+ */
+
+bool C1394CameraNode::SetFeatureState(C1394CAMERA_FEATURE feat, 
+				      C1394CAMERA_FSTATE  fstate)
+{
+  bool r=false;
+  quadlet_t tmp=0;
+  quadlet_t inq=0;
+
+  ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&inq);
+  if ( 0==GetParam(BRIGHTNESS_INQ,Presence_Inq,inq) )
+    return false;
+
+  ReadReg(Addr(BRIGHTNESS)+4*feat,&tmp);
+  switch (fstate){
+  case OFF:
+    if (GetParam(BRIGHTNESS_INQ,On_Off_Inq,inq)){      
+      tmp |=  SetParam(BRIGHTNESS,Presence_Inq,1);
+      // tmp &= ~SetParam(BRIGHTNESS,One_Push, 1);  
+      tmp &= ~SetParam(BRIGHTNESS,ON_OFF,1);  
+      // tmp &= ~SetParam(BRIGHTNESS,A_M_Mode,1);    
+      WriteReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+      r = true;
+    }
+    break;
+  case MANUAL:
+    if (GetParam(BRIGHTNESS_INQ,Manual_Inq,inq)){      
+      ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+      tmp |=  SetParam(BRIGHTNESS,Presence_Inq,1);
+      // tmp &= ~SetParam(BRIGHTNESS,One_Push, 1);  
+      tmp |=  SetParam(BRIGHTNESS,ON_OFF,1);  
+      tmp &= ~SetParam(BRIGHTNESS,A_M_Mode,1);    
+      WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
+      r = true;
+    }
+    break;
+  case AUTO:
+    if (GetParam(BRIGHTNESS_INQ,Auto_Inq,inq)){      
+      ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+      tmp |=  SetParam(BRIGHTNESS,Presence_Inq,1);
+      //tmp &= ~SetParam(BRIGHTNESS,One_Push, 1);  
+      tmp |=  SetParam(BRIGHTNESS,ON_OFF,1);  
+      tmp |=  SetParam(BRIGHTNESS,A_M_Mode,1);    
+      WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
+      r = true;
+    }
+    break;
+  case ONE_PUSH:
+    if (GetParam(BRIGHTNESS_INQ,One_Push_Inq,inq)){      
+      ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+      tmp |=  SetParam(BRIGHTNESS,Presence_Inq,1);
+      tmp |=  SetParam(BRIGHTNESS,One_Push, 1);  
+      tmp |=  SetParam(BRIGHTNESS,ON_OFF,1);  
+      tmp &=  ~SetParam(BRIGHTNESS,A_M_Mode,1);    
+      WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
+      r = true;
+    }
+    break;
+  }
+  return r;
+}
+
+/** 
+ * 
+ * 
+ * @param feat 
+ * @param fstate 
+ * 
+ * @return 
+ */
+bool C1394CameraNode::GetFeatureState(C1394CAMERA_FEATURE feat, 
+				      C1394CAMERA_FSTATE  *fstate)
+{
+  quadlet_t tmp=0;
+
+  if (!fstate)
+    return false;
+  
+  // we must check not Inquiry register but status register.
+  ReadReg(Addr(BRIGHTNESS)+4*feat,&tmp);
+
+  if (
+    0==GetParam(BRIGHTNESS,Presence_Inq,tmp) ||
+    0==GetParam(BRIGHTNESS,ON_OFF,tmp)){
+    *fstate = OFF;
+  } else if (1==GetParam(BRIGHTNESS,A_M_Mode,tmp)){
+    *fstate = AUTO;
+  } else if (1==GetParam(BRIGHTNESS,One_Push,tmp)){
+    *fstate = ONE_PUSH;
+  } else {
+    *fstate = MANUAL;
+  }
+
+  return true;
+}
+
 /** 
  * return the pointer of the specfied feature.
  * 
@@ -450,6 +604,19 @@ const char*
 C1394CameraNode::GetFeatureName(C1394CAMERA_FEATURE feat)
 {
   return feature_hi_table[feat];
+}
+
+/** 
+ * 
+ * 
+ * @param fstate 
+ * 
+ * @return 
+ */
+const char* 
+C1394CameraNode::GetFeatureStateName(C1394CAMERA_FSTATE fstate)
+{
+  return featurestate_table[fstate];
 }
 
 /** 
@@ -539,53 +706,37 @@ C1394CameraNode::GetParameter(C1394CAMERA_FEATURE feat,unsigned int *value)
 }
 
 /** 
- * disable feature
+ * 
  * 
  * @param feat 
  * 
+ * @note this function is obsolete. please use SetFeatureState(feat,
+ * OFF)
+ *
  * @return 
  */
 bool
 C1394CameraNode::DisableFeature(C1394CAMERA_FEATURE feat)
-{
-  quadlet_t tmp=0;
-   
-  ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
-  if (GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)==0){
-    ERR("the feature "<<feature_hi_table[feat]<<" is not available.");
-    return false;
-  }
-  
-  ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
-  tmp &= ~SetParam(BRIGHTNESS,ON_OFF,1);
-  WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
-  
-  return true;
+{  
+  return SetFeatureState(feat, OFF);
 }
 
 /** 
  * enable the feature
  * 
  * @param feat 
+ *
+ * @note this function is obsolete. please use 
+ * SetFeatureState(feat,new_state), where new_state will take the
+ * value of MANUAL, AUTO or
+ * One_Push.
  * 
  * @return 
  */
 bool
 C1394CameraNode::EnableFeature(C1394CAMERA_FEATURE feat)
 {
-  quadlet_t tmp=0;
-   
-  ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
-  if (GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)==0){
-    ERR("the feature "<<feature_hi_table[feat]<<" is not available.");
-    return false;
-  }
-  
-  ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
-  tmp |= SetParam(BRIGHTNESS,ON_OFF,1);
-  WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
-  
-  return true;
+  return SetFeatureState(feat, MANUAL);
 }
 
 /** 
@@ -593,97 +744,54 @@ C1394CameraNode::EnableFeature(C1394CAMERA_FEATURE feat)
  * 
  * @param feat 
  * 
+ * @note this function is obsolete. please use SetFeatureState(feat,
+ * OnePush)
+ *
  * @return 
  */
 bool
 C1394CameraNode::OnePush(C1394CAMERA_FEATURE feat)
 {
-  quadlet_t tmp=0;
-     
-  ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
-  if (GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)==0){
-    ERR("the feature "<<feature_hi_table[feat]<<" is not available.");
-    return false;
-  }
-  if  (GetParam(BRIGHTNESS_INQ,One_Push_Inq,tmp)==0){
-    ERR("the one push auto mode "<<feature_hi_table[feat]<<" is not available.");
-    return false;
-  }
-    
-  ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
-  tmp |= SetParam(BRIGHTNESS,One_Push,1); // (self clear)
-  tmp |= SetParam(BRIGHTNESS,ON_OFF,1);
-  tmp &=~SetParam(BRIGHTNESS,A_M_Mode,1);
-  WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
-    
-  return true;
+  return SetFeatureState(feat, ONE_PUSH);
 }
 
 /** 
  * Set auto-mode the feature.
  * Auto-mode means the camera's feature are adjusted automatically.
  * 
- * 
  * @param feat 
  * 
+ * @note this function is obsolete. please use SetFeatureState(feat,
+ * AUTO)
+ *
  * @return 
  */
 bool
 C1394CameraNode::AutoModeOn(C1394CAMERA_FEATURE feat)
 {
-  quadlet_t tmp=0;
-   
-  ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
-  if (GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)==0){
-      ERR("the feature "<<feature_hi_table[feat]<<" is not available.");
-      return false;
-  }
-  if (GetParam(BRIGHTNESS_INQ,Auto_Inq,tmp)==0){
-      ERR("the auto mode "<<feature_hi_table[feat]<<" is not available.");
-      return false;
-  }
-   
-  ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
-  tmp |= SetParam(BRIGHTNESS,Presence_Inq,1);  
-  tmp &= ~SetParam(BRIGHTNESS,One_Push, 1);
-  tmp |= SetParam(BRIGHTNESS,ON_OFF,1);
-  tmp |= SetParam(BRIGHTNESS,A_M_Mode,1);
-  WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
-  
-  return true;
+  return SetFeatureState(feat, AUTO);
 }
 
 /** 
  * switch the camera state to Manual control state.
- * 
+ *
  * @param feat 
  * 
+ * @note this function is obsolete. please use SetFeatureState(feat,
+ * MANUAL)
+ *
+ *
  * @return 
  */
 bool
 C1394CameraNode::AutoModeOff(C1394CAMERA_FEATURE feat)
 {
-  quadlet_t tmp=0;
-   
-  ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
-  if (GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)==0){
-      ERR("the feature "<<feature_hi_table[feat]<<" is not available.");
-      return false;
-  }
-  
-  ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
-  tmp |= SetParam(BRIGHTNESS,Presence_Inq,1);
-  tmp &= ~SetParam(BRIGHTNESS,One_Push, 1);  
-  tmp |= SetParam(BRIGHTNESS,ON_OFF,1);  
-  tmp &=~SetParam(BRIGHTNESS,A_M_Mode,1);
-  WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
-  
-  return true;
+  return SetFeatureState(feat, MANUAL);
 }
 
 
 /** 
- * 
+ * set the camera paramter to factory defalts.
  * 
  * 
  * @return 
@@ -691,18 +799,7 @@ C1394CameraNode::AutoModeOff(C1394CAMERA_FEATURE feat)
 bool
 C1394CameraNode::PreSet_All()
 {
-  this->SetParameter(BRIGHTNESS,    0x80);
-  this->SetParameter(AUTO_EXPOSURE, 0x80);
-  this->SetParameter(SHARPNESS,     0x80);
-  // default 0x80080
-  this->SetParameter(WHITE_BALANCE, (0x80<<12)|0xe0);
-  this->SetParameter(HUE,           0x80);
-  this->SetParameter(SATURATION,    0x80);
-  this->SetParameter(GAMMA,         0x82); // 0x82=liner
-  // shutter speed 1/30sec=0x800 1/20,000sec=0xa0d
-  this->SetParameter(SHUTTER,       0x800); 
-  this->SetParameter(GAIN,          0x01); // def=0x00
-
+  WriteReg(Addr(Cur_Mem_Ch), 0 );
   return true;
 }
 
@@ -716,11 +813,12 @@ C1394CameraNode::PreSet_All()
 bool 
 C1394CameraNode::AutoModeOn_All()
 {
-    quadlet_t tmp=0;
-    for (int i=(int)BRIGHTNESS;i<(int)END_OF_FEATURE;i++){
-      AutoModeOn((C1394CAMERA_FEATURE)i);
-    }
-    return true;
+  C1394CAMERA_FEATURE feat;
+  for (feat=BRIGHTNESS;feat<END_OF_FEATURE;
+       feat=(C1394CAMERA_FEATURE)((int)feat+1)){
+    SetFeatureState(feat, AUTO);
+  }
+  return true;
 }
 
 /** 
@@ -732,10 +830,12 @@ C1394CameraNode::AutoModeOn_All()
 bool 
 C1394CameraNode::AutoModeOff_All()
 {
-    for (int i=(int)BRIGHTNESS;i<(int)END_OF_FEATURE;i++){  
-      AutoModeOff((C1394CAMERA_FEATURE)i);
-    }
-    return true;
+  C1394CAMERA_FEATURE feat;
+  for (feat=BRIGHTNESS;feat<END_OF_FEATURE;
+       feat=(C1394CAMERA_FEATURE)((int)feat+1)){
+    SetFeatureState(feat, MANUAL);
+  }
+  return true;
 }
 
 /** 
@@ -747,19 +847,11 @@ C1394CameraNode::AutoModeOff_All()
 bool 
 C1394CameraNode::OnePush_All()
 {
-    for (int i=(int)BRIGHTNESS;i<(int)END_OF_FEATURE;i++){ 
-	quadlet_t tmp;
-	ReadReg(Addr(BRIGHTNESS_INQ)+4*i,&tmp);
-    
-	if ( GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp) &&
-	     GetParam(BRIGHTNESS_INQ,One_Push_Inq,tmp) ){
-//	    ReadReg(Addr(BRIGHTNESS)+4*i,&tmp);
-      
-	    tmp = SetParam(BRIGHTNESS,One_Push,1);
-	    tmp|= SetParam(BRIGHTNESS,ON_OFF,1);
-	    WriteReg(Addr(BRIGHTNESS)+4*i,&tmp);
-	}
-    }
+  C1394CAMERA_FEATURE feat;
+  for (feat=BRIGHTNESS;feat<END_OF_FEATURE;
+       feat=(C1394CAMERA_FEATURE)((int)feat+1)){
+    SetFeatureState(feat, ONE_PUSH);
+  }
   
     return true;
 }

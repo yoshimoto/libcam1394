@@ -1,4 +1,10 @@
 ----------------
+  libcam1394-0.1.5 (Mar-1-2003)
+----------------
+add
+ -  improve the camera state control method and add some new functions; 
+    HasFeature(), HasCapability(), SetFeatureState(), GetFeatureState()
+----------------
   libcam1394-0.1.4 (Jan-10-2003)
 ----------------
 add

@@ -2,7 +2,7 @@
   @file  1394cam.h
   @brief 1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.h,v 1.7 2003-01-08 18:38:01 yosimoto Exp $
+  @version $Id: 1394cam.h,v 1.8 2003-03-01 13:34:06 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -98,6 +98,16 @@ enum C1394CAMERA_FEATURE {
     END_OF_FEATURE   ,
 };
 
+//! each feature has four states
+enum C1394CAMERA_FSTATE
+{
+    OFF          = 0,
+    AUTO            ,
+    MANUAL          ,
+    ONE_PUSH        ,
+    END_OF_FSTATE
+};
+
 //-------------------------------------------------------
 
 //! information of the node
@@ -151,11 +161,18 @@ public:
     bool PowerDown();
     bool PowerUp();  
 
+    bool SetFeatureState(C1394CAMERA_FEATURE feat, C1394CAMERA_FSTATE state);
+    bool GetFeatureState(C1394CAMERA_FEATURE feat, C1394CAMERA_FSTATE *state);
+
     bool SetParameter(C1394CAMERA_FEATURE feat, unsigned int value);
     bool GetParameter(C1394CAMERA_FEATURE feat, unsigned int* value);
+
     const char* GetFeatureName(C1394CAMERA_FEATURE feat);
+    const char* GetFeatureStateName(C1394CAMERA_FSTATE fstate);
 
     bool HasFeature(C1394CAMERA_FEATURE feat);
+    bool HasCapability(C1394CAMERA_FEATURE feat, C1394CAMERA_FSTATE fstate);
+
     bool EnableFeature(C1394CAMERA_FEATURE feat);
     bool DisableFeature(C1394CAMERA_FEATURE feat);
     bool AutoModeOn(C1394CAMERA_FEATURE feat);

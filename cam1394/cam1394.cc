@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.14 2003-02-23 08:34:36 yosimoto Exp $
-  @date    $Date: 2003-02-23 08:34:36 $
+  @version $Id: cam1394.cc,v 1.15 2003-03-01 13:34:06 yosimoto Exp $
+  @date    $Date: 2003-03-01 13:34:06 $
  */
 #include "config.h"
 
@@ -416,13 +416,31 @@ int main(int argc, char *argv[]){
 	CCameraList::iterator cam;
 	for (cam=TargetList.begin(); cam!=TargetList.end(); cam++){
 	    C1394CAMERA_FEATURE feat;
+	    
+	    printf("#     feature          value    supported-state \n");
+
 	    for (feat=BRIGHTNESS;feat<END_OF_FEATURE;
 		 feat=(C1394CAMERA_FEATURE)((int)feat+1)){
+
+		if (!cam->HasFeature(feat))
+		    break;
+
 		unsigned int value;
-		if ( cam->GetParameter(feat, &value) ){
-		cout << cam->GetFeatureName(feat) << " " <<
-		    value << endl;
+		cam->GetParameter(feat, &value);
+		const char *fname = cam->GetFeatureName(feat) ;
+		printf("%20s %7d ", fname, value);
+
+		C1394CAMERA_FSTATE st,cur_st;
+		cam->GetFeatureState(feat, &cur_st);
+		for (st=OFF; st<END_OF_FSTATE; 
+		     st=(C1394CAMERA_FSTATE)(st+1)){
+		    
+		    if (cam->HasCapability(feat,st)){
+			printf("%s%s ", (st==cur_st)?"*":"",
+			       cam->GetFeatureStateName(st));
+		    }
 		}
+		printf("\n");
 	    }
 	}
     }
@@ -441,17 +459,22 @@ int main(int argc, char *argv[]){
 	    
 	    if (!strcasecmp("off",cp[feat])){
 		LOG("off "<<cam->GetFeatureName(feat)<<" feat ");
-		cam->DisableFeature(feat);
+		if (!cam->DisableFeature(feat))
+		    ERR(cam->GetFeatureName(feat)<< " is not available.");
 	    } else if (!strcasecmp("on",cp[feat])){
-		cam->EnableFeature(feat);
+		if (!cam->EnableFeature(feat))
+		    ERR(cam->GetFeatureName(feat)<< " is not available.");
 	    } else if (!strcasecmp("manual",cp[feat])){
-		cam->AutoModeOff(feat);
+		if (!cam->SetFeatureState(feat, MANUAL))
+		    ERR("manual mode feature is not available.");
 	    } else if (!strcasecmp("auto",cp[feat])) {
 		LOG("set "<<cam->GetFeatureName(feat)<<" auto mode");
-		cam->AutoModeOn(feat);
+		if (!cam->SetFeatureState(feat, AUTO))
+		    ERR("auto mode feature is not available.");
 	    } else if (!strcasecmp("one_push",cp[feat])) {
 		LOG("set "<<cam->GetFeatureName(feat)<<" one_push mode");
-		cam->OnePush(feat);
+		if (!cam->SetFeatureState(feat, ONE_PUSH))
+		    ERR("one_push mode feature is not available.");
 	    } else {
 		int val;
 		char *end=NULL;
