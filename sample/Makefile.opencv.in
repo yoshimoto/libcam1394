@@ -1,4 +1,4 @@
-# $Id: Makefile.opencv.in,v 1.1 2004-06-20 02:45:08 yosimoto Exp $
+# $Id: Makefile.opencv.in,v 1.2 2004-06-20 03:44:06 yosimoto Exp $
 # $Author: yosimoto $
 
 
@@ -6,8 +6,8 @@ CPPFLAGS += -I@prefix@/include
 LDFLAGS  += -lcam1394 
 CPPFLAGS += @X_CFLAGS@
 LDFLAGS  += @X_LIBS@ @X_PRE_LIBS@ -lX11
-CPPFLAGS += @OPENCV_CFLAGS@
-LDFLAGS  += @OPENCV_LIBS@
+CPPFLAGS += `opencv-config  --cflags` 
+LDFLAGS  += `opencv-config  --libs`
 
 CPPFLAGS += -g
 
