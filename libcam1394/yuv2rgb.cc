@@ -2,7 +2,7 @@
   @file  yuv2rgb.cc
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv2rgb.cc,v 1.10 2004-08-29 08:54:34 yosimoto Exp $
+  @version $Id: yuv2rgb.cc,v 1.11 2004-08-30 08:04:21 yosimoto Exp $
  */
 
 #include "config.h"
@@ -830,7 +830,7 @@ SaveRGBAtoFile(char *pFile,const RGBA* img,int w,int h,int fmt)
 	}
 	fclose(fp);
     }else{
-	fprintf(stderr,"can't create file %s \n",pFile);
+	//fprintf(stderr,"can't create file %s \n",pFile);
     }
     return result;
 }

@@ -2,7 +2,7 @@
  * @file    1394cam.h
  * @brief   1394-based Digital Camera control class
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.h,v 1.17 2004-08-29 08:54:34 yosimoto Exp $
+ * @version $Id: 1394cam.h,v 1.18 2004-08-30 08:04:21 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -303,6 +303,9 @@ const char* GetSpeedString(SPD rate);
 typedef std::list<C1394CameraNode> CCameraList; //!< camera list
 bool GetCameraList(raw1394handle_t,CCameraList *);
 CCameraList::iterator find_camera_by_id(CCameraList& CameraList,uint64_t id);
+
+void libcam1394_set_debug_level(int level);
+char *libcam1394_get_version(void);
 
 #endif // #if !defined(_1394cam_h_included_)
 /*

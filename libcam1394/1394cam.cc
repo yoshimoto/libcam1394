@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.35 2004-08-30 02:00:37 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.36 2004-08-30 08:04:21 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -53,7 +53,7 @@
 
 using namespace std;
 
-#define CHK_PARAM(exp) {if (!(exp)) MSG( "illegal param passed. " << __STRING(exp)); }
+#define CHK_PARAM(exp) {if (!(exp)) LOG( "illegal param passed. " << __STRING(exp)); }
 #define EXCEPT_FOR_FORMAT_6_ONLY  {if (is_format6) return false;}
 
 #define Addr(name) (m_command_regs_base+OFFSET_##name)
@@ -541,10 +541,10 @@ GetCameraList(raw1394handle_t handle, CCameraList* pList)
 
     numcards = raw1394_get_port_info(handle, portinfo, NUM_PORT);
     if (numcards < 0) {
-	perror("couldn't get card info");
+	ERR("couldn't get card info. " <<strerror(errno));
 	return false;
     } else {
-	LOG(numcards << "card(s) found");
+	LOG(numcards << " card(s) found");
     }
 
     if (!numcards) {
@@ -558,7 +558,7 @@ GetCameraList(raw1394handle_t handle, CCameraList* pList)
 	raw1394handle_t new_handle = raw1394_new_handle();
 
 	if (raw1394_set_port(new_handle, i) < 0) {
-	    perror("couldn't set port");
+	    ERR("couldn't set port. "<< strerror(errno));
 	    return false;
 	}	
 	int pre = pList->size();
@@ -1985,6 +1985,7 @@ static void* mmap_video1394(int port_no, int channel,
     
     char devname[1024];
     snprintf(devname, sizeof(devname), "/dev/video1394/%d", port_no);
+    LOG("open("<<devname<<")");
     *fd = open(devname, O_RDONLY);
     // quick hack for backward-compatibility
     if (*fd<0){
@@ -2024,7 +2025,7 @@ static void* mmap_video1394(int port_no, int channel,
     *m_BufferSize = vmmap.buf_size;
     *m_num_frame = vmmap.nb_buffers;
 
-    //printf("channel: %d\n", vmmap.channel);
+    LOG("channel: "<< vmmap.channel);
 
     /* QUEUE the buffers */
     for (i = 0; i < vmmap.nb_buffers; i++){
@@ -2061,6 +2062,7 @@ static void* mmap_isofb(int port_no, int channel,
 
     char devname[1024];
     snprintf(devname, sizeof(devname), "/dev/isofb%d", port_no);
+    LOG("open("<<devname<<")");
     *fd=open(devname,O_RDWR);
     if (-1==*fd){
 	ERR("Failed to open isofb device (" 
@@ -2134,8 +2136,6 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
 	SetIsoChannel(channel);
 	QueryIsoChannel(&channel);
     }
-  
-    LOG("channel "<<channel);
   
     if (!(0<=channel)&&(channel<64)){
 	LOG(" can't determine channel.");
@@ -2515,6 +2515,30 @@ C1394CameraNode::SaveToFile(char* filename,FILE_TYPE type)
     return SaveRGBAtoFile(filename, buf, w, h);
 //    }
 }
+
+//! debug level 
+//  @sa ERR,LOG,WRN
+#if defined DEBUG
+int libcam1394_debug_level = 0;
+#else
+int libcam1394_debug_level = INT_MAX;
+#endif
+
+/** 
+ * 
+ * 
+ * @param level
+ */
+void libcam1394_set_debug_level(int level)
+{
+    libcam1394_debug_level = level;
+}
+
+char *libcam1394_get_version(void)
+{
+    return PACKAGE_VERSION;
+}
+
 /*
  * Local Variables:
  * mode:c++

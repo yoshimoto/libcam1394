@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.21 2004-08-30 02:00:37 yosimoto Exp $
-  @date    $Date: 2004-08-30 02:00:37 $
+  @version $Id: cam1394.cc,v 1.22 2004-08-30 08:04:21 yosimoto Exp $
+  @date    $Date: 2004-08-30 08:04:21 $
  */
 #include "config.h"
 
@@ -312,11 +312,11 @@ int main(int argc, char *argv[]){
     int  do_start   =-1;
     int  do_stop    =-1;
     int  do_query   =-1;
+    int  do_show_version =-1;
 
-    int  do_version_show =-1;
+    int  opt_debug_level = 0;
 
     bool is_all=false; // if target cameras are all camera, then set true
-
 
     struct poptOption control_optionsTable[] = {
 	{ "start", 'S',  POPT_ARG_NONE, &do_start, 'S',
@@ -403,7 +403,11 @@ int main(int argc, char *argv[]){
 
     struct poptOption common_optionsTable[] = {
 	{ "magic", 0,  POPT_ARG_STRING, &opt_magic_string, 0,
-	  "magic number for camera id", NULL } ,   
+	  "Set magic number for camera id", "MAGIC" } ,   
+	{ "verbose", 'v', POPT_ARG_NONE, NULL, 'v',
+	  "Provide more detailed output.",0},
+	{ "version", 'V', POPT_ARG_NONE, &do_show_version, 'V',
+	  "Print the version string of libcam1394 library and exit.",0},
 	{ NULL, 0, 0, NULL, 0 }
     };
 
@@ -446,6 +450,11 @@ int main(int argc, char *argv[]){
     }
 	
     while ((c = poptGetNextOpt(optCon)) >= 0) {
+	switch (c){
+	case 'v':
+	    opt_debug_level ++;
+	    break;
+	}
     }
   
     if (c < -1) {
@@ -454,8 +463,17 @@ int main(int argc, char *argv[]){
 	     <<" : "<< poptStrerror(c) <<endl;
 	exit(1);
     }
+
     target_cameras = poptGetArg(optCon);
     poptFreeContext(optCon);
+    
+    libcam1394_set_debug_level( opt_debug_level );
+
+    if ( do_show_version != -1 ) {
+	printf("libcam1394-%s\n",libcam1394_get_version());
+	exit(0);
+    }
+
   
     if ( opt_magic_string ){
 	char *end=NULL;

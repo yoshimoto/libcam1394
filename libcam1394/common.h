@@ -1,6 +1,6 @@
 /*!
   \file   common.h
-  \author $Id: common.h,v 1.6 2003-12-19 12:40:25 yosimoto Exp $
+  \author $Id: common.h,v 1.7 2004-08-30 08:04:21 yosimoto Exp $
   \date   Thu Oct 31 18:45:40 2002
   \brief  
 
@@ -11,20 +11,18 @@
 
 #include <iostream>
 
+extern int libcam1394_debug_level;
+
 #if defined(DEBUG)
-#define LOG(msg) std::cerr<<__FILE__<<"("<<__LINE__<<"): "<< msg <<std::endl
-#define ERR(msg) std::cerr<<__FILE__<<"("<<__LINE__<<"): "<< msg <<std::endl
-#define MSG(msg) std::cerr<<__FILE__<<"("<<__LINE__<<"): "<< msg <<std::endl
+#define LIBCAM1394_OUTPUT(msg) \
+ std::cerr<<__FILE__<<"("<<__LINE__<<"): "<<msg<<std::endl
 #else // #if defined(DEBUG)
-#define LOG(msg) (void)(0)
-#define ERR(msg) (void)(0)
-#define MSG(msg) (void)(0)
+#define LIBCAM1394_OUTPUT(msg) \
+ std::cerr<<"libcam1394: "<<msg<<std::endl
 #endif // #if defined(DEBUG)
 
-#if !defined(TRACE_OFF) 
-#define TRACE(msg) LOG(msg)
-#else 
-#define TRACE(msg) (void)(0)
-#endif
+#define LOG(msg) do { if (libcam1394_debug_level>2){ LIBCAM1394_OUTPUT(msg);} } while(0)
+#define WRN(msg) do { if (libcam1394_debug_level>1){ LIBCAM1394_OUTPUT(msg);} } while(0)
+#define ERR(msg) do { if (libcam1394_debug_level>0){ LIBCAM1394_OUTPUT(msg);} } while(0)
 
 #endif //#if !defined(_COMMON_H_INCLUDED_)
