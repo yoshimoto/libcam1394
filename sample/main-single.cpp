@@ -27,12 +27,13 @@
 #include <libcam1394/yuv.h>     /* 色変換 */
 
 #include "xview.h"              /* Xの表示オブジェクト*/
+#include <iostream>
+using namespace std;
 
 
 #define DWFV500_MAGICNUMBER 8589965664ULL
 #define MAKE_CAMERA_ID(x) ((int64_t)(x)-DWFV500_MAGICNUMBER)
 #define MAKE_CHIP_ID(x)   ((int64_t)(x)+DWFV500_MAGICNUMBER)
-
 
 /* カメラの各種定数
    これらの値を変更することで様々な形式で画像を獲得できるはずです。

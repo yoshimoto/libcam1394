@@ -1,13 +1,13 @@
 /*!
   @file    
   @brief   
-  @version $Id: main-with-opencv.cc,v 1.2 2002-02-15 20:15:04 yosimoto Exp $
+  @version $Id: main-with-opencv.cpp,v 1.1 2002-07-22 18:50:49 yosimoto Exp $
   @author  $Author: yosimoto $
-  @date    $Date: 2002-02-15 20:15:04 $
+  @date    $Date: 2002-07-22 18:50:49 $
  */
 
 #include <cv.h>
-#include <cvvis.h>
+#include <highgui.h>
 #include <stdio.h>
 #include <errno.h>
 #include <libraw1394/raw1394.h>  /* libraw1394関連 */
@@ -17,6 +17,11 @@
 #include <libcam1394/1394cam.h>
 #include <libcam1394/yuv.h>
 
+#include <unistd.h>
+
+#define DWFV500_MAGICNUMBER 8589965664ULL
+#define MAKE_CAMERA_ID(x) ((int64_t)(x)-DWFV500_MAGICNUMBER)
+#define MAKE_CHIP_ID(x)   ((int64_t)(x)+DWFV500_MAGICNUMBER)
 
 /* カメラのIDなど */
 const int format=0; 
@@ -79,10 +84,10 @@ main(int argc, char **argv)
      while (1){
 	  camera->UpDateFrameBuffer();
 	  camera->CopyIplImage(image);
-
-	  cvvShowImage( "win", image );
+	  
+ 	  cvvShowImage("win", image);
      }
 
-     exit(0);
+     return 0;
 }  
 

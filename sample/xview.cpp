@@ -5,12 +5,11 @@
 //
 
 #include <iostream>
-using namespace std;
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-
 #include <libcam1394/yuv.h>
 #include "xview.h"
+using namespace std;
 
 #define ERR(msg) cerr<< msg <<endl
 #define LOG(msg) cerr<< msg <<endl

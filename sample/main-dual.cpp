@@ -26,11 +26,18 @@
 #include <libcam1394/yuv.h>     /* 色変換 */
 
 #include "xview.h"              /* Xの表示オブジェクト*/
+#include <iostream>
+using namespace std;
 
 /* カメラの各種定数
    これらの値を変更することで様々な形式で画像を獲得できるはずです。
    具体的な数値については1394-based Digital Camera Specや
    実際に使用する1394カメラの仕様書等で確認してください。*/
+
+#define DWFV500_MAGICNUMBER 8589965664ULL
+#define MAKE_CAMERA_ID(x) ((int64_t)(x)-DWFV500_MAGICNUMBER)
+#define MAKE_CHIP_ID(x)   ((int64_t)(x)+DWFV500_MAGICNUMBER)
+
 
 /* カメラを320x240(YUV422)@15fps に設定する場合 */
 /*

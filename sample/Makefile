@@ -1,13 +1,14 @@
-CXXFLAGS=-I/usr/local/include
-LDFLAGS+=-L/usr/local/lib -lraw1394 -L/usr/X11R6/lib -lX11  -lpopt 
+CPPFLAGS+=-I/usr/local/include
+LDFLAGS+=-lstdc++ -L/usr/X11R6/lib -lX11  -lpopt 
+LDFLAGS+=-L/usr/local/lib -lraw1394 -lcam1394
 
-CXXFLAGS+=-g
+CPPFLAGS+=-g
 
 all: main-single main-dual 
 
-main-single: xview.o ../libcam1394/1394cam.o ../libcam1394/yuv2rgb.o
+main-single: main-single.o xview.o
 
-main-dual: xview.o ../libcam1394/1394cam.o ../libcam1394/yuv2rgb.o
+main-dual: main-dual.o xview.o
 
 
 clean: 
