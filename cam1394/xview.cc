@@ -1,5 +1,5 @@
 /**
-   @file   $Id: xview.cc,v 1.9 2004-10-28 22:37:47 yosimoto Exp $
+   @file   $Id: xview.cc,v 1.10 2004-11-06 08:49:41 yosimoto Exp $
    @author YOSHIMOTO Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
    @date   Sat Aug 31 03:58:46 2002
    @brief    
@@ -122,7 +122,7 @@ bool CXview::CreateWindow(int w,int h,const char* strCaption)
     image->byte_order=LSBFirst;
   
     XFlush( display );
-    XSync(display,False);
+    //XSync(display, False);
      
     return true;
 }
@@ -165,6 +165,8 @@ bool CXview::UpDate(RGBA* src)
 */
 bool CXview::UpDate(IplImage *src)
 {
+     XSync(display,False);
+
      const int bpp = ((src->depth & 255) >> 3 ) * src->nChannels;
      const int H = src->height;
      const int W = src->width;
@@ -187,7 +189,7 @@ bool CXview::UpDate(IplImage *src)
      
      XPutImage(display,view_window,gc,image,0,0,
 	       0,0,width,height);
-     XSync(display,False);
+
 
      return true;
 }
