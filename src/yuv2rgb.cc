@@ -2,7 +2,7 @@
   @file  yuv2rgb.cc
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv2rgb.cc,v 1.6 2002-03-11 16:47:20 yosimoto Exp $
+  @version $Id: yuv2rgb.cc,v 1.7 2002-03-11 17:17:28 yosimoto Exp $
  */
 
 #include "config.h"
@@ -13,8 +13,8 @@
 
 #include "yuv.h"
 
-/* yuv -> RGBA 変換を整数演算で行ない高速化をはかっています */
-typedef signed int FIX ; /*  32bit整数を固定小数点として利用しています */
+/*  LUT for yuv to RGBA conversion */
+typedef signed int FIX ;
 #define FIX_BASE  10  
 #define FLOAT2FIX(f)  (FIX)(f*(float)(1<<FIX_BASE))
 #define FIX2INT(F)    ((F)>>FIX_BASE)
@@ -79,11 +79,13 @@ conv_YUVtoRGB(UCHAR* r, UCHAR* g, UCHAR* b,
     else if (b_<0)
 	b_=0;
     
-    *r=r_;    *g=g_;    *b=b_;
+    *r=r_; 
+    *g=g_; 
+    *b=b_;
 }
 
 /** 
- * YUV422 -> RGBA への変換
+ * convert and copy YUV422 to RGBA 
  * 
  * @param lpRGBA      pointer to destnation image data.
  * @param lpYUV422    pointer to source image data.
@@ -152,7 +154,7 @@ copy_YUV444toRGBA(RGBA* lpRGBA,const void *lpYUV444,
 }
 
 
-/* YUV411 -> RGBA への変換
+/* convert YUV411 to RGBA 
  * 
  * @param lpRGBA      pointer to destnation image data.
  * @param lpYUV411    pointer to source image data.
@@ -175,17 +177,21 @@ copy_YUV411toRGBA(RGBA* lpRGBA,const void *lpYUV411,
 	    u=*p++;
 	    Y=*p++;
 	    v=p[1]; // read v(K+0)      
-	    conv_YUVtoRGB(&lpRGBA->r, &lpRGBA->g, &lpRGBA->b, Y, u, v);// Y(K+0)
+	    conv_YUVtoRGB(&lpRGBA->r, &lpRGBA->g, &lpRGBA->b,
+			  Y, u, v);// Y(K+0)
 	    lpRGBA++;
 	    Y=*p++;
-	    conv_YUVtoRGB(&lpRGBA->r, &lpRGBA->g, &lpRGBA->b, Y, u, v);// Y(K+1)
+	    conv_YUVtoRGB(&lpRGBA->r, &lpRGBA->g, &lpRGBA->b, 
+			  Y, u, v);// Y(K+1)
 	    lpRGBA++;
 	    p++;  // skip v(K+0)
 	    Y=*p++;
-	    conv_YUVtoRGB(&lpRGBA->r, &lpRGBA->g, &lpRGBA->b, Y, u, v);// Y(K+2)
+	    conv_YUVtoRGB(&lpRGBA->r, &lpRGBA->g, &lpRGBA->b,
+			  Y, u, v);// Y(K+2)
 	    lpRGBA++;
 	    Y=*p++;
-	    conv_YUVtoRGB(&lpRGBA->r, &lpRGBA->g, &lpRGBA->b, Y, u, v);// Y(K+3)
+	    conv_YUVtoRGB(&lpRGBA->r, &lpRGBA->g, &lpRGBA->b,
+			  Y, u, v);// Y(K+3)
 	    lpRGBA++;
 	}
 	if (flag&REMOVE_HEADER)
@@ -194,10 +200,9 @@ copy_YUV411toRGBA(RGBA* lpRGBA,const void *lpYUV411,
     return true;
 }
 
-/* ファイルへの吐きだし。現時点では ppm format のみサポートです
- */
+
 /** 
- * save RGBA image to the file.
+ * export RGBA image to the file.
  * 
  * @param pFile   filename
  * @param img     pointer to the image.
@@ -229,9 +234,9 @@ SaveRGBAtoFile(char *pFile,const RGBA* img,int w,int h,int fmt)
 }
 
 /** 
- * 
- * 
- * 
+ * convert YUV422 to IplImage. 
+ * (This function will work, only when there is IPL.)
+ *
  * @param img         pointer to IplImage object.
  * @param lpYUV422    pointer to source image data.
  * @param packet_sz   the size of each packet.
@@ -256,7 +261,7 @@ copy_YUV422toIplImage(IplImage* img, const void *lpYUV422,
     }
     while (num_packet-->0){
 	for (i=0;i<packet_sz/4;i++){
-	    signed int r,g,b;
+	    UCHAR r,g,b;
 	    UCHAR Y,u,v;
 	    u=*p++;
 	    Y=*p++;
@@ -279,8 +284,8 @@ copy_YUV422toIplImage(IplImage* img, const void *lpYUV422,
 }
 
 /** 
- * 
- * 
+ * convert YUV411 to IplImage
+ * (This function will work, only when there is IPL.) 
  * 
  * @param img         pointer to IplImage object.
  * @param lpYUV411    pointer to source image data.
@@ -304,7 +309,7 @@ copy_YUV411toIplImage(IplImage* img, const void *lpYUV411,
     }
     while (num_packet-->0){
 	for (int i=0;i<packet_sz/(2*3);i++){      
-	    signed int r,g,b;
+	    UCHAR r,g,b;
 	    UCHAR Y,u,v; 
 	    u=*p++;
 	    Y=*p++;
@@ -338,13 +343,16 @@ copy_YUV411toIplImage(IplImage* img, const void *lpYUV411,
 }
 
 /** 
- * 
- * 
+ * convert YUV444 to IplImage
+ * (This function will work, only when there is IPL.) 
+ *
  * @param img         pointer to IplImage object.
  * @param lpYUV444    pointer to source image data.
  * @param packet_sz   the size of each packet.
  * @param num_packet  the number of packets per one image.
  * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
+ *
+ * @return
  */
 bool
 copy_YUV444toIplImage(IplImage* img, const void *lpYUV444, 
@@ -362,12 +370,12 @@ copy_YUV444toIplImage(IplImage* img, const void *lpYUV444,
     }
     while (num_packet-->0){
 	for (int i=0;i<packet_sz/3;i++){      
-	    signed int r,g,b;
+	    UCHAR r,g,b;
 	    UCHAR Y,u,v; 
 	    u=*p++;
 	    Y=*p++;
 	    v=*p++; // read v(K+0)      
-	    conv_YUVtoRGB(&r,g,&b,Y,u,v); // Y(K+3)
+	    conv_YUVtoRGB(&r, &g, &b, Y, u, v); // Y(K+3)
 	    *dst++=b;
 	    *dst++=g;
 	    *dst++=r;
@@ -378,8 +386,6 @@ copy_YUV444toIplImage(IplImage* img, const void *lpYUV444,
 #endif //#if !defined HAVE_IPL_H
     return true;
 }
-     
-#endif // #if defined HAVE_IPL_H
 
 /*
  * Local Variables:
