@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.32 2004-07-13 15:44:57 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.33 2004-07-13 18:11:03 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -2155,7 +2155,7 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
 	return -2;
     }
     
-    m_num_frame = 8;
+    m_num_frame = 64;
 
 #if !defined(HAVE_ISOFB)
     pMaped = (char*)mmap_video1394(m_port_no, channel, 
@@ -2253,21 +2253,18 @@ void* C1394CameraNode::UpDateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
     }
 
     int drop_frames = vwait.buffer;
-    while (drop_frames>0){	    
-	ERR("drop frame");
-
+    while (drop_frames-->0){
 	vwait.channel = m_channel;
-	vwait.buffer = m_last_read_frame%m_num_frame;
+	vwait.buffer = m_last_read_frame++%m_num_frame;
 	if (ioctl(fd,VIDEO1394_IOC_LISTEN_QUEUE_BUFFER,&vwait) < 0){
-	    ERR("VIDEO1394_IOC_LISTEN_QUEUE_BUFFER failed");
+	    ERR("VIDEO1394_IOC_LISTEN_QUEUE_BUFFER failed.");
 	}	    
-	m_last_read_frame++;
     }
 
     vwait.channel = m_channel;
     vwait.buffer = m_last_read_frame++ % m_num_frame;
     if (ioctl(fd,VIDEO1394_IOC_LISTEN_QUEUE_BUFFER,&vwait) < 0){
-	ERR("VIDEO1394_IOC_LISTEN_QUEUE_BUFFER failed");
+	ERR("VIDEO1394_IOC_LISTEN_QUEUE_BUFFER failed.");
     }
 
     return m_lpFrameBuffer =
