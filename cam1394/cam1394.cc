@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.22 2004-08-30 08:04:21 yosimoto Exp $
-  @date    $Date: 2004-08-30 08:04:21 $
+  @version $Id: cam1394.cc,v 1.23 2004-08-31 08:42:43 yosimoto Exp $
+  @date    $Date: 2004-08-31 08:42:43 $
  */
 #include "config.h"
 
@@ -251,7 +251,7 @@ int display_live_image_on_X(C1394CameraNode &cam)
   /* allocate receive buffer */
   if (cam.AllocateFrameBuffer()){
     LOG("err: failure @ AllocateFrameBuffer() ");
-    return -1;
+    return -2;
   }
 
   const int w = cam.GetImageWidth();

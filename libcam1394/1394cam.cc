@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.36 2004-08-30 08:04:21 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.37 2004-08-31 08:42:43 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -2288,21 +2288,21 @@ void* C1394CameraNode::UpDateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
 }
 
 /** 
- * Gets the size fo frame buffer
- * 
+ * Gets the size fo a frame.
  * 
  * @return size of frame buffer.
+ *
+ * @note Sometimes m_BufferSize is greater than m_packet_sz * m_num_packet.
  */
 int C1394CameraNode::GetFrameBufferSize()
 {
-    /* sometimes  m_BufferSize is greater than m_packet_sz * m_num_packet; */
     return m_packet_sz*m_num_packet;
 }
 
 /** 
+ * Returns the width of the image.
  * 
- * 
- * @return the width of image in bytes. 
+ * @return the width of image.
  */
 int C1394CameraNode::GetImageWidth()
 {
@@ -2310,9 +2310,9 @@ int C1394CameraNode::GetImageWidth()
 }
 
 /** 
+ * Returns the height of the image.
  * 
- * 
- * @return the height of image in bytes.
+ * @return the height of image.
  */
 int C1394CameraNode::GetImageHeight()
 {
@@ -2506,14 +2506,11 @@ C1394CameraNode::CopyRGBAImage(void* dest)
 int  
 C1394CameraNode::SaveToFile(char* filename,FILE_TYPE type)
 {
-//    switch (type){ 
-//    {
     int w=GetImageWidth();
     int h=GetImageHeight();
     RGBA buf[w*h];
     CopyRGBAImage(buf);
     return SaveRGBAtoFile(filename, buf, w, h);
-//    }
 }
 
 //! debug level 
@@ -2525,7 +2522,7 @@ int libcam1394_debug_level = INT_MAX;
 #endif
 
 /** 
- * 
+ * Set debug level.
  * 
  * @param level
  */
@@ -2534,6 +2531,12 @@ void libcam1394_set_debug_level(int level)
     libcam1394_debug_level = level;
 }
 
+/** 
+ * Returns version string.
+ * 
+ * 
+ * @return pointer to the string.
+ */
 char *libcam1394_get_version(void)
 {
     return PACKAGE_VERSION;
