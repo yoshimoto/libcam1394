@@ -2,7 +2,7 @@
   @file  yuv2rgb.cc
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv2rgb.cc,v 1.8 2003-12-19 12:40:25 yosimoto Exp $
+  @version $Id: yuv2rgb.cc,v 1.9 2004-01-13 11:06:58 yosimoto Exp $
  */
 
 #include "config.h"
@@ -294,7 +294,7 @@ copy_Y16toRGBA(RGBA* lpRGBA,const void *lpY16,
 	p+=4;
     }
     while (num_packet-->0){
-	for (int i=0;i<packet_sz;i++){      
+	for (int i=0;i<packet_sz/2;i++){      
 	    /*
 	      int  Y = *p << 8;
 	      p++;
@@ -754,9 +754,9 @@ copy_Y16toIplImage(IplImage* img, const void *lpY16,
     }
     while (num_packet-->0){
 	for (i=0;i<packet_sz;i++){	    
-	    *dst++=*p;
-	    *dst++=*p;
-	    *dst++=*p;
+	    *dst++ = *p;
+	    *dst++ = *p;
+	    *dst++ = *p;
 	    // ignore lower byte:
 	    p++;
 	} //     for (i=0;i<packet_sz/4;i++){
@@ -792,8 +792,6 @@ copy_Y16toIplImageGray(IplImage* img, const void *lpY16,
     while (num_packet-->0){
 	for (i=0;i<packet_sz;i++){
 	    *dst++ = *p++;
-	    // ignore lower byte:
-	    p++;
 	} //     for (i=0;i<packet_sz/4;i++){
 	if (flag&REMOVE_HEADER)
 	    p+=4*2;

@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.28 2004-01-09 15:29:13 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.29 2004-01-13 11:06:58 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -1521,7 +1521,7 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 {
     // format_0
     {
-	{ // format_1 mode_0 
+	{ // format_0 mode_0 
 	    RESERVED,                     // 1.875fps
 	    RESERVED,                     // 3.75 fps
 	    {  15*4, 120*8, SPD_100M  },  // 7.5  fps
@@ -1529,7 +1529,7 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    {  60*4, 120*2, SPD_100M  },  // 30   fps
 	    RESERVED,                     // 60   fps
 	},
-	{ // format_1 mode_1 
+	{ // format_0 mode_1 
 	    RESERVED,
 	    {  20*4, 240*8 ,SPD_100M},
 	    {  40*4, 240*4 ,SPD_100M},
@@ -1537,7 +1537,7 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    { 160*4, 240   ,SPD_100M},
 	    RESERVED,
 	},
-	{ // format_1 mode_2
+	{ // format_0 mode_2
 	    RESERVED,
 	    {  60*4, 480*4 ,SPD_100M},
 	    { 120*4, 480*2 ,SPD_100M},
@@ -1545,7 +1545,7 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    { 480*4, 480/2 ,SPD_200M},
 	    RESERVED,
 	},
-	{  // format_1 mode_3
+	{  // format_0 mode_3
 	    RESERVED,
 	    {  80*4, 480*4 ,SPD_100M},
 	    { 160*4, 480*2 ,SPD_100M},
@@ -1553,7 +1553,7 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    { 640*4, 480/2 ,SPD_400M},
 	    RESERVED,
 	},
-	{ // format_1 mode_4
+	{ // format_0 mode_4
 	    RESERVED,
 	    { 120*4, 480*4 ,SPD_100M},
 	    { 240*4, 480*2 ,SPD_100M},
@@ -1561,15 +1561,15 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    { 960*4, 480/2 ,SPD_400M},
 	    RESERVED,
 	},
-	{ // format_1 mode_5
+	{ // format_0 mode_5
 	    RESERVED,
 	    {  40*4, 480*4 ,SPD_100M},
 	    {  80*4, 480*2 ,SPD_100M},
 	    { 160*4, 480/1 ,SPD_100M},
 	    { 320*4, 480/2 ,SPD_200M},
-	    { 320*4, 480/4 ,SPD_400M},
+	    { 640*4, 480/4 ,SPD_400M},
 	},  
-	{  // format_1 mode_6
+	{  // format_0 mode_6
 	    RESERVED,
 	    {  80*4, 480*4 ,SPD_100M},
 	    { 160*4, 480*2 ,SPD_100M},
@@ -1577,7 +1577,7 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    { 640*4, 480/2 ,SPD_400M},
 	    RESERVED,
 	},
-	{ // format_1 mode_7
+	{ // format_0 mode_7
 	    RESERVED,
 	    RESERVED,
 	    RESERVED,
