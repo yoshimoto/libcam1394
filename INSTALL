@@ -1,0 +1,9 @@
+For installation you can use these commands:
+
+./configure
+make
+make install
+
+If the configure script cannot find header file ohci_iso.h (usually in /usr/include/linux directory), please check if you have installed driver for for current version of your kernel. The driver is available at my web site, 
+http://limu.is.kyushu-u.ac.jp/~yosimoto/ieee1394/
+

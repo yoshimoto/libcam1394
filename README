@@ -1,0 +1,11 @@
+
+
+
+To use this library, you'll need the custom 1394 driver.  It is not
+compatible with one in standard linux kernel-2.4.x. If you have not
+installed the driver, please refer to my web cite:
+http://limu.is.kyushu-u.ac.jp/~yosimoto/ieee1394/.
+
+If you want to write code with this library, please refer to sample
+codes in the directory $(TOPDIR)/sample/.
+
