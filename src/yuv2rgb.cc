@@ -2,8 +2,8 @@
   @file  yuv2rgb.cc
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv2rgb.cc,v 1.3 2002-02-15 19:50:24 yosimoto Exp $
-  @date    $Date: 2002-02-15 19:50:24 $
+  @version $Id: yuv2rgb.cc,v 1.4 2002-02-15 19:56:22 yosimoto Exp $
+  @date    $Date: 2002-02-15 19:56:22 $
  */
 
 #include "config.h"
@@ -238,7 +238,7 @@ copy_YUV422toIplImage(IplImage* img, const void *lpYUV422,
     }
     while (num_packet-->0){
 	for (i=0;i<packet_sz/4;i++){
-	    int r,g,b;
+	    signed int r,g,b;
 	    UCHAR Y,u,v;
 	    u=*p++;
 	    Y=*p++;
@@ -258,6 +258,75 @@ copy_YUV422toIplImage(IplImage* img, const void *lpYUV422,
     } //   while (num_packet-->0) {
 }
 
+/** 
+ * 
+ * 
+ * @param img 
+ * @param lpYUV422 
+ * @param packet_sz 
+ * @param num_packet 
+ * @param flag 
+ */
+void
+copy_YUV411toIplImage(IplImage* img, const void *lpYUV411, 
+		      int packet_sz,
+		      int num_packet, int flag)
+{
+    uchar *dst = (uchar*)img->imageData;
+    UCHAR *p=(UCHAR*)lpYUV411;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
+    }
+    while (num_packet-->0){
+	for (int i=0;i<packet_sz/(2*3);i++){      
+	    signed int r,g,b;
+	    UCHAR Y,u,v; 
+	    u=*p++;
+	    Y=*p++;
+	    v=p[1]; // read v(K+0)      
+	    conv_YUVtoRGB(r,g,b,Y,u,v); // Y(K+0)
+	    *dst++=r;
+	    *dst++=g;
+	    *dst++=b;
+	    Y=*p++;
+	    conv_YUVtoRGB(r,g,b,Y,u,v); // Y(K+1)
+	    *dst++=r;
+	    *dst++=g;
+	    *dst++=b;
+	    p++;  // skip v(K+0)
+	    Y=*p++;
+	    conv_YUVtoRGB(r,g,b,Y,u,v); // Y(K+2)
+	    *dst++=r;
+	    *dst++=g;
+	    *dst++=b;
+	    Y=*p++;
+	    conv_YUVtoRGB(r,g,b,Y,u,v); // Y(K+3)
+	    *dst++=r;
+	    *dst++=g;
+	    *dst++=b;
+	}
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    } 
+}
+
+/** 
+ * 
+ * 
+ * @param img 
+ * @param lpYUV422 
+ * @param packet_sz 
+ * @param num_packet 
+ * @param flag 
+ */void
+copy_YUV444toIplImage(IplImage* img, const void *lpYUV444, 
+		      int packet_sz,
+		      int num_packet, int flag)
+{
+    
+}
+     
 #endif // #if defined USE_IPL
 
 /*
