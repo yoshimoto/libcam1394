@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.11 2002-11-25 12:21:21 yosimoto Exp $
-  @date    $Date: 2002-11-25 12:21:21 $
+  @version $Id: cam1394.cc,v 1.12 2002-11-25 12:24:32 yosimoto Exp $
+  @date    $Date: 2002-11-25 12:24:32 $
  */
 #include <stdio.h>
 #include <unistd.h>
@@ -475,7 +475,7 @@ int main(int argc, char *argv[]){
     // set iso speed
     if (spd!=-1) {
 	for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++)
-	    cam->SetIsoSpeed(spd);
+	    cam->SetIsoSpeed((SPD)spd);
     }
       
     // stop camere(s)
