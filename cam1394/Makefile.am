@@ -1,7 +1,7 @@
 bin_PROGRAMS = cam1394  
 noinst_PROGRAMS = cam1394_save view1394
 
-cam1394_SOURCES  = cam1394.cc mmx_bgs.s common.h xview.cc xview.h
+cam1394_SOURCES  = cam1394.cc common.h xview.cc xview.h
 cam1394_LDADD = ../libcam1394/libcam1394.la
 cam1394_LDFLAGS  = @LIBRAW1394_LIBS@ @X_LIBS@ -lX11
 

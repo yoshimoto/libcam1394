@@ -13,6 +13,7 @@
 #include <X11/Xutil.h>
 #include <popt.h>
 #include <string.h>
+#include <iostream>
 
 #include <libraw1394/raw1394.h> 
 #include <libraw1394/csr.h>
@@ -23,6 +24,7 @@
 #include "common.h"
 #include "xview.h"              /* Xの表示オブジェクト*/
 
+using namespace std;
 
 typedef unsigned int uint;
 
