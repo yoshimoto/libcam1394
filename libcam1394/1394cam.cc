@@ -2,7 +2,7 @@
   @file    1394cam.cc
   @brief   1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.7 2002-07-22 19:26:39 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.8 2002-07-26 18:37:04 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2002 by YOSHIMOTO Hiromasa
@@ -401,20 +401,20 @@ GetVenderName(char* lpBuffer,size_t* lpLength)
 bool
 C1394CameraNode::ResetToInitialState()
 {
-  quadlet_t tmp;
+    quadlet_t tmp;
 
-  WriteReg(
-    (CSR_REGISTER_BASE + CSR_CONFIG_ROM)+CSR_STATE_SET, 
-    &tmp);
+    WriteReg(
+	(CSR_REGISTER_BASE + CSR_CONFIG_ROM)+CSR_STATE_SET, 
+	&tmp);
   
   
-  tmp=SetParam(INITIALIZE,Initialize,1);
-  LOG("reset camera..."<<tmp);
+    tmp=SetParam(INITIALIZE,Initialize,1);
+    LOG("reset camera..."<<tmp);
 
-  WriteReg(Addr(INITIALIZE),&tmp);
+    WriteReg(Addr(INITIALIZE),&tmp);
 
     
-  return true;
+    return true;
 }
 
 /** 
@@ -428,12 +428,12 @@ C1394CameraNode::ResetToInitialState()
 bool
 C1394CameraNode::PowerDown()
 {
-  quadlet_t tmp=SetParam(Camera_Power,,0);
-  TRY( raw1394_write(m_handle, m_node_id, 
-		     Addr(Camera_Power),4,
-		     &tmp) );  
+    quadlet_t tmp=SetParam(Camera_Power,,0);
+    TRY( raw1394_write(m_handle, m_node_id, 
+		       Addr(Camera_Power),4,
+		       &tmp) );  
   
-  return true;
+    return true;
 }
 
 /** 
@@ -447,12 +447,12 @@ C1394CameraNode::PowerDown()
 bool
 C1394CameraNode::PowerUp()
 {
-  quadlet_t tmp=SetParam(Camera_Power,,1);
-  TRY( raw1394_write(m_handle, m_node_id, 
-		     Addr(Camera_Power),4,
-		     &tmp) );  
+    quadlet_t tmp=SetParam(Camera_Power,,1);
+    TRY( raw1394_write(m_handle, m_node_id, 
+		       Addr(Camera_Power),4,
+		       &tmp) );  
   
-  return true;
+    return true;
 }
 
 
