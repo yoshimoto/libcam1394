@@ -1,6 +1,6 @@
-# $Id: Makefile.in,v 1.1 2004-06-20 02:45:08 yosimoto Exp $
+# $Id: Makefile.in,v 1.2 2004-07-14 09:26:22 yosimoto Exp $
 CPPFLAGS += -I@prefix@/include 
-LDFLAGS  += -lcam1394 
+LDFLAGS  += -lcam1394  @LIBRAW1394_LIBS@
 CPPFLAGS += @X_CFLAGS@
 LDFLAGS  += @X_LIBS@ @X_PRE_LIBS@ -lX11
 

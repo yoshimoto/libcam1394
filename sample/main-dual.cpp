@@ -1,5 +1,5 @@
 /*
- * $Id: main-dual.cpp,v 1.7 2003-10-07 13:02:36 yosimoto Exp $
+ * $Id: main-dual.cpp,v 1.8 2004-07-14 09:26:22 yosimoto Exp $
  * main-dual.cc - 1394カメラ2台利用サンプルプログラム
  *
  * By Hiromasa Yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp>
@@ -8,8 +8,6 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include <libraw1394/raw1394.h>  /* libraw1394関連 */
-#include <linux/ohci1394_iso.h> /* ドライバとのインタフェイス関連 */
 #include <libcam1394/1394cam.h>
 #include <libcam1394/yuv.h>     /* for conversion yuv to rgb */
 

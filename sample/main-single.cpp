@@ -1,5 +1,5 @@
 /*
- * $Id: main-single.cpp,v 1.8 2004-06-20 02:44:45 yosimoto Exp $
+ * $Id: main-single.cpp,v 1.9 2004-07-14 09:26:23 yosimoto Exp $
  * main-single.cc - 1394カメラ1台利用サンプルプログラム
  *
  * By Hiromasa Yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp>
@@ -8,10 +8,6 @@
  */
 #include <stdio.h>
 #include <errno.h>
-
-#include <libraw1394/raw1394.h>  /* libraw1394関連 */
-
-#include <linux/ohci1394_iso.h> /* ドライバとのインタフェイス関連 */
 
 #include <libcam1394/1394cam.h> /* libcam1394本体 */
 #include <libcam1394/yuv.h>     /* 色変換 */

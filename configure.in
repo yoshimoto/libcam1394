@@ -1,9 +1,9 @@
-# $Id: configure.in,v 1.32 2004-07-13 18:11:03 yosimoto Exp $
+# $Id: configure.in,v 1.33 2004-07-14 09:26:22 yosimoto Exp $
 
 AC_PREREQ([2.54])
 
 m4_define([debug_default], [no])
-m4_define([libcam1394_version], [0.1.9rc5])
+m4_define([libcam1394_version], [0.1.9rc6])
 
 AC_INIT([libcam1394], [libcam1394_version], [yosimoto@limu.is.kyushu-u.ac.jp])
 AM_INIT_AUTOMAKE([1.7 no-define])
@@ -85,14 +85,22 @@ sample/Makefile.opencv
 sample/Makefile
 ])
 
+
+
 ##################################################
 # Print configuration
 ##################################################
+if test "x$ac_cv_header_opencv_cv_h" = "xyes"; then
+  is_opencv_supported="yes"
+elif test "x$ac_cv_header_cv_h" = "xyes"; then
+  is_opencv_supported="yes"
+else
+  is_opencv_supported="no"
+fi
 
 echo "
 configuration:	
-              debug:             $enable_debug
-             driver:             $driver
-opencv/cv.h support:             $ac_cv_header_opencv_cv_h
-cv.h        support:             $ac_cv_header_cv_h
+        debug:   $enable_debug
+       driver:   $driver
+opecv support:   $is_opencv_supported
 "

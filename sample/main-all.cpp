@@ -12,8 +12,6 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include <libraw1394/raw1394.h>  /* libraw1394  */
-#include <linux/ohci1394_iso.h> /* for original driver */
 #include <libcam1394/1394cam.h>
 #include <libcam1394/yuv.h>     /* for conversion yuv to rgb */
 
