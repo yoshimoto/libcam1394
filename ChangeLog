@@ -1,16 +1,16 @@
 ----------------
-  libcam1394-0.1.2(beta)
+  libcam1394-0.1.2
 ----------------
 add
- - support OpenCV's IPL compat libraries. CopyIplImage(IplImage*) can
-   copy image to IplImage structure directly.
- - add document in doc directory. These docments are generatedi
-   by Doxygen.   
+ - support IplImage strucutre which is one of IPL's image 
+ structure. CopyIplImage(IplImage*) can copy image to IplImage
+ structure directly
+ - add document in doc directory.  These documents are generated
+ by Doxygen
 fix
- - code clean up
- - fix some incorrect include path.
- - Under some distribution like RedHat Linux 7.2, the libtool 
-   scripts may illegal shared library. 
+ - fix some incorrect include path
+ - correct libtool scripts, which cause to make illegal shared
+ library in some distributions
 ----------------
   libcam1394-0.1.1
 ----------------

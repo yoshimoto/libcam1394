@@ -1,8 +1,7 @@
----------------------------------------------
-  libcam1394 installation
----------------------------------------------
+                       libcam1394 installation
 
-Installation 
+
+INSTALLATION
 ------------
 
 For installation you can use these commands:
@@ -20,7 +19,7 @@ Note: If you change kernel sources frequently, please, check if you have
       installed ieee1394 driver for current version of your kernel.
 
 
-Compilation of static library
+COMPILATION OF STATIC LIBRARY
 -----------------------------
 
 If you would like to use the static libcam1394 library, you need to
