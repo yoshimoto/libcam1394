@@ -1,8 +1,9 @@
 /*
+ * $Id: main-dual.cpp,v 1.5 2003-03-13 11:27:10 yosimoto Exp $
  * main-dual.cc - 1394カメラ2台利用サンプルプログラム
  *
  * By Hiromasa Yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp>
-// Thu Mar 15 18:23:53 2001 By YOSHIMOTO Hiromasa 
+ * Thu Mar 15 18:23:53 2001 By YOSHIMOTO Hiromasa 
  */
 #include <stdio.h>
 #include <errno.h>
@@ -12,7 +13,7 @@
 
 #include <linux/ohci1394_iso.h> /* ドライバとのインタフェイス関連 */
 #include <libcam1394/1394cam.h>
-#include <libcam1394/yuv.h>     /* 色変換 */
+#include <libcam1394/yuv.h>     /* for conversion yuv to rgb */
 
 #include "xview.h"              /* Xの表示オブジェクト*/
 
@@ -25,7 +26,6 @@
 #define DWFV500_MAGICNUMBER 8589965664ULL
 #define MAKE_CAMERA_ID(x) ((int64_t)(x)-DWFV500_MAGICNUMBER)
 #define MAKE_CHIP_ID(x)   ((int64_t)(x)+DWFV500_MAGICNUMBER)
-
 
 /* カメラを320x240(YUV422)@15fps に設定する場合 */
 const int format=0; 
@@ -105,16 +105,18 @@ int main(int argc, char **argv)
 	       // 1/75sec  2363
 	       // 1/100sec 2416
 	       camera[i]->SetParameter(SHUTTER,       2258); 
-	       camera[i]->SetParameter(GAIN,          0x04); // def=0x00
+	       camera[i]->SetParameter(GAIN,          0x04);
 	  }
      }
 
      for (i=0;i<NUM_CAM;i++){
 	  /* set camera params */
 	  camera[i]->SetIsoChannel(cinfo[i].channel);
-	  camera[i]->SetFormat((FORMAT)format,(VMODE)mode,(FRAMERATE)frame_rate);
+	  camera[i]->SetFormat((FORMAT)format,(VMODE)mode,
+			       (FRAMERATE)frame_rate);
+	  camera[i]->SetIsoSpeed(SPD_400M);
 	  camera[i]->AllocateFrameBuffer();
-
+	  
 	  /* make a Window */
 	  char tmp[256];
 	  sprintf(tmp,"-- Live image from #%5d/ %2dch --",
@@ -128,7 +130,7 @@ int main(int argc, char **argv)
 	  }
      }
      
-
+     
      /* create look-up table */
      ::CreateYUVtoRGBAMap();
   

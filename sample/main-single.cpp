@@ -1,9 +1,10 @@
 /*
+ * $Id: main-single.cpp,v 1.4 2003-03-13 11:27:10 yosimoto Exp $
  * main-single.cc - 1394カメラ1台利用サンプルプログラム
  *
  * By Hiromasa Yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp>
-// Thu Mar 15 17:53:25 2001  YOSHIMOTO Hiromasa 
-// Sun Sep 23 18:10:50 2001  YOSHIMOTO Hiromasa 
+ * Thu Mar 15 17:53:25 2001  YOSHIMOTO Hiromasa 
+ * Sun Sep 23 18:10:50 2001  YOSHIMOTO Hiromasa 
  */
 #include <stdio.h>
 #include <errno.h>
@@ -27,7 +28,7 @@ const int format=0;
 const int mode=1;    
 const int frame_rate=3;
 
-const int channel   = 7;      /* チャネルは6番を使用 */
+const int channel   = 7;      /* チャネルは7番を使用 */
 const int buf_count = 4;      /* 4フレーム分の受信用バッファを確保 */
 
 bool use_auto_mode = false; // カメラパラメータを自動調整するならば true
