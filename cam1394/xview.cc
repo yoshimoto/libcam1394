@@ -1,26 +1,24 @@
 /*!
-  @file  xview.cc
+  @file    xview.cc
   @brief 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: xview.cc,v 1.3 2002-03-15 21:08:31 yosimoto Exp $
-  @date
+  @version $Id: xview.cc,v 1.4 2002-11-25 12:51:35 yosimoto Exp $
 */
-//
+
 // xview.cc - 
 //
 // Copyright (C) 2000 by Hiromasa Yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp>
 //
 
 #include <iostream>
-using namespace std;
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
 #include <libcam1394/yuv.h>
 #include "xview.h"
 
-#define ERR(msg) cerr<< msg <<endl
-#define LOG(msg) cerr<< msg <<endl
+using namespace std;
 
 void
 CXview::calc_pixel_param(UINT *wait,UINT *shift,UINT mask)
@@ -47,8 +45,8 @@ CXview::CreateWindow(int w,int h,char* strCaption)
 
   display = XOpenDisplay (NULL);
   if (display == NULL) {
-    ERR("can't open X11 display.");
-    return -1;
+      //ERR("can't open X11 display.");
+      return -1;
   }
 
   view_window = XCreateSimpleWindow (display, 
@@ -93,7 +91,7 @@ CXview::CreateWindow(int w,int h,char* strCaption)
 		     0);    // bytes_per_line auto calculate
 
   if (NULL==image){
-    ERR("can't allocate image.");
+      //ERR("can't allocate image.");
     return false;
   }
   bytes_per_pixel = image->bits_per_pixel / 8;
@@ -116,7 +114,7 @@ CXview::CreateWindow(int w,int h,char* strCaption)
 
   image->data=new char[image->bytes_per_line*height];
   if (!image->data){
-    LOG("failure @ allocate image->data ");
+      //LOG("failure @ allocate image->data ");
   }
   image->byte_order=LSBFirst;
   
@@ -129,37 +127,40 @@ bool
 CXview::UpDate(RGBA* src)
 {
 
-  unsigned char *dst=(unsigned char*)image->data;
-  int i;
-  for (i=0;i<width*height;i++){
-    *((unsigned int*)dst)=
-      (( src->r>>r_shift )<<r_wait) | 
-      (( src->g>>g_shift )<<g_wait) |
-      (( src->b>>b_shift )<<b_wait) ;	
-    dst += bytes_per_pixel ; // div 8
-    src++;
-  }      
+    unsigned char *dst=(unsigned char*)image->data;
+    int i;
+    for (i=0;i<width*height;i++){
+	*((unsigned int*)dst)=
+	    (( src->r>>r_shift )<<r_wait) | 
+	    (( src->g>>g_shift )<<g_wait) |
+	    (( src->b>>b_shift )<<b_wait) ;	
+	dst += bytes_per_pixel ; // div 8
+	src++;
+    }      
 
-  XPutImage(display,view_window,gc,image,0,0,
-	    0,0,width,height);
-  XSync(display,False);
+    XPutImage(display,view_window,gc,image,0,0,
+	      0,0,width,height);
+    XSync(display,False);
 
-  return false;
+    return false;
 }
 
 
 CXview::CXview():
-  image(NULL),display(NULL),gc(NULL),
-  width(640),height(480)
+    image(NULL),display(NULL),gc(NULL),
+    width(640),height(480)
 {
   
 }
 
 CXview::~CXview()
 {
-  XDestroyImage(image); 
-  XFreeGC(display,gc);
-  XCloseDisplay(display);
+    if (image)
+	XDestroyImage(image); 
+    if (image)
+	XFreeGC(display,gc);
+    if (image)
+	XCloseDisplay(display);
 }
 /*
  * Local Variables:
