@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.45 2004-11-15 19:19:38 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.46 2004-12-21 20:49:38 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -1648,7 +1648,7 @@ bool
 C1394CameraNode:: SetTriggerOn()
 {
     quadlet_t tmp;
-    tmp=0x82000000;
+    tmp=0x82010000;
     WriteReg(Addr(TRIGGER_MODE),&tmp);
     return true;
 }
@@ -2408,7 +2408,7 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
 	SetIsoChannel(channel);
 	QueryIsoChannel(&channel);
     }
-  
+ 
     if (!(0<=channel)&&(channel<64)){
 	LOG(" can't determine channel.");
 	return -1;
@@ -2447,6 +2447,7 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
 	return -3;
     }
 #else
+    m_num_frame = 16;
     pMaped = (char*)mmap_isofb(m_port_no, channel,
 			       m_packet_sz, m_num_packet,
 			       &m_num_frame,
@@ -2555,7 +2556,7 @@ void* C1394CameraNode::UpDateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
 #else
     ISO1394_Chunk chunk;
     if (0 > ioctl(fd, IOCTL_GET_RXBUF, &chunk) ){
-	ERR("ISOFB_IOCTL_GET_RXBUF failed.");
+	ERR("ISOFB_IOCTL_GET_RXBUF failed:  " << strerror(errno) );
 	return NULL;
     }
     return m_lpFrameBuffer=(pMaped+chunk.offset);
@@ -2790,7 +2791,7 @@ C1394CameraNode::SaveToFile(char* filename,FILE_TYPE type)
 
 //! debug level 
 //  @sa ERR,LOG,WRN
-#if defined DEBUG
+#ifndef DEBUG
 int libcam1394_debug_level = 0;
 #else
 int libcam1394_debug_level = INT_MAX;
