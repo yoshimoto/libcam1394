@@ -1,5 +1,5 @@
 /**
-   @file   $Id: xview.cc,v 1.7 2003-01-08 18:38:01 yosimoto Exp $
+   @file   $Id: xview.cc,v 1.8 2004-10-28 10:44:23 yosimoto Exp $
    @author YOSHIMOTO Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
    @date   Sat Aug 31 03:58:46 2002
    @brief    
@@ -70,6 +70,8 @@ bool CXview::CreateWindow(int w,int h,const char* strCaption)
     XMapWindow (display, view_window); 
     XStoreName (display, view_window, strCaption); 
 
+    XFlush( display );
+
     // create GC.
     XGCValues values;
     values.function = GXcopy;  
@@ -79,10 +81,11 @@ bool CXview::CreateWindow(int w,int h,const char* strCaption)
 		    &values);
   
     // set a window's WM_HINTS property 
-    XWMHints wmhints;
+/*    XWMHints wmhints;
     wmhints.input = True; 
     wmhints.flags = InputHint;
     XSetWMHints(display,view_window,&wmhints);
+*/
 
     // 
     int depth= DefaultDepth(display,DefaultScreen(display));
@@ -97,6 +100,7 @@ bool CXview::CreateWindow(int w,int h,const char* strCaption)
 		       height,
 		       8,    
 		       0);    // bytes_per_line auto calculate
+
 
     if (NULL==image){
 	//ERR("can't allocate image.");
