@@ -2,7 +2,7 @@
  * @file    1394cam.h
  * @brief   1394-based Digital Camera control class
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.h,v 1.12 2003-11-30 08:46:55 yosimoto Exp $
+ * @version $Id: 1394cam.h,v 1.13 2003-12-02 16:33:09 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -27,7 +27,8 @@ enum PIXEL_FORMAT {
     VFMT_NOT_SUPPORTED ,
 };
 
-//! video format codes. This library supports only Format_0 now.
+//! video format codes. This library supports only Format_0 to Format_2 now.
+// @todo Format_6, Format_7 is not supported yet.
 enum FORMAT {
     Format_0 = 0, //!< VGA non-compressed format 
     Format_1 = 1, //!< Super VGA non-compressed format(1)
@@ -35,8 +36,8 @@ enum FORMAT {
     Format_3 = 3, //!< reserved for other format
     Format_4 = 4, //!< reserved for other format
     Format_5 = 5, //!< reserved for other format
-    Format_6 = 6, //!< Still Image Format
-    Format_7 = 7, //!< Scalable Image Format
+    Format_6 = 6, //!< Still Image Format    (not supported yet)
+    Format_7 = 7, //!< Scalable Image Format (not supported yet)
 
     Format_X=-1,
 };

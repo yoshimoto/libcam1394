@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.25 2003-12-02 15:34:31 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.26 2003-12-02 16:33:09 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -1850,6 +1850,9 @@ int C1394CameraNode::SetFrameCount(int tmp)
  * @param info  pointer to BufferInfo, or NULL.
  * 
  * @return ponter of latest caputered frame.
+ *
+ * @todo  AS_FIFO and WAIT_NEW_FRAME is not implemented yet.
+ * @todo  BufferInfo is not implemented yet.
  */
 void* C1394CameraNode::UpDateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
 {
