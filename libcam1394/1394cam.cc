@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.47 2005-02-09 07:54:31 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.48 2005-02-09 09:29:05 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -1016,10 +1016,12 @@ C1394CameraNode::GetParameter(C1394CAMERA_FEATURE feat,unsigned int *value)
     return false;
   }
   
-  // disable abs_control
+  // disable abs_control if abs_control mode
   ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
-  tmp &= ~SetParam(BRIGHTNESS, Abs_Control, 1);
-  WriteReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+  if ( GetParam(BRIGHTNESS, Abs_Control, tmp) ){
+      tmp &= ~SetParam(BRIGHTNESS, Abs_Control, 1);
+      WriteReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+  }
   
   ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
   *value=tmp&((1<<24)-1);////GetParam(BRIGHTNESS,Value,tmp);

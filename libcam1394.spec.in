@@ -49,7 +49,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 
-%doc AUTHORS COPYING  ChangeLog NEWS README TODO
+%doc AUTHORS COPYING  ChangeLog NEWS README
 %{_libdir}/libcam1394.so*
 %{_bindir}/cam1394
 
@@ -61,6 +61,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libcam1394.pc
 
 %changelog
+*Mon Jan 31 2005 Hiromasa YOSHIMOTO <yosimoto@limu.is.kyushu-u.ac.jp>
+- Updated
 *Mon Aug 30 2004 Hiromasa YOSHIMOTO <yosimoto@limu.is.kyushu-u.ac.jp>
 - Initial build.
 
