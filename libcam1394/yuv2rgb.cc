@@ -2,7 +2,7 @@
   @file  yuv2rgb.cc
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv2rgb.cc,v 1.7 2002-03-11 17:17:28 yosimoto Exp $
+  @version $Id: yuv2rgb.cc,v 1.1 2002-03-15 20:45:13 yosimoto Exp $
  */
 
 #include "config.h"

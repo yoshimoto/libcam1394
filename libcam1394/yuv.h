@@ -2,8 +2,8 @@
   @file    yuv.h
   @brief   convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv.h,v 1.5 2002-03-13 13:59:51 yosimoto Exp $
-  @date    $Date: 2002-03-13 13:59:51 $
+  @version $Id: yuv.h,v 1.1 2002-03-15 20:45:13 yosimoto Exp $
+  @date    $Date: 2002-03-15 20:45:13 $
  */
 
 #if !defined(_YUV_H_INCLUDED_)

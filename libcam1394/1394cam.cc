@@ -2,7 +2,7 @@
   @file  lz.h 
   @brief 1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.7 2002-03-13 13:59:50 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.1 2002-03-15 20:45:13 yosimoto Exp $
  */
 // Copyright (C) 1999-2002 by YOSHIMOTO Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp> 
 //
@@ -37,6 +37,7 @@ using namespace std;
 #endif
 
 #include "common.h"
+#include "1394cam_registers.h"
 #include "1394cam.h"
 
 
@@ -775,29 +776,28 @@ C1394CameraNode::SetFormat(FORMAT    fmt,
  */
 bool
 C1394CameraNode::QueryFormat(FORMAT*    fmt,
-			   VMODE*      mode,
-			   FRAMERATE* frame_rate)
+			     VMODE*      mode,
+			     FRAMERATE* frame_rate)
 {
     quadlet_t tmp;
+
+    tmp = 0;
+    ReadReg(Addr(V_FORMAT_INQ),&tmp);
+    cout <<"V_FORMAT_INQ:"<<hex<<tmp<<dec<<endl;
+
+    ReadReg(Addr(V_MODE_INQ_0),&tmp);
+    cout <<"V_MODE_INQ_0:"<<hex<<tmp<<dec<<endl;
+
     if (fmt){
-	ReadReg(
-	    Addr(Cur_V_Format),
-	    &tmp);
-	
+	ReadReg(Addr(Cur_V_Format),&tmp);
 	*fmt=(FORMAT)GetParam(Cur_V_Format,,tmp);
     }
     if (mode){
-	ReadReg(
-	    Addr(Cur_V_Mode),
-	    &tmp);
-	
+	ReadReg(Addr(Cur_V_Mode),&tmp);
 	*mode=(VMODE)GetParam(Cur_V_Mode,,tmp); 
     }
     if (frame_rate){
-	ReadReg(
-	    Addr(Cur_V_Frm_Rate),
-	    &tmp);
-	
+	ReadReg(Addr(Cur_V_Frm_Rate),&tmp);
 	*frame_rate=(FRAMERATE)GetParam(Cur_V_Frm_Rate,,tmp);
     }
     return true;  
@@ -843,6 +843,7 @@ C1394CameraNode::QueryInfo()
     FRAMERATE rate;
     QueryFormat(&fmt,&mode,&rate);
 
+    
     return true;
 }
 
