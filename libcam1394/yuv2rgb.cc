@@ -2,7 +2,7 @@
   @file  yuv2rgb.cc
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv2rgb.cc,v 1.6 2003-10-07 13:16:27 yosimoto Exp $
+  @version $Id: yuv2rgb.cc,v 1.7 2003-11-30 08:46:55 yosimoto Exp $
  */
 
 #include "config.h"
@@ -19,9 +19,16 @@
 
 using namespace std;
 
+/**
+ * @class RGBA yuv.h
+ * @brief RGBA structure
+ */
+
 
 /*  LUT for yuv to RGBA conversion */
-typedef signed int FIX ;
+
+
+typedef signed int FIX ;	//!< fixex point integer for color conversion.
 #define FIX_BASE  10  
 #define FLOAT2FIX(f)  (FIX)(f*(float)(1<<FIX_BASE))
 #define FIX2INT(F)    ((F)>>FIX_BASE)
@@ -33,10 +40,9 @@ static  FIX table_g1[256];  //!< LUT for  v component
 static  FIX table_b [256];  //!< LUT for  v component
 
 /** 
- * setup LUT for YUV to RGBA conversion.
- * YOU MAST CALL THIS FUNCTION FIRST.
- * 
- * @return   0 success
+ * Create look-up tabe for YUV to RGBA conversion.
+ *
+ * @return  Zero on success.
  */
 int
 CreateYUVtoRGBAMap()
@@ -54,7 +60,7 @@ CreateYUVtoRGBAMap()
     return 0;
 }
 
-/** 
+/*
  * convert YUV to RGB
  * 
  * Fri Jun  2 10:31:22 2000 By hiromasa yoshimoto 
@@ -91,7 +97,7 @@ conv_YUVtoRGB(UCHAR* r, UCHAR* g, UCHAR* b,
     *b=b_;
 }
 
-/** 
+/*
  * convert and copy YUV422 to RGBA 
  * 
  * @param lpRGBA      pointer to destnation image data.
@@ -128,7 +134,7 @@ copy_YUV422toRGBA(RGBA* lpRGBA, const void *lpYUV422, int packet_sz,
     return true;
 }
 
-/** convert YUV444 to RGBA
+/* convert YUV444 to RGBA
  * 
  * @param lpRGBA      pointer to destnation image data.
  * @param lpYUV444    pointer to source image data.
@@ -208,7 +214,7 @@ copy_YUV411toRGBA(RGBA* lpRGBA,const void *lpYUV411,
 }
 
 
-/** 
+/*
  * export RGBA image to the file.
  * 
  * @param pFile   filename
@@ -242,7 +248,7 @@ SaveRGBAtoFile(char *pFile,const RGBA* img,int w,int h,int fmt)
 
 
 #if defined OPENCVAPI
-/** 
+/*
  * convert YUV422 to IplImage. 
  * (This function will work, only when there is IPL.)
  *
@@ -288,7 +294,7 @@ copy_YUV422toIplImage(IplImage* img, const void *lpYUV422,
     return true;
 }
 
-/** 
+/*
  * convert YUV422 to IplImage(gray). 
  * (This function will work, only when there is IPL.)
  *
@@ -327,7 +333,7 @@ copy_YUV422toIplImageGray(IplImage* img, const void *lpYUV422,
     return true;
 }
 
-/** 
+/*
  * convert YUV411 to IplImage
  * (This function will work, only when there is IPL.) 
  * 
@@ -382,7 +388,7 @@ copy_YUV411toIplImage(IplImage* img, const void *lpYUV411,
     return true;
 }
 
-/** 
+/*
  * convert YUV411 to IplImage(Gray)
  * (This function will work, only when there is IPL.) 
  * 
@@ -428,7 +434,7 @@ copy_YUV411toIplImageGray(IplImage* img, const void *lpYUV411,
     return true;
 }
 
-/** 
+/*
  * convert YUV444 to IplImage
  * (This function will work, only when there is IPL.) 
  *
@@ -469,7 +475,7 @@ copy_YUV444toIplImage(IplImage* img, const void *lpYUV444,
     return true;
 }
 
-/** 
+/*
  * convert YUV444 to IplImage
  * (This function will work, only when there is IPL.) 
  *

@@ -15,7 +15,8 @@ FEATURES
    - support for IPL (Intel's image processing library) image
    structure
 
-There are a few sample codes in the sample/ directory.
+There are some sample codes in the sample/ directory.
+
 
 RESTRICTIONS
 ------------

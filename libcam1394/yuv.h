@@ -2,8 +2,8 @@
   @file    yuv.h
   @brief   convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv.h,v 1.3 2003-10-07 13:16:27 yosimoto Exp $
-  @date    $Date: 2003-10-07 13:16:27 $
+  @version $Id: yuv.h,v 1.4 2003-11-30 08:46:55 yosimoto Exp $
+  @date    $Date: 2003-11-30 08:46:55 $
  */
 
 #if !defined(_YUV_H_INCLUDED_)
@@ -13,7 +13,6 @@
 typedef unsigned char UCHAR; 
 #endif 
 
-//! RGBA structure
 class RGBA {
 public:
     UCHAR r;  //!< red component
@@ -26,7 +25,7 @@ public:
     RGBA(UCHAR r_, UCHAR g_, UCHAR b_,UCHAR a_):r(r_),g(g_),b(b_),a(a_){}
 };
 
-//! video format type
+// video format type
 enum {
     REMOVE_HEADER    = 0x100,
     FMT_YUV411       = 0x001,

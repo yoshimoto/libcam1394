@@ -2,7 +2,7 @@
  * @file    1394cam.h
  * @brief   1394-based Digital Camera control class
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.h,v 1.11 2003-10-07 13:16:27 yosimoto Exp $
+ * @version $Id: 1394cam.h,v 1.12 2003-11-30 08:46:55 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -115,19 +115,16 @@ enum C1394CAMERA_FSTATE
 
 //-------------------------------------------------------
 
-//! information of the node
 class C1394Node {
 public:
     unsigned int  m_VenderID;  //!< vender id
     uint64_t      m_ChipID;    //!< chip id
 };
 
-//! frame buffer parameters
 struct BufferInfo {
     //! @todo  !!FIXME!! -- not implemented yet
 };
 
-//! class C1394CameraNode 
 class C1394CameraNode : public C1394Node {
 private:
     enum {
@@ -135,23 +132,20 @@ private:
     };
 protected:
 
-    unsigned is_format6:1;           //!< '1':format_6 /  '0':other format
-//  FORMAT m_Format;
-//  VMODE   m_mode;
-//  FRAMERATE m_rate;
-    int   m_channel;                 //!< -1 or "isochronus channel"
-    int   m_iso_speed;               //!< isochronus speed
+    unsigned is_format6:1;           // '1':format_6 /  '0':other format
+    int   m_channel;                 // -1 or "isochronus channel"
+    int   m_iso_speed;               // isochronus speed
 
-    char* m_lpModelName;             //!< camera name
-    char* m_lpVecderName;            //!< camera vender name
+    char* m_lpModelName;             // camera name
+    char* m_lpVecderName;            // camera vender name
 
     nodeaddr_t CMD(nodeaddr_t reg) ;
 
 public:
-    int    m_port_no;		     //!< port no of 1394 I/F
-    raw1394handle_t m_handle;        //!< handle of 1394 I/F
-    nodeid_t m_node_id;              //!< node_id of this node
-    nodeaddr_t m_command_regs_base;  //!< base address of camera's cmd reg
+    int    m_port_no;		     // port no of 1394 I/F
+    raw1394handle_t m_handle;        // handle of 1394 I/F
+    nodeid_t m_node_id;              // node_id of this node
+    nodeaddr_t m_command_regs_base;  // base address of camera's cmd reg
 
     C1394CameraNode();
     virtual ~C1394CameraNode();
@@ -210,28 +204,30 @@ public:
     int   GetChannel(){return m_channel;}
 
 private:
-    int fd;                        //!< file descriptor of the driver
-    char *pMaped;                  //!< pointer to the mmaped buffer
+    int fd;                        // file descriptor of the driver
+    char *pMaped;                  // pointer to the mmaped buffer
 
-    PIXEL_FORMAT m_pixel_format;   //!< the format of the buffered image 
-    int   m_BufferSize;            //!< size of buffer
-    char*  m_lpFrameBuffer;        //!< pointer to the latest updated image
-    int  m_Image_W;                //!< image width (in pixels)
-    int  m_Image_H;                //!< image height (in pixels)
-    int  m_packet_sz;              //!< the packet size per a image
-    int  m_num_packet;             //!< the number of packets per a image
+    PIXEL_FORMAT m_pixel_format;   // the format of the buffered image 
+    int   m_BufferSize;            // size of buffer
+    char*  m_lpFrameBuffer;        // pointer to the latest updated image
+    int  m_Image_W;                // image width (in pixels)
+    int  m_Image_H;                // image height (in pixels)
+    int  m_packet_sz;              // the packet size per a image
+    int  m_num_packet;             // the number of packets per a image
   
-    bool  m_bIsInitalized; //!< true means this instance has been initalized
+    bool  m_bIsInitalized; // true means this instance has been initalized
 
 public:
-    int m_last_read_frame;    //!< the counter of the last read frame number.
+    int m_last_read_frame;    // the counter of the last read frame number.
 
+    //! buffer option. \sa UpDateFrameBuffer()
     enum BUFFER_OPTION {
 	BUFFER_DEFAULT    = 0 ,
 	LAST              ,   //!< read last  captured image.
 	AS_FIFO           ,   //!< read first captured image.   
 	WAIT_NEW_FRAME    ,   //!< block till new frame will be caputerd.
     };
+    //! file type. \sa SaveToFile()
     enum FILE_TYPE {
 	FILETYPE_PPM =0x000,  //!< ppm file.
 	FILETYPE_PNM =0x001,  //!< pnm file.

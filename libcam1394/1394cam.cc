@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.22 2003-10-07 13:16:27 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.23 2003-11-30 08:46:55 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -65,7 +65,7 @@ using namespace std;
 
 #define WAIT usleep(10000)
 
-//! string-table for feature codes
+// string-table for feature codes
 static const char *feature_hi_table[]={
     "brightness" ,   // +0
     "auto_exposure" ,   
@@ -109,7 +109,7 @@ static const char *featurestate_table[]=
   NULL
 };
 
-/** 
+/*
  * callback function for enumerating each node.
  * 
  * @param handle 
@@ -160,20 +160,20 @@ callback_1394Camera(raw1394_handle* handle, nodeid_t node_id,
     pNode->m_ChipID   = (((uint64_t)chip_id_hi&0xff)<<32)+(uint64_t)chip_id_lo;
 
   
-    addr=ADDR_UNIT_DIRECTORY_OFFSET;   /* addr<=RootDirectory の先頭 */
+    addr=ADDR_UNIT_DIRECTORY_OFFSET;   /* addr <= the addr of RootDirectory */
     
     WAIT;    
-    /* RootDirectory.unit_directory_offset の取得 */
+    /* getting RootDirectory.unit_directory_offset  */
     TRY( raw1394_read(handle, node_id,
 		      addr,sizeof(tmp),&tmp));
     tmp=ntohl(tmp);
     if (0xd1000000!=(tmp&0xff000000)){
 	return false;
     }
-    addr+=(tmp&~0xff000000)*4;        /* addr <= Unit directory の先頭 */
+    addr+=(tmp&~0xff000000)*4;        /* addr <= the addr of Unit directory  */
     
     WAIT;    
-    /* Unit Directory.unit_dependent_directory_offset の取得 */
+    /* getting Unit Directory.unit_dependent_directory_offset  */
     addr+=OFFSET_UNIT_DEPENDENT_DIRECTORY_OFFSET;
     TRY( raw1394_read(handle, node_id,
 		      addr,sizeof(tmp),&tmp));
@@ -181,10 +181,10 @@ callback_1394Camera(raw1394_handle* handle, nodeid_t node_id,
     if (0xD4000000!=(tmp&0xff000000)){
 	return false;
     }
-    addr+=(tmp&~0xff000000)*4;        /* addr <= Unit directory の先頭 */
+    addr+=(tmp&~0xff000000)*4;        /* addr <= the top of Unit directory  */
     
     WAIT;    
-    /* Unit Dependent Directory.command_regs_base の取得 */
+    /* getting Unit Dependent Directory.command_regs_base  */
     addr+=OFFSET_COMMAND_REGS_BASE;
     TRY( raw1394_read(handle, node_id,
 		      addr,sizeof(tmp),&tmp));
@@ -192,8 +192,9 @@ callback_1394Camera(raw1394_handle* handle, nodeid_t node_id,
     if (0x40000000!=(tmp&0xff000000)){
 	return false;
     }
-    /* command_regs_base の取得 */
-    // save infomation of this device
+    /* getting command_regs_base  */
+
+    // store the infomation of this camera-device.
     pNode->m_handle  = handle;
     pNode->m_node_id = node_id;
     pNode->m_command_regs_base = CSR_REGISTER_BASE+(tmp&~0xff000000)*4;
@@ -207,7 +208,7 @@ callback_1394Camera(raw1394_handle* handle, nodeid_t node_id,
  * @param CameraList 
  * @param id 
  * 
- * @return  
+ * @return  iterator of the found camera,  or  CCameraList::end().
  */
 CCameraList::iterator
 find_camera_by_id(CCameraList& CameraList, uint64_t id)
@@ -222,18 +223,15 @@ find_camera_by_id(CCameraList& CameraList, uint64_t id)
 }
 
 
-
-//typedef int (*ENUM1394_CALLBACK)(T* node,void* id);
-
 /* 
- * @fn enumrate 1394 node 
+ * @fn  enumrate 1394 nodes
  * 
- * @param handle
+ * @param handle      
  * @param pPort
- * @param pList 
+ * @param pList       
  * @param func        pointer to the function 
  * 
- * @return 
+ * @return returns zero on success, or -1 if an error occurred.
  */
 template <typename T> int
 Enum1394Node(raw1394_handle* handle,
@@ -255,12 +253,12 @@ Enum1394Node(raw1394_handle* handle,
 
 
 /** 
- * make camera list 
+ * retrieve  the list of cameras.
  * 
  * @param handle 
  * @param pList 
  * 
- * @return 
+ * @return returns true on success, or false if an error occurred.
  */
 bool
 GetCameraList(raw1394handle_t handle, CCameraList* pList)
@@ -303,13 +301,31 @@ GetCameraList(raw1394handle_t handle, CCameraList* pList)
 
 // ------------------------------------------------------------
 
-/** 
- * read the configuratoin register directory.
+/**
+ * @class C1394Node 1394cam.h
+ * @brief container for 1394-node
+ *
+ */
+
+/**
+ * @class C1394CameraNode 1394cam.h
+ * @brief container for 1394-based digital camera.
+ *
  * 
+ */
+
+/**
+ * @struct BufferInfo  1394cam.h
+ * @brief  frame buffer parameters
+ */ 
+
+/** 
+ * Read the configuratoin register directory.
+ *
  * @param addr 
  * @param value 
  * 
- * @return 
+ * @return True on succeed, or false otherwise.
  */
 bool C1394CameraNode::ReadReg(nodeaddr_t addr,quadlet_t* value)
 {
@@ -320,12 +336,12 @@ bool C1394CameraNode::ReadReg(nodeaddr_t addr,quadlet_t* value)
     return true;
 }
 /** 
- * write the configuratoin register directory.
+ * Write the configuratoin register directory.
  * 
  * @param addr 
  * @param value 
  * 
- * @return 
+ * @return True on succeed, or false otherwise.
  */
 bool C1394CameraNode::WriteReg(nodeaddr_t addr,quadlet_t* value)
 {
@@ -361,44 +377,44 @@ C1394CameraNode::~C1394CameraNode()
 
 
 /** 
- * get model name
+ * Get model name.
  * 
  * @todo  FIXME, not implemented yet
  *
  * @param lpBuffer 
  * @param lpLength 
  * 
- * @return 
+ * @return returns a pointer to the destination string lpBuffer.
  */
 const char* 
 GetModelName(char* lpBuffer,size_t* lpLength)
 {
-  return 0;
+    return NULL;
 }
 
 
 /** 
- * get vender name
+ * Get vender name.
  * 
  * @todo  FIXME, not implemented yet
  *
  * @param lpBuffer 
  * @param lpLength 
  * 
- * @return 
+ * @return returns a pointer to the destination string lpBuffer.
  */
 const char* 
 GetVenderName(char* lpBuffer,size_t* lpLength)
 {
-  return 0;
+    return 0;
 }
 
 
 /** 
+ * Get camera's id.
  * 
  * 
- * 
- * @return 
+ * @return returns camera's id.
  */
 uint64_t C1394CameraNode::GetID(void) const
 {
@@ -406,11 +422,11 @@ uint64_t C1394CameraNode::GetID(void) const
 }
 
 /** 
- * re-set camera to initial(factory setting value) state
+ * Re-set camera to initial (factory setting value) state.
  * 
- * Dec 12 19:04:14 1999 by hiromasa yoshimoto 
+ * @since   Dec 12 19:04:14 1999 by hiromasa yoshimoto 
  * 
- * @return 
+ * @return  returns true on success, or false otherwise.
  */
 bool
 C1394CameraNode::ResetToInitialState()
@@ -426,13 +442,14 @@ C1394CameraNode::ResetToInitialState()
 }
 
 /** 
- * power the camera off
+ * Power-down camera.
  *
- * @note DFW-V500 seems not to support these functions... 
+ * @return returns true on success, or false otherwise.
+ *
+ * @note Some cameras such as sony's DFW-V500 seems not to support
+ * these functions.
  * 
- * @since Sun Dec 12 19:08:52 1999 by hiromasa yoshimoto 
- *
- * @return 
+ * @since Sun Dec 12 19:08:52 1999
  */
 bool
 C1394CameraNode::PowerDown()
@@ -446,11 +463,11 @@ C1394CameraNode::PowerDown()
 }
 
 /** 
- * power the camera on
+ * Power-up camera.
  *
- * @note DFW-V500 seems not to support these functions... 
+ * @note Some cameras seem not to support these functions.
  *
- * @return 
+ * @return returns true on success, or false otherwise.
  */
 bool
 C1394CameraNode::PowerUp()
@@ -468,11 +485,11 @@ C1394CameraNode::PowerUp()
 
 
 /** 
- * 
+ * Checks the presence of feature.
  * 
  * @param feat 
  * 
- * @return 
+ * @return Returns true if the camera has the given feature.
  */
 bool 
 C1394CameraNode::HasFeature(C1394CAMERA_FEATURE feat)
@@ -483,12 +500,14 @@ C1394CameraNode::HasFeature(C1394CAMERA_FEATURE feat)
 }
 
 /** 
+ * Checks whether the feature has capability for the state.
  * 
+ * @note  Each feature can have four states in C1394CAMERA_FSTATE.
  * 
- * @param feat 
- * @param fstate 
+ * @param feat    feature
+ * @param fstate  state
  * 
- * @return 
+ * @return Returns true if the feature supports the given state.
  */
 bool
 C1394CameraNode::HasCapability(C1394CAMERA_FEATURE feat, 
@@ -519,14 +538,13 @@ C1394CameraNode::HasCapability(C1394CAMERA_FEATURE feat,
 }
 
 /** 
- * 
+ * Sets state of feature .
  * 
  * @param feat 
  * @param fstate 
  * 
- * @return 
+ * @return True on success.
  */
-
 bool C1394CameraNode::SetFeatureState(C1394CAMERA_FEATURE feat, 
 				      C1394CAMERA_FSTATE  fstate)
 {
@@ -584,12 +602,12 @@ bool C1394CameraNode::SetFeatureState(C1394CAMERA_FEATURE feat,
 }
 
 /** 
+ * Retrieves the current state of the feature.
  * 
+ * @param feat      a C1394CAMERA_FEATURE
+ * @param fstate    pointer to store the state.
  * 
- * @param feat 
- * @param fstate 
- * 
- * @return 
+ * @return True if the state was stored in fstate, false otherwise.
  */
 bool C1394CameraNode::GetFeatureState(C1394CAMERA_FEATURE feat, 
 				      C1394CAMERA_FSTATE  *fstate)
@@ -617,11 +635,11 @@ bool C1394CameraNode::GetFeatureState(C1394CAMERA_FEATURE feat,
 }
 
 /** 
- * return the pointer of the specfied feature.
+ * Gets the name for the given feature.
  * 
- * @param feat 
+ * @param   feat a C1394CAMERA_FEATURE
  * 
- * @return  pointer to the string of feat
+ * @return  pointer to the string for the given feature, or NULL.
  */
 const char*
 C1394CameraNode::GetFeatureName(C1394CAMERA_FEATURE feat)
@@ -633,32 +651,36 @@ C1394CameraNode::GetFeatureName(C1394CAMERA_FEATURE feat)
 }
 
 /** 
+ * Gets the name for the given state.
  * 
+ * @param fstate a C1394CAMERA_FSTATE
  * 
- * @param fstate 
- * 
- * @return 
+ * @return pointer to the string for the given feature, or NULL.
  */
 const char* 
 C1394CameraNode::GetFeatureStateName(C1394CAMERA_FSTATE fstate)
 {
-  return featurestate_table[fstate];
+    if (OFF<= fstate && fstate < END_OF_FEATURE)
+	return featurestate_table[fstate];
+    else
+	return NULL;
 }
 
 /** 
- * set the parameter of camera.
- * the camera state will be set to the manual state.
+ * Sets the parameter of the camera.
+ *
+ * @note After this method succeed, the camera state will be set to
+ * the manual state.
  * 
- * @param feat     feature to write to
- * @param value    value to write
+ * @param feat     a C1394CAMERA_FEATURE to write 
+ * @param value    value
  * 
- * @return 
+ * @return True on succeed, or false otherwise.
  */
 bool
 C1394CameraNode::SetParameter(C1394CAMERA_FEATURE feat,unsigned int value)
 {
   quadlet_t tmp;
-    
     
   ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
 
@@ -704,12 +726,12 @@ C1394CameraNode::SetParameter(C1394CAMERA_FEATURE feat,unsigned int value)
 }
 
 /** 
- * get the parameter of feature
+ * Retrieves the current parameter of feature.
  * 
- * @param feat   feature to read
- * @param value  the value which is read.
+ * @param feat   a C1394CAMERA_FEATURE to read
+ * @param value  pointer to stored the parameter.
  * 
- * @return 
+ * @return True if the parameter was stored in fstate, or false otherwise.
  */
 bool
 C1394CameraNode::GetParameter(C1394CAMERA_FEATURE feat,unsigned int *value)
@@ -732,11 +754,13 @@ C1394CameraNode::GetParameter(C1394CAMERA_FEATURE feat,unsigned int *value)
 }
 
 /** 
- * disable feature 
+ * Disables feature. 
  * 
+ * @note  This functions is synonym for SetFeatureState(feat, OFF).
+ *
  * @param feat 
  * 
- * @return 
+ * @return True on success.
  */
 bool
 C1394CameraNode::DisableFeature(C1394CAMERA_FEATURE feat)
@@ -745,11 +769,17 @@ C1394CameraNode::DisableFeature(C1394CAMERA_FEATURE feat)
 }
 
 /** 
- * enable feature
+ * Enable feature.
+ *
+ * @note After this function succeed, the state of feature will be set to 
+ * AUTO, MANUAL, or OnePush. It's depend on the previous feature's
+ * state. 
  * 
  * @param feat 
  *
- * @return 
+ * @return True on success.
+ *
+ * @sa SetFeatureState().
  */
 bool
 C1394CameraNode::EnableFeature(C1394CAMERA_FEATURE feat)
@@ -775,14 +805,13 @@ C1394CameraNode::EnableFeature(C1394CAMERA_FEATURE feat)
 }
 
 /** 
- * 
+ * Sets the feature to the onepush state.
+ *
+ * @note This functions is synonym for SetFeatureState(feat, OnePush)
  * 
  * @param feat 
  * 
- * @note this function is obsolete. please use SetFeatureState(feat,
- * OnePush)
- *
- * @return 
+ * @return True on success.
  */
 bool
 C1394CameraNode::OnePush(C1394CAMERA_FEATURE feat)
@@ -791,15 +820,14 @@ C1394CameraNode::OnePush(C1394CAMERA_FEATURE feat)
 }
 
 /** 
- * Set auto-mode the feature.
- * Auto-mode means the camera's feature are adjusted automatically.
- * 
- * @param feat 
+ * Sets auto-mode the feature.
  * 
  * @note this function is obsolete. please use SetFeatureState(feat,
  * AUTO)
  *
- * @return 
+ * @param feat 
+ *
+ * @return True on success. 
  */
 bool
 C1394CameraNode::AutoModeOn(C1394CAMERA_FEATURE feat)
@@ -808,15 +836,14 @@ C1394CameraNode::AutoModeOn(C1394CAMERA_FEATURE feat)
 }
 
 /** 
- * switch the camera state to Manual control state.
+ * Sets the camera feature to Manual control state.
  *
- * @param feat 
- * 
  * @note this function is obsolete. please use SetFeatureState(feat,
  * MANUAL)
  *
+ * @param feat 
  *
- * @return 
+ * @return True on success.
  */
 bool
 C1394CameraNode::AutoModeOff(C1394CAMERA_FEATURE feat)
@@ -826,10 +853,10 @@ C1394CameraNode::AutoModeOff(C1394CAMERA_FEATURE feat)
 
 
 /** 
- * set the camera paramter to factory defalts.
+ * Sets the camera paramter to factory defaults.
  * 
  * 
- * @return 
+ * @return True on success.
  */
 bool
 C1394CameraNode::PreSet_All()
@@ -838,12 +865,14 @@ C1394CameraNode::PreSet_All()
   return true;
 }
 
-/** 
- * off the auto-mode of the feature.
+/**
+ * Sets all feature to auto state.
  *
- *  Sun Dec 12 20:10:33 1999 by hiromasa yoshimoto 
+ * @note  This function is obsolete.
+ *
+ * @since Sun Dec 12 20:10:33 1999 by hiromasa yoshimoto 
  * 
- * @return 
+ * @return True on success.
  */
 bool 
 C1394CameraNode::AutoModeOn_All()
@@ -857,10 +886,11 @@ C1394CameraNode::AutoModeOn_All()
 }
 
 /** 
+ * Sets all feature to manual state.
  * 
+ * @note This function is obsolete.
  * 
- * 
- * @return 
+ * @return True on success.
  */
 bool 
 C1394CameraNode::AutoModeOff_All()
@@ -874,10 +904,11 @@ C1394CameraNode::AutoModeOff_All()
 }
 
 /** 
- * 
- * 
- * 
- * @return 
+ * Sets all feature to onepush state.
+ *
+ * @note  This function is obsolete.
+ *
+ * @return True on success.
  */
 bool 
 C1394CameraNode::OnePush_All()
@@ -894,13 +925,15 @@ C1394CameraNode::OnePush_All()
 //--------------------------------------------------------------------------
 
 /** 
- * set the format, mode, frame rate
+ * Sets the format, mode, frame rate.
  * 
- * @param fmt          format
- * @param mode         mode
- * @param frame_rate   frame rate
+ * @param fmt          a FORMAT
+ * @param mode         a VMODE
+ * @param frame_rate   a FRAMERATE
  * 
- * @return 
+ * @return True on success.
+ *
+ * @note  This library supports FORMAT_0, FORMAT_1, FORMAT_2 only.
  */
 bool
 C1394CameraNode::SetFormat(FORMAT    fmt,
@@ -935,13 +968,13 @@ C1394CameraNode::SetFormat(FORMAT    fmt,
 }
 
 /** 
- * query the format, mode, frame_rate of camera.
+ * Retrieves the format, mode, frame_rate of camera.
  * 
- * @param fmt          
- * @param mode         
- * @param frame_rate   
+ * @param fmt         pointer to store format, or NULL        
+ * @param mode        pointer to store mode, or NULL        
+ * @param frame_rate  pointer to store frame rate, or NULL        
  * 
- * @return 
+ * @return True on success.
  */
 bool
 C1394CameraNode::QueryFormat(FORMAT*    fmt,
@@ -968,11 +1001,11 @@ C1394CameraNode::QueryFormat(FORMAT*    fmt,
 }
 
 /** 
- * set isochronus channel to use
+ * Sets isochronus channel to use
  * 
- * @param channel 
+ * @param channel  an integer from 0 to 15.
  * 
- * @return 
+ * @return True on success.
  */
 bool
 C1394CameraNode::SetIsoChannel(int channel)
@@ -987,11 +1020,11 @@ C1394CameraNode::SetIsoChannel(int channel)
     return true;  
 }
 
-/** 
- * query the camera setting and update the caches in this class.
+/**
+ * Retrieves the camera setting and store in this class.
  * 
  * 
- * @return 
+ * @return True
  */
 bool
 C1394CameraNode::QueryInfo()
@@ -1004,17 +1037,16 @@ C1394CameraNode::QueryInfo()
     VMODE mode;
     FRAMERATE rate;
     QueryFormat(&fmt,&mode,&rate);
-
     
     return true;
 }
 
 /** 
- * get current isochronus channel
+ * Gets current isochronus channel
  * 
- * @param channel 
+ * @param channel  pointer to store the current channel. 
  * 
- * @return 
+ * @return True on success.
  */
 bool
 C1394CameraNode::QueryIsoChannel(int* channel)
@@ -1031,11 +1063,11 @@ C1394CameraNode::QueryIsoChannel(int* channel)
 }
 
 /** 
- * get current isochronus speed
+ * Gets current isochronus speed
  * 
- * @param spd 
+ * @param spd  pointer ot store the current speed.
  * 
- * @return 
+ * @return True on success
  */
 bool  
 C1394CameraNode::QueryIsoSpeed(SPD* spd)
@@ -1050,11 +1082,11 @@ C1394CameraNode::QueryIsoSpeed(SPD* spd)
 }
 
 /** 
- * set  isochronus speed
+ * Sets  isochronus speed
  * 
- * @param iso_speed 
+ * @param iso_speed  a SPD
  * 
- * @return 
+ * @return True on success
  */
 bool
 C1394CameraNode::SetIsoSpeed(SPD iso_speed)
@@ -1070,10 +1102,10 @@ C1394CameraNode::SetIsoSpeed(SPD iso_speed)
 }
 
 /** 
- * take one image.
+ * Starts camera to send an image.
  * 
  * 
- * @return 
+ * @return True on success.
  */
 bool 
 C1394CameraNode::OneShot()
@@ -1084,11 +1116,11 @@ C1394CameraNode::OneShot()
 }
 
 /** 
- * start camera to send images
+ * Starts camera to send images continuously.
  * 
- * @param count_number 
+ * @param count_number      sending only count_number frames.
  * 
- * @return 
+ * @return True on success.
  */
 bool
 C1394CameraNode:: StartIsoTx(unsigned int count_number)
@@ -1116,10 +1148,12 @@ C1394CameraNode:: StartIsoTx(unsigned int count_number)
 }
 
 /** 
- * set trigger mode 
+ * Sets  external trigger mode.
  * 
+ * @todo Currentry this function supports only trigger mode0. (But You
+ * can change trigger mode with SetParameter().)
  * 
- * @return 
+ * @return True.
  */
 bool
 C1394CameraNode:: SetTriggerOn()
@@ -1131,10 +1165,10 @@ C1394CameraNode:: SetTriggerOn()
 }
 
 /** 
- * off the trigger mode
+ * Sets internal trigger mode.
  * 
  * 
- * @return 
+ * @return True.
  */
 bool
 C1394CameraNode:: SetTriggerOff()
@@ -1148,10 +1182,10 @@ C1394CameraNode:: SetTriggerOff()
 
 
 /** 
- * stop the camera to send image
+ * Stops to send images.
  * 
  * 
- * @return 
+ * @return True.
  */
 bool
 C1394CameraNode:: StopIsoTx()
@@ -1165,7 +1199,7 @@ C1394CameraNode:: StopIsoTx()
 }
 
 
-/**
+/*
  * pixel information.  bit weight
  *
  */
@@ -1177,7 +1211,7 @@ struct VideoPixelInfo{
     int weight2;		/**< 3rd component weight */
 };
 
-/**
+/*
  *
  *
  */
@@ -1187,7 +1221,7 @@ struct VideoImageInfo{
     int  h;			/**< height */
 };
 
-/**
+/*
  * packet format table.
  * 
  * see IIDC 1394-based Digital Camera Sepec (2.1.2 Video mode comparison chart)
@@ -1460,12 +1494,12 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 #undef RESERVED
 
 /** 
- * the GetVideoFormatString() returns a string of the given video format.
+ * Gets a string of the given video format.
  * 
  * @param fmt 
  * @param mode 
  * 
- * @return pointer to the string
+ * @return pointer to the string.
  */
 const char* GetVideoFormatString(FORMAT fmt,VMODE mode)
 {
@@ -1477,7 +1511,7 @@ const char* GetVideoFormatString(FORMAT fmt,VMODE mode)
 }
 
 /** 
- * returns a string of the given bus speed.
+ * Getss a string of the given bus speed.
  * 
  * @param spd 
  * 
@@ -1497,7 +1531,7 @@ const char* GetSpeedString(SPD spd)
 }
 
 /** 
- * packet size for the given video format.
+ * Returns packet size for the given video format.
  * 
  * @param fmt 
  * @param mode 
@@ -1511,7 +1545,7 @@ int GetPacketSize(FORMAT fmt,VMODE mode,FRAMERATE frame_rate)
 }
 
 /** 
- * the number of packets per a image for the given video format.
+ * Returns the number of packets per a image for the given video format.
  * 
  * @param fmt 
  * @param mode 
@@ -1525,7 +1559,7 @@ int GetNumPackets(FORMAT fmt,VMODE mode,FRAMERATE frame_rate)
 }
 
 /** 
- * width of image for the given video format.
+ * Returns width of image for the given video format.
  * 
  * @param fmt 
  * @param mode 
@@ -1538,7 +1572,7 @@ int GetImageWidth(FORMAT fmt,VMODE mode)
 }
 
 /** 
- * height of image for the given video format.
+ * Returns height of image for the given video format.
  * 
  * @param fmt 
  * @param mode 
@@ -1551,7 +1585,7 @@ int GetImageHeight(FORMAT fmt,VMODE mode)
 }
 
 /** 
- * bus speed for the given video format.
+ * Returns bus speed for the given video format.
  * 
  * @param fmt 
  * @param mode 
@@ -1566,7 +1600,8 @@ SPD GetRequiredSpeed(FORMAT fmt,VMODE mode,FRAMERATE frame_rate)
 
 
 /** 
- * this function is for backward compatibility. DO NOT USE THIS FUNCTION.
+ *
+ * @note  This function is for backward compatibility.DO NOT USE THIS FUNCTION.
  * 
  * @param handle 
  * 
@@ -1581,7 +1616,7 @@ int EnableCyclemaster(raw1394handle_t handle)
 }
 
 /** 
- * this function is for backward compatibility. DO NOT USE THIS FUNCTION.
+ * @note This function is for backward compatibility. DO NOT USE THIS FUNCTION.
  * 
  * @param handle 
  * 
@@ -1596,7 +1631,7 @@ int DisableCyclemaster(raw1394handle_t handle)
 }
 
 /** 
- * This function is for backward compatibility. DO NOT USE THIS FUNCTION.
+ * @note This function is for backward compatibility. DO NOT USE THIS FUNCTION.
  * 
  * @param handle 
  * @param channel
@@ -1609,7 +1644,7 @@ int EnableIsoChannel(raw1394handle_t handle,int channel)
 }
 
 /** 
- * This function is for backward compatibility. DO NOT USE THIS FUNCTION.
+ * @note This function is for backward compatibility. DO NOT USE THIS FUNCTION.
  * 
  * @param handle 
  * @param channel
@@ -1623,7 +1658,7 @@ int DisableIsoChannel(raw1394handle_t handle,int channel)
 
 
 /** 
- * This function is for backward compatibility. DO NOT USE THIS FUNCTION.
+ * @note This function is for backward compatibility. DO NOT USE THIS FUNCTION.
  * 
  * @param handle 
  * @param channel 
@@ -1638,7 +1673,7 @@ int AllocateIsoChannel(raw1394handle_t handle,
 }
 
 /** 
- * This function is for backward compatibility. DO NOT USE THIS FUNCTION.
+ * @note This function is for backward compatibility. DO NOT USE THIS FUNCTION.
  * 
  * @param handle 
  * @param channel 
@@ -1652,7 +1687,7 @@ int ReleaseIsoChannel(raw1394handle_t handle,
 }
 
 /** 
- * This function is for backward compatibility. DO NOT USE THIS FUNCTION.
+ * @note This function is for backward compatibility. DO NOT USE THIS FUNCTION.
  * 
  * @param handle 
  * 
@@ -1665,12 +1700,12 @@ int ReleaseIsoChannelAll(raw1394handle_t handle)
 
 
 /** 
- * set the counter of captured images.
+ * Sets the counter of captured images.
  * 
- * @param fd 
+ * @param fd        
  * @param counter 
  * 
- * @return 
+ * @return  Zero on success.
  */
 int SetFrameCounter(int fd, int counter)
 {
@@ -1678,12 +1713,12 @@ int SetFrameCounter(int fd, int counter)
 }
 
 /** 
- * get count of captured images.
+ * Gets count of captured images.
  * 
  * @param fd 
  * @param counter 
  * 
- * @return 
+ * @return Zero on success. 
  */
 int GetFrameCounter(int fd, int* counter)
 {
@@ -1694,14 +1729,14 @@ int GetFrameCounter(int fd, int* counter)
 
 
 /** 
- * allocate frame buffer memory for the given video format
+ * Allocate frame buffer memory for the given video format
  * 
  * @param channel 
- * @param fmt 
- * @param mode 
- * @param rate 
+ * @param fmt        a FORMAT
+ * @param mode       a VMODE
+ * @param rate       a FRAMERATE
  * 
- * @return 
+ * @return Zero on success.
  */
 int C1394CameraNode::AllocateFrameBuffer(int channel,
 				     FORMAT fmt,
@@ -1784,11 +1819,11 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
 
 
 /** 
+ * Returns number of caputered frames.
  * 
+ * @param count pointer to store the count.
  * 
- * @param count 
- * 
- * @return 
+ * @return Zero on success.
  */
 int C1394CameraNode::GetFrameCount(int* count)
 {
@@ -1796,11 +1831,11 @@ int C1394CameraNode::GetFrameCount(int* count)
 }
 
 /** 
- * 
+ * Sets the number of caputered frame counter.
  * 
  * @param tmp 
  * 
- * @return 
+ * @return Zero on success.
  */
 int C1394CameraNode::SetFrameCount(int tmp)
 {
@@ -1808,13 +1843,15 @@ int C1394CameraNode::SetFrameCount(int tmp)
 }
 
 /** 
- * The UpDateFrameBuffer() waits until the frame buffer is updated, 
- * and returns the pointer of captured image. 
+ * Retrieves  the pointer of caputered frame.
+ *
+ * This function waits until the frame buffer is updated, and returns
+ * the pointer of the last captured image.
  * 
- * @param opt 
- * @param info 
+ * @param opt   a C1394CameraNode::BUFFER_OPTION
+ * @param info  pointer to BufferInfo, or NULL.
  * 
- * @return 
+ * @return ponter of latest caputered frame.
  */
 void* C1394CameraNode::UpDateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
 {
@@ -1824,10 +1861,10 @@ void* C1394CameraNode::UpDateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
 }
 
 /** 
+ * Gets the size fo frame buffer
  * 
  * 
- * 
- * @return 
+ * @return size of frame buffer.
  */
 int C1394CameraNode::GetFrameBufferSize()
 {
@@ -1835,9 +1872,9 @@ int C1394CameraNode::GetFrameBufferSize()
 }
 
 /** 
- * width of image in bytes. 
  * 
- * @return 
+ * 
+ * @return the width of image in bytes. 
  */
 int C1394CameraNode::GetImageWidth()
 {
@@ -1845,10 +1882,9 @@ int C1394CameraNode::GetImageWidth()
 }
 
 /** 
- * height of image in bytes.
  * 
  * 
- * @return 
+ * @return the height of image in bytes.
  */
 int C1394CameraNode::GetImageHeight()
 {
@@ -1856,12 +1892,17 @@ int C1394CameraNode::GetImageHeight()
 }
 
 /** 
- * copy caputured image to IplImage buffer.
- * This function will be enabled if you have Intel's IPL.
+ * Copies a caputured frame to IplImage buffer.
+ *
+ * This function converts the color-space if needed.
+ *
+ * @param dest  pointer to store the frame.
  * 
- * @param dest 
+ * @return Zero on success, or -1 if you don't have IPL or OpenCV.
+ *
+ * @note This function uses LUT created by CreateYUVtoRGBAMap().
+ * @note This function will be enabled if you have Intel's IPL or OpenCV.
  * 
- * @return if you don't have IPL, returns -1
  */
 int C1394CameraNode::CopyIplImage(IplImage *dest)
 {
@@ -1895,12 +1936,18 @@ int C1394CameraNode::CopyIplImage(IplImage *dest)
 }
 
 /** 
- * copy caputured image to IplImage buffer.
- * This function will be enabled if you have Intel's IPL.
+ * Copies a caputured image to IplImage buffer.
+ *
+ * This function converts the image to gray-scaled one. When camera
+ * uses YUV format, this function stores the Y component only.
+ *
+ * @param dest  pointer to store the frame.
  * 
- * @param dest 
+ * @return Zero on success, or -1 if you don't have IPL or OpenCV.
+ *
+ * @note This function uses LUT created by CreateYUVtoRGBAMap().
+ * @note This function will be enabled if you have Intel's IPL or OpenCV.
  * 
- * @return if you don't have IPL, returns -1
  */
 int C1394CameraNode::CopyIplImageGray(IplImage *dest)
 {
@@ -1935,11 +1982,15 @@ int C1394CameraNode::CopyIplImageGray(IplImage *dest)
 
 
 /** 
- * copy caputured image  to RGBA buffer
+ * copies a caputured image  to RGBA buffer.
  * 
  * @param dest 
+ *
+ * @param dest  pointer to store the frame.
  * 
- * @return 
+ * @return Zero on success.
+ *
+ * @note This function uses LUT created by CreateYUVtoRGBAMap().
  */
 int
 C1394CameraNode::CopyRGBAImage(void* dest)
@@ -1970,12 +2021,14 @@ C1394CameraNode::CopyRGBAImage(void* dest)
 }
 
 /** 
- * seve the current image to file.
+ * Save the current image to a file.
  * 
- * @param filename 
- * @param type 
+ * @param filename   the name of filename to store the image.
+ * @param type       a FILE_TYPE
  * 
- * @return 
+ * @return 0 on success.
+ *
+ * @note  Only FILE_TYPE_PPM is supported.
  */
 int  
 C1394CameraNode::SaveToFile(char* filename,FILE_TYPE type)
