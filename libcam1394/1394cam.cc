@@ -2,7 +2,7 @@
   @file    1394cam.cc
   @brief   1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.13 2002-11-25 12:11:09 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.14 2002-11-25 13:05:00 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2002 by YOSHIMOTO Hiromasa
@@ -853,13 +853,11 @@ C1394CameraNode::SetIsoChannel(int channel)
 {
     EXCEPT_FOR_FORMAT_6_ONLY;
     quadlet_t tmp;
-    // ask IRM ???
-    tmp=SetParam(ISO_Channel,,channel)|SetParam(ISO_Speed,,m_iso_speed);
-    WriteReg(
-	Addr(ISO_Speed),
-	&tmp);  
-  
-    m_channel=channel;
+    ReadReg(Addr(ISO_Channel), &tmp);
+    tmp &= ~SetParam(ISO_Channel,,0xfffff); // clear field
+    tmp |=  SetParam(ISO_Channel,,channel); // set field
+    WriteReg(Addr(ISO_Channel),&tmp);
+    m_channel = channel;
     return true;  
 }
 
@@ -899,13 +897,10 @@ C1394CameraNode::QueryIsoChannel(int* channel)
   CHK_PARAM(channel!=NULL);
   quadlet_t tmp;
    
-  ReadReg(
-    Addr(ISO_Speed),
-    &tmp);  
-
-  
-  m_channel=
-  *channel=GetParam(ISO_Channel,,tmp);
+  ReadReg(Addr(ISO_Speed), &tmp);    
+  WAIT;
+  m_channel= GetParam(ISO_Channel,,tmp);
+  *channel = m_channel;
   return true;
 }
 
@@ -940,9 +935,11 @@ C1394CameraNode::SetIsoSpeed(SPD iso_speed)
 {
   EXCEPT_FOR_FORMAT_6_ONLY;
   quadlet_t tmp;
-  tmp =SetParam(ISO_Speed,,iso_speed);
-  tmp|=SetParam(ISO_Channel,,m_channel);
-  ReadReg(Addr(ISO_Speed),&tmp); 
+  ReadReg(Addr(ISO_Speed), &tmp); 
+  tmp &= ~SetParam(ISO_Speed,,0xfffff);    // clear field
+  tmp |=  SetParam(ISO_Speed,,iso_speed);  // set field
+  WriteReg(Addr(ISO_Speed),&tmp); 
+  m_iso_speed = iso_speed;
   return true;
 }
 
