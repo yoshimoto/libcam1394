@@ -1,5 +1,5 @@
 /**
-   @file   $Id: xview.cpp,v 1.4 2004-09-15 09:24:22 yosimoto Exp $
+   @file   $Id: xview.cpp,v 1.5 2004-10-28 22:37:47 yosimoto Exp $
    @author YOSHIMOTO Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
    @date   Sat Aug 31 03:58:46 2002
    @brief    
@@ -74,6 +74,7 @@ bool CXview::CreateWindow(int w,int h,const char* strCaption)
 
     // show window
     XMapWindow (display, view_window); 
+    XFlush(display);
 
     // create GC.
     XGCValues values;
@@ -82,12 +83,6 @@ bool CXview::CreateWindow(int w,int h,const char* strCaption)
     gc  = XCreateGC(display,view_window,
 		    GCFunction|GCGraphicsExposures,
 		    &values);
-  
-    // set a window's WM_HINTS property 
-    //XWMHints wmhints;
-    //wmhints.input = True; 
-    //wmhints.flags = InputHint;
-    //XSetWMHints(display,view_window,&wmhints);
 
     // 
     int depth= DefaultDepth(display,DefaultScreen(display));
