@@ -10,7 +10,7 @@
 #define ERR(msg) cerr<<__FILE__<<"("<<__LINE__<<")"<< msg <<endl
 #define MSG(msg) cerr<<__FILE__<<"("<<__LINE__<<")"<< msg <<endl
 #else // #if defined(DEBUG)
-#define LOG(msg) (void*)(0)
+#define LOG(msg) 
 #define ERR(msg) cerr<<__FILE__<<"("<<__LINE__<<")"<< msg <<endl
 #define MSG(msg) cerr<<__FILE__<<"("<<__LINE__<<")"<< msg <<endl
 #endif // #if defined(DEBUG)

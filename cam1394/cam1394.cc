@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.2 2002-02-12 14:41:01 yosimoto Exp $
-  @date    $Date: 2002-02-12 14:41:01 $
+  @version $Id: cam1394.cc,v 1.3 2002-03-13 13:59:50 yosimoto Exp $
+  @date    $Date: 2002-03-13 13:59:50 $
  */
 #include <stdio.h>
 #include <unistd.h>
@@ -56,12 +56,19 @@ display_current_status(C1394CameraNode& camera)
   VMODE  mode;
   FRAMERATE rate;
   camera.QueryFormat(&fmt,&mode,&rate);
+
   cout << ::GetImageWidth(fmt,mode) <<"x"<< ::GetImageHeight(fmt,mode) 
        <<" "<< ::GetVideoFormatString(fmt,mode) 
        <<"@"<< 1.875f*(1<<rate) <<"fps";
   SPD speed;
   camera.QueryIsoSpeed(&speed);
   cout << " "<<::GetSpeedString(speed) <<endl;
+
+  cout << fmt <<endl;
+  cout << mode <<endl;
+  cout << rate <<endl;
+
+
   return 0;
 }
 

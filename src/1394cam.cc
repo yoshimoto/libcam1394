@@ -2,7 +2,7 @@
   @file  lz.h 
   @brief 1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.6 2002-03-11 16:47:19 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.7 2002-03-13 13:59:50 yosimoto Exp $
  */
 // Copyright (C) 1999-2002 by YOSHIMOTO Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp> 
 //
@@ -99,20 +99,16 @@ static const char *feature_hi_table[]={
 };
 
 
-// static char __buffer__[32+4+1];
-// static char* BIN32(quadlet_t value)
-// {
-//     int mask;
-//     char* p=__buffer__;
-//     for (mask=31;mask>=0;mask--){
-// 	*p++=(value&(1<<mask))?'1':'0';
-// 	if ((mask!=0)&&((mask&0x3)==0)){
-// 	    *p++='-';
-// 	}
-//     }
-//     return __buffer__;
-// }
-
+/** 
+ * hoghoe
+ * 
+ * @param handle 
+ * @param node_id 
+ * @param pNode 
+ * @param arg 
+ * 
+ * @return 
+ */
 static int 
 callback_1394Camera(raw1394_handle* handle,nodeid_t node_id,
 		    C1394CameraNode* pNode,void* arg)
@@ -120,7 +116,7 @@ callback_1394Camera(raw1394_handle* handle,nodeid_t node_id,
     nodeaddr_t addr;
     quadlet_t tmp;
     addr=ADDR_INDIRECT_OFFSET;
-    WAIT;
+    
     TRY( raw1394_read(handle, node_id,
 		      addr, 4, &tmp) );
     tmp=ntohl(tmp);
@@ -131,14 +127,14 @@ callback_1394Camera(raw1394_handle* handle,nodeid_t node_id,
     tmp&=~0x8d000000;
     tmp*=4;
     addr=ADDR_INDIRECT_OFFSET+tmp+4;
-//  LOG(VAR32(addr));
+    //  LOG(VAR32(addr));
     quadlet_t chip_id_hi,chip_id_lo;
-    WAIT;
+    
     TRY( raw1394_read(handle, node_id,
 		      addr, 4, 
 		      &chip_id_hi));
     chip_id_hi=ntohl(chip_id_hi);
-    WAIT;
+    
     addr+=4;
     TRY( raw1394_read(handle, node_id,
 		      addr, 4, 
@@ -149,7 +145,7 @@ callback_1394Camera(raw1394_handle* handle,nodeid_t node_id,
 
   
     addr=ADDR_UNIT_DIRECTORY_OFFSET;   /* addr<=RootDirectory の先頭 */
-    WAIT;
+    
     /* RootDirectory.unit_directory_offset の取得 */
     TRY( raw1394_read(handle, node_id,
 		      addr,sizeof(tmp),&tmp));
@@ -158,7 +154,7 @@ callback_1394Camera(raw1394_handle* handle,nodeid_t node_id,
 	return false;
     }
     addr+=(tmp&~0xff000000)*4;        /* addr <= Unit directory の先頭 */
-    WAIT;
+    
     /* Unit Directory.unit_dependent_directory_offset の取得 */
     addr+=OFFSET_UNIT_DEPENDENT_DIRECTORY_OFFSET;
     TRY( raw1394_read(handle, node_id,
@@ -168,7 +164,7 @@ callback_1394Camera(raw1394_handle* handle,nodeid_t node_id,
 	return false;
     }
     addr+=(tmp&~0xff000000)*4;        /* addr <= Unit directory の先頭 */
-    WAIT;
+    
     /* Unit Dependent Directory.command_regs_base の取得 */
     addr+=OFFSET_COMMAND_REGS_BASE;
     TRY( raw1394_read(handle, node_id,
@@ -194,7 +190,7 @@ callback_1394Camera(raw1394_handle* handle,nodeid_t node_id,
  * @return  
  */
 CCameraList::iterator
-find_camera_by_id(CCameraList& CameraList,int64_t id)
+find_camera_by_id(CCameraList& CameraList,uint64_t id)
 {
   CCameraList::iterator ite;
   for (ite=CameraList.begin();ite!=CameraList.end();ite++){
@@ -274,7 +270,7 @@ bool C1394CameraNode::ReadReg(nodeaddr_t addr,quadlet_t* value)
   TRY(raw1394_read(m_handle, m_node_id,
 		   addr, 4,
 		   value));
-  WAIT;    WAIT;
+      
   *value=(quadlet_t)ntohl((unsigned long int)*value);
 
   return true;
@@ -286,7 +282,7 @@ bool C1394CameraNode::WriteReg(nodeaddr_t addr,quadlet_t* value)
   TRY(raw1394_write(m_handle, m_node_id,
 		    addr,4, 
 		    &tmp));
-  WAIT;
+  
   return true;
 }
 
@@ -362,14 +358,14 @@ C1394CameraNode::ResetToInitialState()
   WriteReg(
     (CSR_REGISTER_BASE + CSR_CONFIG_ROM)+CSR_STATE_SET, 
     &tmp);
-  WAIT;
+  
   
   tmp=SetParam(INITIALIZE,Initialize,1);
   LOG("reset camera..."<<tmp);
 
   WriteReg(Addr(INITIALIZE),&tmp);
 
-  WAIT;  
+    
   return true;
 }
 
@@ -388,7 +384,7 @@ C1394CameraNode::PowerDown()
   TRY( raw1394_write(m_handle, m_node_id, 
 		     Addr(Camera_Power),4,
 		     &tmp) );  
-  WAIT;
+  
   return true;
 }
 
@@ -407,7 +403,7 @@ C1394CameraNode::PowerUp()
   TRY( raw1394_write(m_handle, m_node_id, 
 		     Addr(Camera_Power),4,
 		     &tmp) );  
-  WAIT;
+  
   return true;
 }
 
@@ -439,8 +435,8 @@ bool
 C1394CameraNode::SetParameter(C1394CAMERA_FEATURE feat,unsigned int value)
 {
     quadlet_t tmp;
-    WAIT;
-    WAIT;
+    
+    
     ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
 
 //  ERR( "tmp:" <<  hex << tmp << dec <<(int)feat );
@@ -470,14 +466,14 @@ C1394CameraNode::SetParameter(C1394CAMERA_FEATURE feat,unsigned int value)
 	}
     }
 
-    WAIT;
-    WAIT;
+    
+    
     tmp=0;
     tmp|=SetParam(BRIGHTNESS,Value,value);
     tmp|=SetParam(BRIGHTNESS,ON_OFF,1);
     WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
-    WAIT;
-    WAIT;
+    
+    
     return true;
 }
 
@@ -493,8 +489,8 @@ bool
 C1394CameraNode::GetParameter(C1394CAMERA_FEATURE feat,unsigned int *value)
 {
   quadlet_t tmp;
-  WAIT;
-  WAIT;
+  
+  
   ReadReg(Addr(BRIGHTNESS)+4*feat,&tmp);
   if (!GetParam(BRIGHTNESS,Presence_Inq,tmp)){
     //ERR("the feature "<<feature_hi_table[feat]<<" is not available");
@@ -515,16 +511,16 @@ bool
 C1394CameraNode::DisableFeature(C1394CAMERA_FEATURE feat)
 {
   quadlet_t tmp=0;
-  WAIT; 
+   
   ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
   if (GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)==0){
     ERR("the feature "<<feature_hi_table[feat]<<" is not available.");
     return false;
   }
-  WAIT;
+  
   tmp&=~SetParam(BRIGHTNESS,ON_OFF,0);
   WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
-  WAIT;
+  
   return true;
 }
 
@@ -539,16 +535,16 @@ bool
 C1394CameraNode::EnableFeature(C1394CAMERA_FEATURE feat)
 {
   quadlet_t tmp=0;
-  WAIT; 
+   
   ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
   if (GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)==0){
     ERR("the feature "<<feature_hi_table[feat]<<" is not available.");
     return false;
   }
-  WAIT;
+  
   tmp&=~SetParam(BRIGHTNESS,ON_OFF,1);
   WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
-  WAIT;
+  
   return true;
 }
 
@@ -563,7 +559,7 @@ bool
 C1394CameraNode::OnePush(C1394CAMERA_FEATURE feat)
 {
     quadlet_t tmp=0;
-    WAIT; 
+     
     ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
     if (GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)==0){
 	ERR("the feature "<<feature_hi_table[feat]<<" is not available.");
@@ -572,10 +568,10 @@ C1394CameraNode::OnePush(C1394CAMERA_FEATURE feat)
 /*  if  (GetParam(BRIGHTNESS,One_Push,tmp)!=0){
     return true;
     }*/
-    WAIT;
+    
     tmp&=~SetParam(BRIGHTNESS,One_Push,1);
     WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
-    WAIT;
+    
     return true;
 }
 
@@ -592,16 +588,16 @@ bool
 C1394CameraNode::AutoModeOn(C1394CAMERA_FEATURE feat)
 {
   quadlet_t tmp=0;
-  WAIT; 
+   
   ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
   if (GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)==0){
     ERR("the feature "<<feature_hi_table[feat]<<" is not available.");
     return false;
   }
-  WAIT;
+  
   tmp&=~(SetParam(BRIGHTNESS,A_M_Mode,1));
   WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
-  WAIT;
+  
   return true;
 }
 
@@ -614,7 +610,7 @@ C1394CameraNode::AutoModeOn(C1394CAMERA_FEATURE feat)
 bool
 C1394CameraNode::PreSet_All()
 {
-  quadlet_t tmp;
+
   this->SetParameter(BRIGHTNESS,    0x80);
   this->SetParameter(AUTO_EXPOSURE, 0x80);
   this->SetParameter(SHARPNESS,     0x80);
@@ -632,8 +628,8 @@ C1394CameraNode::PreSet_All()
 
 
 /*
-    WAIT;
-    WAIT;
+    
+    
     char str[30];
     snprintf(str,sizeof(str),"%20s",feature_hi_table[i]);
     if (GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)){
@@ -656,29 +652,28 @@ C1394CameraNode::PreSet_All()
  * 
  * @return 
  */
-
 bool 
 C1394CameraNode::AutoModeOn_All()
 {
-  quadlet_t tmp=0;
-  for (int i=0;i<12;i++){ // FIXME
-    WAIT;WAIT;
-    ReadReg(Addr(BRIGHTNESS_INQ)+4*i,&tmp);
+    quadlet_t tmp=0;
+    for (int i=0;i<12;i++){ // FIXME
     
-    if ( GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp) && 
-	 GetParam(BRIGHTNESS_INQ,Auto_Inq,tmp) ){
-      LOG(" auto on "<< GetFeatureName(( C1394CAMERA_FEATURE)i ));
+	ReadReg(Addr(BRIGHTNESS_INQ)+4*i,&tmp);
+    
+	if ( GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp) && 
+	     GetParam(BRIGHTNESS_INQ,Auto_Inq,tmp) ){
+	    LOG(" auto on "<< GetFeatureName(( C1394CAMERA_FEATURE)i ));
 
-      ReadReg(Addr(BRIGHTNESS)+4*i,&tmp);
+	    ReadReg(Addr(BRIGHTNESS)+4*i,&tmp);
 
-      tmp|=SetParam(BRIGHTNESS,ON_OFF,1);
-      tmp|=SetParam(BRIGHTNESS,A_M_Mode,1);
-      WriteReg(Addr(BRIGHTNESS)+4*i,&tmp);
-      WAIT;
-      WAIT;
+	    tmp|=SetParam(BRIGHTNESS,ON_OFF,1);
+	    tmp|=SetParam(BRIGHTNESS,A_M_Mode,1);
+	    WriteReg(Addr(BRIGHTNESS)+4*i,&tmp);
+      
+      
+	}
     }
-  }
-  return true;
+    return true;
 }
 
 /** 
@@ -690,21 +685,21 @@ C1394CameraNode::AutoModeOn_All()
 bool 
 C1394CameraNode::AutoModeOff_All()
 {
-  for (int i=0;i<12;i++){  // FIXME
-    quadlet_t tmp;
-    ReadReg(Addr(BRIGHTNESS_INQ)+4*i,&tmp);
-    WAIT;
-    if ( GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp) &&
-	 GetParam(BRIGHTNESS_INQ,Auto_Inq,tmp) ){
-      ReadReg(Addr(BRIGHTNESS)+4*i,&tmp);
-      WAIT;
-      LOG(" auto off "<< GetFeatureName( (C1394CAMERA_FEATURE )i) );
-      tmp&=~SetParam(BRIGHTNESS,A_M_Mode,1);
-      WriteReg(Addr(BRIGHTNESS)+4*i,&tmp);
-      WAIT;
+    for (int i=0;i<12;i++){  // FIXME
+	quadlet_t tmp;
+	ReadReg(Addr(BRIGHTNESS_INQ)+4*i,&tmp);
+    
+	if ( GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp) &&
+	     GetParam(BRIGHTNESS_INQ,Auto_Inq,tmp) ){
+	    ReadReg(Addr(BRIGHTNESS)+4*i,&tmp);
+      
+	    LOG(" auto off "<< GetFeatureName( (C1394CAMERA_FEATURE )i) );
+	    tmp&=~SetParam(BRIGHTNESS,A_M_Mode,1);
+	    WriteReg(Addr(BRIGHTNESS)+4*i,&tmp);
+      
+	}
     }
-  }
-  return true;
+    return true;
 }
 
 /** 
@@ -716,21 +711,21 @@ C1394CameraNode::AutoModeOff_All()
 bool 
 C1394CameraNode::OnePush_All()
 {
-  for (int i=0;i<12;i++){  // FIXME
-    quadlet_t tmp;
-    ReadReg(Addr(BRIGHTNESS_INQ)+4*i,&tmp);
-    WAIT;
-    if ( GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp) &&
-	 GetParam(BRIGHTNESS_INQ,One_Push_Inq,tmp) ){
-      ReadReg(Addr(BRIGHTNESS)+4*i,&tmp);
-      WAIT;
-      tmp=SetParam(BRIGHTNESS,One_Push,1);
-      ReadReg(Addr(BRIGHTNESS)+4*i,&tmp);
-      WAIT;
+    for (int i=0;i<12;i++){  // FIXME
+	quadlet_t tmp;
+	ReadReg(Addr(BRIGHTNESS_INQ)+4*i,&tmp);
+    
+	if ( GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp) &&
+	     GetParam(BRIGHTNESS_INQ,One_Push_Inq,tmp) ){
+	    ReadReg(Addr(BRIGHTNESS)+4*i,&tmp);
+      
+	    tmp=SetParam(BRIGHTNESS,One_Push,1);
+	    ReadReg(Addr(BRIGHTNESS)+4*i,&tmp);
+      
+	}
     }
-  }
-  WAIT;
-  return true;
+  
+    return true;
 }
 
 //--------------------------------------------------------------------------
@@ -754,17 +749,17 @@ C1394CameraNode::SetFormat(FORMAT    fmt,
     if (fmt!=Format_X){
 	tmp=SetParam(Cur_V_Format,,fmt);
 	WriteReg(Addr(Cur_V_Format),&tmp);
-	WAIT;
+	
     }
     if (mode!=Mode_X){
 	tmp=SetParam(Cur_V_Mode,,mode); 
 	WriteReg(Addr(Cur_V_Mode),&tmp);
-	WAIT;
+	
     }
     if (frame_rate!=FrameRate_X){
 	tmp=SetParam(Cur_V_Frm_Rate,,frame_rate);
 	WriteReg(Addr(Cur_V_Frm_Rate),&tmp);
-	WAIT;
+	
     }
     return true;  
 }
@@ -788,21 +783,21 @@ C1394CameraNode::QueryFormat(FORMAT*    fmt,
 	ReadReg(
 	    Addr(Cur_V_Format),
 	    &tmp);
-	WAIT;
+	
 	*fmt=(FORMAT)GetParam(Cur_V_Format,,tmp);
     }
     if (mode){
 	ReadReg(
 	    Addr(Cur_V_Mode),
 	    &tmp);
-	WAIT;
+	
 	*mode=(VMODE)GetParam(Cur_V_Mode,,tmp); 
     }
     if (frame_rate){
 	ReadReg(
 	    Addr(Cur_V_Frm_Rate),
 	    &tmp);
-	WAIT;
+	
 	*frame_rate=(FRAMERATE)GetParam(Cur_V_Frm_Rate,,tmp);
     }
     return true;  
@@ -818,16 +813,16 @@ C1394CameraNode::QueryFormat(FORMAT*    fmt,
 bool
 C1394CameraNode::SetIsoChannel(int channel)
 {
-  EXCEPT_FOR_FORMAT_6_ONLY;
-  quadlet_t tmp;
-  // ask IRM ???
-  tmp=SetParam(ISO_Channel,,channel)|SetParam(ISO_Speed,,m_iso_speed);
-  WriteReg(
-		      Addr(ISO_Speed),
-		      &tmp);  
-  WAIT;
-  m_channel=channel;
-  return true;  
+    EXCEPT_FOR_FORMAT_6_ONLY;
+    quadlet_t tmp;
+    // ask IRM ???
+    tmp=SetParam(ISO_Channel,,channel)|SetParam(ISO_Speed,,m_iso_speed);
+    WriteReg(
+	Addr(ISO_Speed),
+	&tmp);  
+  
+    m_channel=channel;
+    return true;  
 }
 
 /** 
@@ -839,16 +834,16 @@ C1394CameraNode::SetIsoChannel(int channel)
 bool
 C1394CameraNode::QueryInfo()
 {
-  int channel;
-  QueryIsoChannel(&channel);
-  SPD spd;
-  QueryIsoSpeed(&spd);
-  FORMAT fmt;
-  VMODE mode;
-  FRAMERATE rate;
-  QueryFormat(&fmt,&mode,&rate);
+    int channel;
+    QueryIsoChannel(&channel);
+    SPD spd;
+    QueryIsoSpeed(&spd);
+    FORMAT fmt;
+    VMODE mode;
+    FRAMERATE rate;
+    QueryFormat(&fmt,&mode,&rate);
 
-  return true;
+    return true;
 }
 
 /** 
@@ -864,12 +859,12 @@ C1394CameraNode::QueryIsoChannel(int* channel)
   EXCEPT_FOR_FORMAT_6_ONLY;
   CHK_PARAM(channel!=NULL);
   quadlet_t tmp;
-  WAIT; WAIT;
+   
   ReadReg(
     Addr(ISO_Speed),
     &tmp);  
 
-  WAIT;
+  
   m_channel=
   *channel=GetParam(ISO_Channel,,tmp);
   return true;
@@ -888,11 +883,11 @@ C1394CameraNode::QueryIsoSpeed(SPD* spd)
   EXCEPT_FOR_FORMAT_6_ONLY;
   CHK_PARAM(spd!=NULL);
   quadlet_t tmp;
-  WAIT; WAIT;
+   
   ReadReg(
     Addr(ISO_Speed),
     &tmp);  
-  WAIT;
+  
   *spd=(SPD)GetParam(ISO_Speed,,tmp);
   return true;
 }
@@ -913,7 +908,7 @@ C1394CameraNode::SetIsoSpeed(SPD iso_speed)
   ReadReg(
 		      Addr(ISO_Speed),
 		     &tmp); 
-  WAIT;
+  
   return true;
 }
 
@@ -931,7 +926,7 @@ C1394CameraNode::OneShot()
   WriteReg(
 		     Addr(One_Shot),
 		     &tmp) ;  
-  WAIT;
+  
   return true;
 }
 
@@ -954,7 +949,7 @@ C1394CameraNode:: StartIsoTx(unsigned int count_number)
 	WriteReg(
 	    Addr(ISO_EN),
 	    &tmp);
-	WAIT;
+	
     }else{
 	quadlet_t tmp;
 	tmp =SetParam(Multi_Shot,,1);
@@ -962,7 +957,7 @@ C1394CameraNode:: StartIsoTx(unsigned int count_number)
 	WriteReg(
 	    Addr(Multi_Shot),
 	    &tmp);
-	WAIT;
+	
     }
     return true;
 }
@@ -981,13 +976,13 @@ C1394CameraNode:: SetTriggerOn()
     ReadReg(
 	Addr(TRIGGER_INQ),
 	&tmp);  
-    WAIT;
+    
 
 
     ReadReg(
 	Addr(TRIGGER_MODE),
 	&tmp);  
-    WAIT;
+    
 
     LOG(" SetTriggerOn"<<tmp);
   
@@ -1004,7 +999,7 @@ C1394CameraNode:: SetTriggerOn()
     WriteReg(
 	Addr(TRIGGER_MODE),
 	&tmp);
-    WAIT; 
+     
 
     return true;
 }
@@ -1021,9 +1016,9 @@ C1394CameraNode:: SetTriggerOff()
     LOG("SetTriggerOff");
     quadlet_t tmp;
     ReadReg(Addr(TRIGGER_INQ),&tmp);  
-    WAIT;
+    
     ReadReg(Addr(TRIGGER_MODE),&tmp);  
-    WAIT;
+    
     tmp=0x80010000;
   
 /*  SetParam(TRIGGER_MODE,  Presence_Inq, 1)
@@ -1032,7 +1027,7 @@ C1394CameraNode:: SetTriggerOff()
     |SetParam(TRIGGER_MODE, Trigger_Mode,1<<4); */
   
     WriteReg(Addr(TRIGGER_MODE),&tmp);
-    WAIT; 
+     
     return true;
 }
 
@@ -1050,7 +1045,7 @@ C1394CameraNode:: StopIsoTx()
     quadlet_t tmp;
     tmp=SetParam(ISO_EN,,0);
     WriteReg(Addr(ISO_EN),&tmp);
-    WAIT;
+    
     return true;
 }
 
@@ -1059,23 +1054,18 @@ C1394CameraNode:: StopIsoTx()
 
 struct VideoPixelInfo{
     char* name;
-    union {
-	int  R_weight;
-	int  G_weight;
-	int  B_weight;
-    } rgb;
-    struct YUVinfo{
-	int  Y_weight;
-	int  U_weight;
-	int  V_weight;
-    } yuv; 
-} info;
+
+    int weight0;
+    int weight1;
+    int weight2;
+};
 
 struct VideoImageInfo{
     PIXEL_FORMAT pixel_format;
     int  w;
     int  h;
 };
+
 struct VideoPacketInfo{
     int packet_sz;
     int num_packets;
@@ -1084,13 +1074,12 @@ struct VideoPacketInfo{
 
 static struct VideoPixelInfo video_pixel_info[]=
 {
-    {"YUV(4:4:4)", 4,4,4   }, // VFMT_YUV444
-    {"YUV(4:2:2)", 4,2,2   }, // VFMT_VUV422
-    {"YUV(4:1:1)", 4,1,1   }, // VFMT_VUV411
-    {"RGB(8:8:8)", 8,8,8   },  // VFMT_RGB888
-    {" Y (Mono) ", 8,0,0   }, // VFMT_Y8
-
-    {" unknown  ",-1,-1,-1 },
+    {"YUV(4:4:4)",  4, 4, 4   }, // VFMT_YUV444
+    {"YUV(4:2:2)",  4, 2, 2   }, // VFMT_VUV422
+    {"YUV(4:1:1)",  4, 1, 1   }, // VFMT_VUV411
+    {"RGB(8:8:8)",  8, 8, 8   }, // VFMT_RGB888
+    {" Y (Mono) ",  8, 0, 0   }, // VFMT_Y8
+    {" unknown  ", -1,-1,-1   }
 };
 
 #define RESERVED { VFMT_NOT_SUPPORTED, -1,-1}
@@ -1112,7 +1101,8 @@ static struct VideoImageInfo video_image_info[][8]=  // format / mode
 };
 #undef RESERVED
 
-#define RESERVED  { -1,-1,SPD_100M}
+
+#define RESERVED  { -1, -1, SPD_100M}
 static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 {
     // format_0
@@ -1171,8 +1161,15 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 };
 #undef RESERVED
 
-const char*
-GetVideoFormatString(FORMAT fmt,VMODE mode)
+/** 
+ * the GetVideoFormatString() returns a string of the given video format.
+ * 
+ * @param fmt 
+ * @param mode 
+ * 
+ * @return pointer to the string
+ */
+const char* GetVideoFormatString(FORMAT fmt,VMODE mode)
 {
     if (!(0<=fmt&&fmt<1))
 	return NULL;
@@ -1180,61 +1177,191 @@ GetVideoFormatString(FORMAT fmt,VMODE mode)
     PIXEL_FORMAT pixel=video_image_info[fmt][mode].pixel_format;
     return video_pixel_info[ pixel ].name;
 }
-const char*
-GetSpeedString(SPD spd)
+
+/** 
+ * returns a string of the given bus speed.
+ * 
+ * @param spd 
+ * 
+ * @return pointer to the string
+ */
+const char* GetSpeedString(SPD spd)
 {
-    static char* speed_string[]=
-	{
-	    "100Mbps",
-	    "200Mbps",
-	    "400Mbps",
-	};
-    return speed_string[spd];
+    static char* speed_string[]={
+	"100Mbps",
+	"200Mbps",
+	"400Mbps",
+    };
+    if (0 <= spd && spd < (SPD)(sizeof(speed_string)/sizeof(char*)) )
+	return speed_string[spd];
+    else
+	return "???Mbps";
 }
-int
-GetPacketSize(FORMAT fmt,VMODE mode,FRAMERATE frame_rate)
+
+/** 
+ * packet size for the given video format.
+ * 
+ * @param fmt 
+ * @param mode 
+ * @param frame_rate 
+ * 
+ * @return packet size (in bytes)
+ */
+int GetPacketSize(FORMAT fmt,VMODE mode,FRAMERATE frame_rate)
 {
-//  LOG("Format_"<<fmt<<" Mode_"<<mode<<" FrameRate_"<<frame_rate);
     return video_packet_info[fmt][mode][frame_rate].packet_sz;
 }
-int 
-GetNumPackets(FORMAT fmt,VMODE mode,FRAMERATE frame_rate)
+
+/** 
+ * the number of packets per a image for the given video format.
+ * 
+ * @param fmt 
+ * @param mode 
+ * @param frame_rate 
+ * 
+ * @return number of packets (in bytes)
+ */
+int GetNumPackets(FORMAT fmt,VMODE mode,FRAMERATE frame_rate)
 {
     return video_packet_info[fmt][mode][frame_rate].num_packets;
 }
-int
-GetImageWidth(FORMAT fmt,VMODE mode)
+
+/** 
+ * width of image for the given video format.
+ * 
+ * @param fmt 
+ * @param mode 
+ * 
+ * @return width of image
+ */
+int GetImageWidth(FORMAT fmt,VMODE mode)
 {
     return video_image_info[fmt][mode].w;
 }
-int
-GetImageHeight(FORMAT fmt,VMODE mode)
+
+/** 
+ * height of image for the given video format.
+ * 
+ * @param fmt 
+ * @param mode 
+ * 
+ * @return height of image
+ */
+int GetImageHeight(FORMAT fmt,VMODE mode)
 {
     return video_image_info[fmt][mode].h;
 }
 
-SPD
-GetRequiredSpeed(FORMAT fmt,VMODE mode,FRAMERATE frame_rate)
+/** 
+ * bus speed for the given video format.
+ * 
+ * @param fmt 
+ * @param mode 
+ * @param frame_rate 
+ * 
+ * @return 
+ */
+SPD GetRequiredSpeed(FORMAT fmt,VMODE mode,FRAMERATE frame_rate)
 {
     return video_packet_info[fmt][mode][frame_rate].required_speed;
 }
 
-// 
-int 
-EnableCyclemaster(raw1394handle_t handle)
+
+/** 
+ * this function is for backward compatibility. DO NOT USE THIS FUNCTION.
+ * 
+ * @param handle 
+ * 
+ * @return 
+ */
+int EnableCyclemaster(raw1394handle_t handle)
 {
 /*  if (0!=ioctl(handle->fd,OHCI_ENABLE_CYCLEMASTER,NULL)){
     return false;
     }*/
     return true;
 }
-// 
-int 
-DisableCyclemaster(raw1394handle_t handle)
+
+/** 
+ * this function is for backward compatibility. DO NOT USE THIS FUNCTION.
+ * 
+ * @param handle 
+ * 
+ * @return 
+ */
+int DisableCyclemaster(raw1394handle_t handle)
 {
 /*  if (0!=ioctl(handle->fd,OHCI_DISABLE_CYCLEMASTER,NULL)){
     return false;
     }  */
+    return true;
+}
+
+/** 
+ * This function is for backward compatibility. DO NOT USE THIS FUNCTION.
+ * 
+ * @param handle 
+ * @param channel
+ * 
+ * @return 
+ */
+int EnableIsoChannel(raw1394handle_t handle,int channel)
+{
+    return true;
+}
+
+/** 
+ * This function is for backward compatibility. DO NOT USE THIS FUNCTION.
+ * 
+ * @param handle 
+ * @param channel
+ * 
+ * @return 
+ */
+int DisableIsoChannel(raw1394handle_t handle,int channel)
+{
+    return true;
+}
+
+
+/** 
+ * This function is for backward compatibility. DO NOT USE THIS FUNCTION.
+ * 
+ * @param handle 
+ * @param channel 
+ * @param spd 
+ * 
+ * @return 
+ */
+int AllocateIsoChannel(raw1394handle_t handle,
+		   int channel,SPD spd)
+{
+    return true;
+}
+
+/** 
+ * This function is for backward compatibility. DO NOT USE THIS FUNCTION.
+ * 
+ * @param handle 
+ * @param channel 
+ * 
+ * @return 
+ */
+int ReleaseIsoChannel(raw1394handle_t handle,
+		 int channel)
+{
+    return true;
+}
+
+/** 
+ * This function is for backward compatibility. DO NOT USE THIS FUNCTION.
+ * 
+ * @param handle 
+ * 
+ * @return 
+ */
+int ReleaseIsoChannelAll(raw1394handle_t handle)
+{
     return true;
 }
 
@@ -1247,10 +1374,9 @@ DisableCyclemaster(raw1394handle_t handle)
  * 
  * @return 
  */
-int
-SetFrameCounter(int fd, int counter)
+int SetFrameCounter(int fd, int counter)
 {
-    return  (0!=ioctl(fd,IOCTL_SET_COUNT,counter));
+    return  (0 != ioctl(fd, IOCTL_SET_COUNT, counter));
 }
 
 /** 
@@ -1261,49 +1387,16 @@ SetFrameCounter(int fd, int counter)
  * 
  * @return 
  */
-int
-GetFrameCounter(int fd, int* counter)
+int GetFrameCounter(int fd, int* counter)
 {
     if (NULL==counter)
 	return false;
-    return  (0!=ioctl(fd,IOCTL_GET_COUNT,counter));
+    return  (0 != ioctl(fd, IOCTL_GET_COUNT, counter));
 }
 
-
-int 
-EnableIsoChannel(raw1394handle_t handle,int channel)
-{
-    return true;
-}
-
-int 
-DisableIsoChannel(raw1394handle_t handle,int channel)
-{
-    return true;
-}
-
-int 
-AllocateIsoChannel(raw1394handle_t handle,
-		   int channel,SPD spd)
-{
-    return true;
-}
-
-int 
-ReleaseIsoChannel(raw1394handle_t handle,
-		 int channel)
-{
-    return true;
-}
-
-int 
-ReleaseIsoChannelAll(raw1394handle_t handle)
-{
-    return true;
-}
 
 /** 
- * allocate frame buffer memory.
+ * allocate frame buffer memory for the given video format
  * 
  * @param channel 
  * @param fmt 
@@ -1312,8 +1405,7 @@ ReleaseIsoChannelAll(raw1394handle_t handle)
  * 
  * @return 
  */
-int
-C1394CameraNode::AllocateFrameBuffer(int channel,
+int C1394CameraNode::AllocateFrameBuffer(int channel,
 				     FORMAT fmt,
 				     VMODE mode,
 				     FRAMERATE rate)
@@ -1395,11 +1487,11 @@ C1394CameraNode::AllocateFrameBuffer(int channel,
  * 
  * @return 
  */
-int    
-C1394CameraNode::GetFrameCount(int* count)
+int C1394CameraNode::GetFrameCount(int* count)
 {
-    return GetFrameCounter(fd,count);
+    return ::GetFrameCounter(fd,count);
 }
+
 /** 
  * 
  * 
@@ -1407,53 +1499,68 @@ C1394CameraNode::GetFrameCount(int* count)
  * 
  * @return 
  */
-int    
-C1394CameraNode::SetFrameCount(int tmp)
+int C1394CameraNode::SetFrameCount(int tmp)
 {
-    return SetFrameCounter(fd,tmp);
+    return ::SetFrameCounter(fd,tmp);
 }
 
 /** 
- * 
+ * The UpDateFrameBuffer() waits until the frame buffer is updated, 
+ * and returns the pointer of captured image. 
  * 
  * @param opt 
  * @param info 
  * 
  * @return 
  */
-void*
-C1394CameraNode::UpDateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
+void* C1394CameraNode::UpDateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
 {
     ISO1394_Chunk chunk;
     TRY( ioctl(fd, IOCTL_GET_RXBUF, &chunk) );
     return m_lpFrameBuffer=(pMaped+chunk.offset);
 }
 
-int
-C1394CameraNode::GetFrameBufferSize()
+/** 
+ * 
+ * 
+ * 
+ * @return 
+ */
+int C1394CameraNode::GetFrameBufferSize()
 {
     return m_BufferSize;
 }
-int    
-C1394CameraNode::GetImageWidth()
+
+/** 
+ * width of image in bytes. 
+ * 
+ * @return 
+ */
+int C1394CameraNode::GetImageWidth()
 {
     return m_Image_W;
 }
-int    
-C1394CameraNode::GetImageHeight()
+
+/** 
+ * height of image in bytes.
+ * 
+ * 
+ * @return 
+ */
+int C1394CameraNode::GetImageHeight()
 {
     return m_Image_H;
 }
 
 /** 
  * copy caputured image to IplImage buffer.
+ * This function will be enabled if you have Intel's IPL.
  * 
  * @param dest 
  * 
- * @return 
+ * @return if you don't have IPL, returns -1
  */
-int 
-C1394CameraNode::CopyIplImage(IplImage *dest)
+int C1394CameraNode::CopyIplImage(IplImage *dest)
 {
 #if !defined HAVE_IPL_H
     LOG("This system don't have ipl or OpenCV library.");
@@ -1486,7 +1593,7 @@ C1394CameraNode::CopyIplImage(IplImage *dest)
 
 
 /** 
- * copy caputured image  ot RGBA buffer
+ * copy caputured image  to RGBA buffer
  * 
  * @param dest 
  * 
@@ -1520,21 +1627,8 @@ C1394CameraNode::CopyRGBAImage(void* dest)
     return 0;
 }
 
-/*int 
-C1394CameraNode::WriteRGBAImage(int fd)
-{
-  return 0;
-}
-
-int
-C1394CameraNode::WriteRawImage(int fd)
-{
-  return 0;
-}
-*/
-
 /** 
- * set the current image to file.
+ * seve the current image to file.
  * 
  * @param filename 
  * @param type 
