@@ -1,5 +1,5 @@
 /*!
-  \file   $Id: xview.h,v 1.3 2003-01-08 17:53:24 yosimoto Exp $
+  \file   $Id: xview.h,v 1.4 2003-01-09 15:17:23 yosimoto Exp $
   \author YOSHIMOTO Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
   \date   Sat Aug 31 03:58:46 2002
   
@@ -37,9 +37,9 @@ public:
   
      bool CreateWindow(int width,int height,const char* strCaption);
      bool UpDate(RGBA*);
-#if defined(USE_OPENCV)
+#if defined OPENCVAPI
      bool UpDate(IplImage*);
-#endif     
+#endif 
      Display *GetDisplay() const;
      Window  GetWindow() const;
 };

@@ -6,18 +6,7 @@
 // Sun Sep 23 18:10:50 2001  YOSHIMOTO Hiromasa 
  */
 #include <stdio.h>
-#include <unistd.h>
-#include <string.h>
 #include <errno.h>
-#include <time.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <features.h>
-#include <netinet/in.h> /* バイトオーダの変換 */
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
 
 #include <libraw1394/raw1394.h>  /* libraw1394関連 */
 #include <libraw1394/csr.h>
@@ -26,10 +15,7 @@
 #include <libcam1394/1394cam.h>
 #include <libcam1394/yuv.h>     /* 色変換 */
 
-#include "xview.h"              /* Xの表示オブジェクト*/
-#include <iostream>
-using namespace std;
-
+#include "xview.h"              /* Xの表示 */
 
 /* カメラの各種定数
    これらの値を変更することで様々な形式で画像を獲得できるはずです。
@@ -37,24 +23,14 @@ using namespace std;
    実際に使用する1394カメラの仕様書等で確認してください。*/
 
 /* カメラを320x240(YUV422)@15fps に設定する場合 */
-
-/*
-const int W=320;
-const int H=240;
-const int format=0; 
-const int mode=1;    
-const int frame_rate=3;
-*/
-
-const int W=320;
-const int H=240;
 const int format=0; 
 const int mode=1;    
 const int frame_rate=3;
 
-/* カメラのIDなど */
-const int channel=7;        /* チャネルは6番を使用 */
-const int buf_count=4;      /* 4フレーム分受信用バッファを確保 */
+const int channel   = 7;      /* チャネルは6番を使用 */
+const int buf_count = 4;      /* 4フレーム分の受信用バッファを確保 */
+
+bool use_auto_mode = false; // カメラパラメータを自動調整するならば true
 
 int 
 main(int argc, char **argv)
@@ -75,7 +51,7 @@ main(int argc, char **argv)
      /* list up  all cameras on bus */
      CCameraList CameraList;
      if (! GetCameraList(handle,&CameraList) ){
-	  cout<<" there's no camera?? ."<<endl;
+	  fprintf(stderr, " couldn't get the list of cameras.");
 	  return -1;
      }
 
@@ -83,7 +59,7 @@ main(int argc, char **argv)
      CCameraList::iterator camera;
      camera=CameraList.begin();
      if (camera==CameraList.end()){
-	  cout<<" there's no camera?? ."<<endl;
+	  fprintf(stderr, " there's no camera?? .");
 	  return -2;
      }
 
@@ -93,30 +69,32 @@ main(int argc, char **argv)
      camera->SetFormat((FORMAT)format,(VMODE)mode,(FRAMERATE)frame_rate);
      camera->AllocateFrameBuffer();
 
-#if true
-     camera->AutoModeOn_All();
-#else
-     camera->SetParameter(BRIGHTNESS,    0x80);
-     camera->SetParameter(AUTO_EXPOSURE, 0x80);
-     camera->SetParameter(SHARPNESS,     0x80);
-     // default 0x80080
-     camera->SetParameter(WHITE_BALANCE, (0x80<<12)|0xe0);
-     camera->SetParameter(HUE,           0x80);
-     camera->SetParameter(SATURATION,    0x80);
-     camera->SetParameter(GAMMA,         0x82); // 0x82=liner
-     // shutter speed 1/30sec=0x800 1/20,000sec=0xa0d
-     camera->SetParameter(SHUTTER,       0x800); 
-     camera->SetParameter(GAIN,          0x02); // def=0x00
-#endif
-
+     if (use_auto_mode){
+	  camera->AutoModeOn_All();
+     }else{
+	  camera->SetParameter(BRIGHTNESS,    0x90);
+	  camera->SetParameter(AUTO_EXPOSURE, 0x80);
+	  camera->SetParameter(SHARPNESS,     0x80);
+	  camera->SetParameter(WHITE_BALANCE, (0x80<<12)|0xe0);
+	  camera->SetParameter(HUE,           0x80);
+	  camera->SetParameter(SATURATION,    0x80);
+	  // 0x82=liner
+	  camera->SetParameter(GAMMA,         0x82); 
+	  // shutter speed 1/30sec=0x800 1/20,000sec=0xa0d
+	  camera->SetParameter(SHUTTER,       0x800); 
+	  camera->SetParameter(GAIN,          0x02);
+     }
 
      /* make a Window */
      char tmp[256];
      sprintf(tmp,"-- Live image from #%8lx/ %2dch --",
 	     (long int)camera->m_ChipID, channel );
+     
+     int width=camera->GetImageWidth();
+     int height=camera->GetImageHeight();
      CXview xview;
-     if (!xview.CreateWindow(W,H,tmp)){
-	  cerr << " failure @ create X window" << endl;
+     if (!xview.CreateWindow(width, height, tmp)){
+	  fprintf(stderr, " couldn't create X window.");
 	  return -1;
      }
 
@@ -126,16 +104,14 @@ main(int argc, char **argv)
      /* start */
      camera->StartIsoTx();
 
+     RGBA* image = new RGBA[width*height];
      /* show live images  */
-     int loop=0;
      while (1){
-	  RGBA tmp[W*H];
 	  camera->UpDateFrameBuffer();
-	  camera->CopyRGBAImage(tmp);
-
-
-	  xview.UpDate(tmp);
+	  camera->CopyRGBAImage(image);
+	  xview.UpDate(image);
      }
 
-     exit(0);
-}  
+     return 0;
+}
+  
