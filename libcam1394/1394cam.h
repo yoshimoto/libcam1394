@@ -2,7 +2,7 @@
  * @file    1394cam.h
  * @brief   1394-based Digital Camera control class
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.h,v 1.20 2004-10-19 07:19:45 yosimoto Exp $
+ * @version $Id: 1394cam.h,v 1.21 2004-10-19 09:41:41 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -92,7 +92,11 @@ enum C1394CAMERA_FEATURE {
     IRIS               ,      //!< iris control
     FOCUS              ,      //!< forcus control
     TEMPERATURE        ,      //!< temperature control
-    TRIGGER            ,      //!< triger control
+    TRIGGER            ,      //!< trigger control
+
+    TRIGGER_DELAY      ,      //!< trigger delay control
+    WHITE_SHD          ,      //!< white shading  control
+    FRAME_RATE         ,      //!< frame rate control
 
     // reserved for other FEATURE_HI
 

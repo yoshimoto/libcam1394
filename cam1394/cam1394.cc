@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.25 2004-10-19 07:19:45 yosimoto Exp $
-  @date    $Date: 2004-10-19 07:19:45 $
+  @version $Id: cam1394.cc,v 1.26 2004-10-19 09:41:41 yosimoto Exp $
+  @date    $Date: 2004-10-19 09:41:41 $
  */
 #include "config.h"
 
@@ -117,19 +117,41 @@ set_camera_feature(C1394CameraNode *cam, const char *cp[])
 	    int val;
 	    char *end=NULL;
 	    val=strtol(cp[feat],&end,0);
-	    if (*end!='\0'){
-		ERR(cam->GetFeatureName(feat) 
-		    << ": invalid parameter, " << cp[feat] );
-		exit(-1);
-	    }
-	    LOG("set "<<cam->GetFeatureName(feat)<<" feat "<<val);
-	    if (!cam->SetParameter(feat, val)){
-		ERR("specified parameter "<<cp[feat]
-		    <<" is out of "<< cam->GetFeatureName(feat) 
-		    << " range, skip..");
+	    if (*end=='\0'){
+		// set camera value (non-abs control)
+		LOG("set "<<cam->GetFeatureName(feat)<<" feat "<<val);
+		if (!cam->SetParameter(feat, val)){
+		    ERR("specified parameter "<<cp[feat]
+			<<" is out of "<< cam->GetFeatureName(feat) 
+			<< " range, skip..");
+		}
+	    } else {
+		// try to abs control
+		if (!cam->HasAbsControl(feat)){
+		    ERR("the abs control capability for "
+			<< cam->GetFeatureName(feat) << " is not available.");
+		    exit (-1);
+		}
+		double abs_val;
+		abs_val = strtod(cp[feat], &end);
+		if (*end != '\0'){
+		    // verify unit string.
+		    if (strncasecmp(end, cam->GetAbsParameterUnit(feat),10)){
+			ERR(cam->GetFeatureName(feat) 
+			    << ": invalid unit string ["
+			    << end <<"] is specified.");
+			exit(-1);
+		    }
+		}
+		
+		LOG("set "<<cam->GetFeatureName(feat)
+		    <<" abs feat "<<val);
+		if (!cam->SetAbsParameter(feat,  abs_val)){
+		    ERR("invalied abs value is specified.");
+		}
 	    }
 	}
-    }
+    } // for (feat=BRIGHTNESS;
 }
 
 void
@@ -407,6 +429,13 @@ int main(int argc, char *argv[]){
 	  "temperature", "{TEMPERATURE|on|off|manual|auto|one_push}" } ,
 	{ "trigger", '\0', POPT_ARG_STRING, &cp[TRIGGER], 0,
 	  "trigger", "{on|off}" } ,
+	{ "trigger_delay", '\0', POPT_ARG_STRING, &cp[TRIGGER_DELAY], 0,
+	  "trigger delay", "{TRIGGER_DELAY|on|off|manual|auto|one_push}" } ,
+	{ "white_shd", '\0', POPT_ARG_STRING, &cp[WHITE_SHD], 0,
+	  "white shading", "{WHITE_SHD|on|off|manual|auto|one_push}" } ,
+	{ "frame_rate", '\0', POPT_ARG_STRING, &cp[FRAME_RATE], 0,
+	  "frame rate", "{FRAME_RATE|on|off|manual|auto|one_push}" } ,
+
 	{ "zoom", '\0', POPT_ARG_STRING, &cp[ZOOM], 0,
 	  "zoom", "{ZOOM|on|off|manual|auto|one_push}" } ,
 	{ "pan", '\0', POPT_ARG_STRING, &cp[PAN], 0,
@@ -414,7 +443,12 @@ int main(int argc, char *argv[]){
 	{ "tilt", '\0', POPT_ARG_STRING, &cp[TILT], 0,
 	  "tilt", "{TILT|on|off|manual|auto|one_push}" } ,
 	{ "optical_filter", '\0', POPT_ARG_STRING, &cp[OPTICAL_FILTER], 0,
-	  "optical_filter", "{TILT|on|off|manual|auto|one_push}" } ,
+	  "optical filter", "{OPTICAL_FILTER|on|off|manual|auto|one_push}" } ,
+
+	{ "capture_size", '\0', POPT_ARG_STRING, &cp[CAPTURE_SIZE], 0,
+	  "capture size", "{CAPTURE_SIZE|on|off|manual|auto|one_push}" } ,
+	{ "capture_quality", '\0', POPT_ARG_STRING, &cp[CAPTURE_QUALITY], 0,
+	  "capture quality", "{CAPTURE_QUALITY|on|off|manual|auto|one_push}" } ,
 
 	{ NULL, 0, 0, NULL, 0 }
     };

@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.41 2004-10-19 07:19:45 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.42 2004-10-19 09:41:41 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -108,6 +108,29 @@ static const char *featurestate_table[]=
   "manual",
   "one_push",
   NULL
+};
+
+
+static const char* abs_control_unit_table[64] = {
+    "%", "EV", "", "K", 
+    "deg", "%", "", "s",
+    "dB", "F", "m", "",       // gain 
+    "times", "s",  "", "fps", // trigger
+    
+    "", "", "", "",   // reserved
+    "", "", "", "",
+    "", "", "", "",
+    "", "", "", "",
+    
+    "power", "deg", "deg", "",   // zoom
+    "", "", "", "",
+    "", "", "", "",
+    "", "", "", "",	
+
+    "", "", "", "",
+    "", "", "", "",
+    "", "", "", "",
+    "", "", "", "",
 };
 
 
@@ -1009,29 +1032,55 @@ C1394CameraNode::GetParameter(C1394CAMERA_FEATURE feat,unsigned int *value)
 
 
 /** 
- * 
+ * Get minimum/maximum value for the feature control.
  * 
  * @param feat 
- * @param min 
- * @param max 
- * 
+ * @param min   pointer to store the minimum value, or NULL.
+ * @param max   pointer to store the maximum value, or NULL.
+ *
  * @return 
+ *
+ * @since  libcam1394-0.2.0
+ *
  */
 bool
 C1394CameraNode::GetParameterRange(C1394CAMERA_FEATURE feat,
 				   unsigned int *min,
 				   unsigned int *max)
 {
-    return true;
+  quadlet_t tmp;
+    
+  ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
+
+  if (GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)==0){
+    ERR("the feature "<<feature_table[feat]<<" is not available.");
+    return false;
+  }
+  if (GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)==0){
+    ERR("the feature "<<feature_table[feat]<<" is not available.");
+    return false;
+  }
+  
+  if (min){
+      *min = GetParam(BRIGHTNESS_INQ,MIN_Value,tmp);
+  }
+  if (max){
+      *max = GetParam(BRIGHTNESS_INQ,MAX_Value,tmp);
+  }
+
+  return true;
 }
 
 /** 
- * 
+ *
+ * Set the value for absolute feature control.
  * 
  * @param feat 
  * @param value 
  * 
  * @return 
+ *
+ * @since  libcam1394-0.2.0
  */
 bool
 C1394CameraNode::SetAbsParameter(C1394CAMERA_FEATURE feat, float value)
@@ -1048,28 +1097,32 @@ C1394CameraNode::SetAbsParameter(C1394CAMERA_FEATURE feat, float value)
     return false;
   }
 
-
   // enable abs_control
-  ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+  tmp = 0;
+  tmp |= SetParam(BRIGHTNESS, Presence_Inq, 1);
   tmp |= SetParam(BRIGHTNESS, Abs_Control, 1);
+  tmp |= SetParam(BRIGHTNESS, ON_OFF, 1);
   WriteReg(Addr(BRIGHTNESS)+4*feat, &tmp);
  
   // retrive the offset of absolute value CSR.
   quadlet_t off = 0;
   ReadReg(Addr(ABS_CSR_HI_INQ_0)+4*feat, &off);  
   // write abs value
-  WriteReg(m_command_regs_base + off + 0x0008, (quadlet_t*)&value);
+  WriteReg(CSR_REGISTER_BASE + off*4 + 0x0008, (quadlet_t*)&value);
 
   return true;
 }
 
 /** 
- * 
+ * Get the value for absolute feature control.
  * 
  * @param feat 
  * @param value 
  * 
  * @return 
+ *
+ * @since  libcam1394-0.2.0
+ *
  */
 bool
 C1394CameraNode::GetAbsParameter(C1394CAMERA_FEATURE feat, float *value)
@@ -1104,49 +1157,70 @@ C1394CameraNode::GetAbsParameter(C1394CAMERA_FEATURE feat, float *value)
 }
 
 
+/** 
+ * Get the "Unit" string for the feature.
+ * 
+ * @param feat 
+ * 
+ * @return pointer to the string for the feat.
+ *
+ * @since  libcam1394-0.2.0
+ */
 const char* 
 C1394CameraNode::GetAbsParameterUnit(C1394CAMERA_FEATURE feat)
 {
-    static char* abs_control_unit_table[64] = {
-	"%", "EV", "", "K", 
-	"deg", "%", "", "s",
-	"dB", "F", "m", "",       // gain 
-	"times", "s",  "", "fps", // trigger
-
-	"", "", "", "",   // reserved
-	"", "", "", "",
-	"", "", "", "",
-	"", "", "", "",
-
-	"power", "deg", "deg", "",   // zoom
-	"", "", "", "",
-	"", "", "", "",
-	"", "", "", "",	
-
-	"", "", "", "",
-	"", "", "", "",
-	"", "", "", "",
-	"", "", "", "",
-    };
-
     //!!FIXME!!
     return abs_control_unit_table[feat];
 }
 
 /** 
- * 
+ *
+ * Get minimum/maximum value for the feature absolute control.
  * 
  * @param feat 
- * @param min 
- * @param max 
+ * @param min   pointer to store the minimum value, or NULL.
+ * @param max   pointer to store the maximum value, or NULL.
  * 
  * @return 
+ *
+ * @since  libcam1394-0.2.0
  */
 bool 
 C1394CameraNode::GetAbsParameterRange(C1394CAMERA_FEATURE feat, 
 				      float* min,
 				      float* max)
 {
+    quadlet_t tmp=0;
+  
+    ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
+    if (!GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)){
+	ERR("the feature ( "<<feature_table[feat]<<") is not available");
+	return false;
+    }
+    if (!GetParam(BRIGHTNESS_INQ,Abs_Control_Inq,tmp)){
+	ERR("the capability of control with absolute value ( "
+	    <<feature_table[feat]<<") is not available");
+	return false;
+    }
+
+    // enable absolute control
+    ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+    tmp |= SetParam(BRIGHTNESS, Abs_Control, 1);
+    WriteReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+ 
+    // retrive the offset of absolute value CSR.
+    quadlet_t off = 0;
+    ReadReg(Addr(ABS_CSR_HI_INQ_0)+4*feat, &off);
+    LOG("off is "<<hex<<off<<dec);
+    
+    // read Value
+    if (min){
+	ReadReg(CSR_REGISTER_BASE + off*4 + 0x0000, (quadlet_t*)min);
+    }
+    if (max){
+	ReadReg(CSR_REGISTER_BASE + off*4 + 0x0004, (quadlet_t*)max);
+    }
+
     return false;
 }
 
@@ -1155,7 +1229,9 @@ C1394CameraNode::GetAbsParameterRange(C1394CAMERA_FEATURE feat,
  * 
  * @param feat 
  * 
- * @return 
+ * @return returns true if the absolute control is available.
+ *
+ * @since  libcam1394-0.2.0
  */
 bool
 C1394CameraNode::HasAbsControl(C1394CAMERA_FEATURE feat)
