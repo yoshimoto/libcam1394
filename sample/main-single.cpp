@@ -1,5 +1,5 @@
 /*
- * $Id: main-single.cpp,v 1.6 2003-08-25 15:39:17 yosimoto Exp $
+ * $Id: main-single.cpp,v 1.7 2003-10-07 13:16:27 yosimoto Exp $
  * main-single.cc - 1394カメラ1台利用サンプルプログラム
  *
  * By Hiromasa Yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp>
@@ -10,10 +10,10 @@
 #include <errno.h>
 
 #include <libraw1394/raw1394.h>  /* libraw1394関連 */
-#include <libraw1394/csr.h>
 
 #include <linux/ohci1394_iso.h> /* ドライバとのインタフェイス関連 */
-#include <libcam1394/1394cam.h>
+
+#include <libcam1394/1394cam.h> /* libcam1394本体 */
 #include <libcam1394/yuv.h>     /* 色変換 */
 
 #include "xview.h"              /* Xの表示 */
@@ -58,8 +58,8 @@ main(int argc, char **argv)
 
      /* select one camera */
      CCameraList::iterator camera;
-     camera=CameraList.begin();
-     if (camera==CameraList.end()){
+     camera = CameraList.begin();
+     if (camera == CameraList.end()){
 	  fprintf(stderr, " there's no camera?? .");
 	  return -2;
      }
@@ -81,18 +81,22 @@ main(int argc, char **argv)
 	  camera->SetParameter(SATURATION,    0x80);
 	  // 0x82=liner
 	  camera->SetParameter(GAMMA,         0x82); 
-	  // shutter speed 1/30sec=0x800 1/20,000sec=0xa0d
-	  camera->SetParameter(SHUTTER,       0x800); 
+	  // shutter speed  
+	  // 1/30sec  2048
+	  // 1/50sec  2258 
+	  // 1/75sec  2363
+	  // 1/100sec 2416
+	  camera->SetParameter(SHUTTER,       2048); 
 	  camera->SetParameter(GAIN,          0x02);
      }
 
-     /* make a Window */
+     /* make a window */
      char tmp[256];
      sprintf(tmp,"-- Live image from #%8lx/ %2dch --",
 	     (long int)camera->m_ChipID, channel );
      
-     int width=camera->GetImageWidth();
-     int height=camera->GetImageHeight();
+     int width  = camera->GetImageWidth();
+     int height = camera->GetImageHeight();
      CXview xview;
      if (!xview.CreateWindow(width, height, tmp)){
 	  fprintf(stderr, " couldn't create X window.");
@@ -100,7 +104,7 @@ main(int argc, char **argv)
      }
 
      /* create look-up table for color space conversion */
-     ::CreateYUVtoRGBAMap();
+     CreateYUVtoRGBAMap();
 
      /* start */
      camera->StartIsoTx();

@@ -2,7 +2,7 @@
   @file  yuv2rgb.cc
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv2rgb.cc,v 1.5 2003-01-27 18:21:11 yosimoto Exp $
+  @version $Id: yuv2rgb.cc,v 1.6 2003-10-07 13:16:27 yosimoto Exp $
  */
 
 #include "config.h"
@@ -289,6 +289,45 @@ copy_YUV422toIplImage(IplImage* img, const void *lpYUV422,
 }
 
 /** 
+ * convert YUV422 to IplImage(gray). 
+ * (This function will work, only when there is IPL.)
+ *
+ * @param img         pointer to IplImage object.
+ * @param lpYUV422    pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
+ */
+bool
+copy_YUV422toIplImageGray(IplImage* img, const void *lpYUV422, 
+			  int packet_sz,
+			  int num_packet, int flag)
+{
+    uchar *dst = (uchar*)(img->imageData);
+    
+    UCHAR *p=(UCHAR*)lpYUV422;
+    int i;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
+    }
+    while (num_packet-->0){
+	for (i=0;i<packet_sz/4;i++){
+	    UCHAR Y;
+	    p++;
+	    Y=*p++;
+	    p++;
+	    *dst++=Y;
+	    Y=*p++;
+	    *dst++=Y;
+	} //     for (i=0;i<packet_sz/4;i++){
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    } //   while (num_packet-->0) {
+    return true;
+}
+
+/** 
  * convert YUV411 to IplImage
  * (This function will work, only when there is IPL.) 
  * 
@@ -344,6 +383,52 @@ copy_YUV411toIplImage(IplImage* img, const void *lpYUV411,
 }
 
 /** 
+ * convert YUV411 to IplImage(Gray)
+ * (This function will work, only when there is IPL.) 
+ * 
+ * @param img         pointer to IplImage object.
+ * @param lpYUV411    pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
+ */
+bool
+copy_YUV411toIplImageGray(IplImage* img, const void *lpYUV411, 
+			  int packet_sz,
+			  int num_packet, int flag)
+{
+    uchar *dst = (uchar*)img->imageData;
+    UCHAR *p=(UCHAR*)lpYUV411;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
+    }
+    while (num_packet-->0){
+	for (int i=0;i<packet_sz/(2*3);i++){      
+	    UCHAR Y; 
+	    p++;
+	    Y=*p++;
+	    //v=p[1]; // read v(K+0)      
+	    //conv_YUVtoRGB(&r,&g,&b,Y,u,v); // Y(K+0)
+	    *dst++=Y;
+	    Y=*p++;
+	    //conv_YUVtoRGB(&r,&g,&b,Y,u,v); // Y(K+1)
+	    *dst++=Y;
+	    p++;  // skip v(K+0)
+	    Y=*p++;
+	    //conv_YUVtoRGB(&r,&g,&b,Y,u,v); // Y(K+2)
+	    *dst++=Y;
+	    Y=*p++;
+	    //conv_YUVtoRGB(&r,&g,&b,Y,u,v); // Y(K+3)
+	    *dst++=Y;
+	}
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    } 
+    return true;
+}
+
+/** 
  * convert YUV444 to IplImage
  * (This function will work, only when there is IPL.) 
  *
@@ -383,6 +468,45 @@ copy_YUV444toIplImage(IplImage* img, const void *lpYUV444,
     }
     return true;
 }
+
+/** 
+ * convert YUV444 to IplImage
+ * (This function will work, only when there is IPL.) 
+ *
+ * @param img         pointer to IplImage object.
+ * @param lpYUV444    pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
+ *
+ * @return
+ */
+bool
+copy_YUV444toIplImageGray(IplImage* img, const void *lpYUV444, 
+			  int packet_sz,
+			  int num_packet, int flag)
+{
+    uchar *dst = (uchar*)img->imageData;
+    UCHAR *p=(UCHAR*)lpYUV444;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
+    }
+    while (num_packet-->0){
+	for (int i=0;i<packet_sz/3;i++){      
+	    UCHAR Y;
+	    p++;
+	    Y=*p++;
+	    p++; // read v(K+0)      
+	    //conv_YUVtoRGB(&r, &g, &b, Y, u, v); // Y(K+3)
+	    *dst++=Y;
+	}
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    }
+    return true;
+}
+
 #endif // #if defined OPENCVAPI
 
 /*

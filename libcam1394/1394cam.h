@@ -2,7 +2,7 @@
  * @file    1394cam.h
  * @brief   1394-based Digital Camera control class
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.h,v 1.10 2003-08-22 01:54:02 yosimoto Exp $
+ * @version $Id: 1394cam.h,v 1.11 2003-10-07 13:16:27 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -118,8 +118,8 @@ enum C1394CAMERA_FSTATE
 //! information of the node
 class C1394Node {
 public:
-    unsigned int m_VenderID;  //!< vender id
-    uint64_t     m_ChipID;    //!< chip id
+    unsigned int  m_VenderID;  //!< vender id
+    uint64_t      m_ChipID;    //!< chip id
 };
 
 //! frame buffer parameters
@@ -183,6 +183,8 @@ public:
     bool AutoModeOn(C1394CAMERA_FEATURE feat);
     bool AutoModeOff(C1394CAMERA_FEATURE feat);
     bool OnePush(C1394CAMERA_FEATURE feat);
+
+    uint64_t GetID(void) const;
 
     bool PreSet_All(void);
     bool AutoModeOn_All(void);
@@ -253,6 +255,7 @@ public:
   
     int    CopyRGBAImage(void* dest);
     int    CopyIplImage(IplImage* dest);
+    int    CopyIplImageGray(IplImage* dest);
 
     int    SaveToFile(char* filename,FILE_TYPE type=FILETYPE_PPM); 
 
@@ -288,6 +291,7 @@ int GetPacketSize(FORMAT fmt,VMODE mode,FRAMERATE frame_rate);
 int GetNumPackets(FORMAT fmt,VMODE mode,FRAMERATE frame_rate);
 int GetImageWidth(FORMAT fmt,VMODE mode);
 int GetImageHeight(FORMAT fmt,VMODE mode);
+SPD GetRequiredSpeed(FORMAT fmt,VMODE mode,FRAMERATE frame_rate);
 const char* GetVideoFormatString(FORMAT fmt,VMODE mode);
 const char* GetSpeedString(SPD rate);
 

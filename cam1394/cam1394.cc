@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.17 2003-08-25 15:39:16 yosimoto Exp $
-  @date    $Date: 2003-08-25 15:39:16 $
+  @version $Id: cam1394.cc,v 1.18 2003-10-07 13:16:27 yosimoto Exp $
+  @date    $Date: 2003-10-07 13:16:27 $
  */
 #include "config.h"
 
@@ -24,7 +24,6 @@
 #include <string.h>
 
 #include <libraw1394/raw1394.h> 
-#include <libraw1394/csr.h>
 
 #include <iostream>
 
@@ -36,10 +35,9 @@
 
 using namespace std;
 
-#define DWFV500_MAGICNUMBER 8589965664ULL
-#define MAKE_CAMERA_ID(x) ((uint64_t)(x)-DWFV500_MAGICNUMBER)
-#define MAKE_CHIP_ID(x)   ((uint64_t)(x)+DWFV500_MAGICNUMBER)
-
+#define MAKE_CAMERA_ID(x, off) ((x)-(off))
+#define MAKE_CHIP_ID(x, off)   ((x)+(off))
+uint64_t magic_number = 0;
 
 // const 
 const int NUM_PORT=16;  // number of 1394 interfaces 
@@ -57,8 +55,9 @@ display_current_status(C1394CameraNode& camera)
 {
   int channel;
   camera.QueryIsoChannel(&channel);
-  cout << " camera id: " << MAKE_CAMERA_ID(camera.m_ChipID);
-  cout << " ch: " << channel <<" ";
+
+  cout << " camera id: " << MAKE_CAMERA_ID(camera.GetID(), magic_number);
+  cout << " ch: "  << channel <<" ";
 
 //  cout << camera->GetImageWidth() <<"x"<< camera->GetImageHeight() ;
 
@@ -81,6 +80,90 @@ display_current_status(C1394CameraNode& camera)
 
   return 0;
 }
+
+void
+set_camera_feature(C1394CameraNode *cam, const char *cp[])
+{
+    C1394CAMERA_FEATURE feat;
+    for (feat=BRIGHTNESS;
+	 feat<END_OF_FEATURE;
+	 feat=(C1394CAMERA_FEATURE)((int)feat+1)){
+	    
+	//    LOG(cam->GetFeatureName(feat)<<" "<<cp[feat]);
+	if (!cp[feat])
+	    continue;
+	    
+	if (!strcasecmp("off",cp[feat])){
+	    LOG("off "<<cam->GetFeatureName(feat)<<" feat ");
+	    if (!cam->DisableFeature(feat))
+		ERR(cam->GetFeatureName(feat)
+		    <<" has no capability of switching to OFF");
+	} else if (!strcasecmp("on",cp[feat])){
+	    if (!cam->EnableFeature(feat))
+		ERR(cam->GetFeatureName(feat)
+		    <<" has no capability of switching to ON");
+	} else if (!strcasecmp("manual",cp[feat])){
+	    if (!cam->SetFeatureState(feat, MANUAL))
+		ERR(cam->GetFeatureName(feat)
+		    <<" has no capability of manual mode");
+	} else if (!strcasecmp("auto",cp[feat])) {
+	    if (!cam->SetFeatureState(feat, AUTO))
+		ERR(cam->GetFeatureName(feat)
+		    <<" has no capability of auto mode");
+	} else if (!strcasecmp("one_push",cp[feat])) {
+	    if (!cam->SetFeatureState(feat, ONE_PUSH))
+		ERR(cam->GetFeatureName(feat)
+		    <<" has no capability of one_push mode");
+	} else {
+	    int val;
+	    char *end=NULL;
+	    val=strtol(cp[feat],&end,0);
+	    if (*end!='\0'){
+		ERR(cam->GetFeatureName(feat) 
+		    << ": invalid parameter, " << cp[feat] );
+		exit(-1);
+	    }
+	    LOG("set "<<cam->GetFeatureName(feat)<<" feat "<<val);
+	    if (!cam->SetParameter(feat, val)){
+		ERR("specified parameter "<<cp[feat]
+		    <<" is out of "<< cam->GetFeatureName(feat) 
+		    << " range, skip..");
+	    }
+	}
+    }
+}
+
+void
+show_camera_feature(C1394CameraNode *cam)
+{
+    C1394CAMERA_FEATURE feat;
+	    
+    printf("#     feature          value    supported-state \n");
+
+    for (feat=BRIGHTNESS;feat<END_OF_FEATURE;
+	 feat=(C1394CAMERA_FEATURE)((int)feat+1)){
+
+	if (!cam->HasFeature(feat)){
+	    continue;
+	}
+
+	unsigned int value;
+	cam->GetParameter(feat, &value);
+	const char *fname = cam->GetFeatureName(feat) ;
+	printf("%20s %7d ", fname, value);
+
+	C1394CAMERA_FSTATE st,cur_st;
+	cam->GetFeatureState(feat, &cur_st);
+	for (st=OFF; st<END_OF_FSTATE;st=(C1394CAMERA_FSTATE)(st+1)){
+	    if (cam->HasCapability(feat,st)){
+		printf("%s%s ", (st==cur_st)?"*":"",
+		       cam->GetFeatureStateName(st));
+	    }
+	}
+	printf("\n");
+    }
+}
+
 
 int
 savetofile(C1394CameraNode& camera,char *fname)
@@ -179,7 +262,7 @@ int display_live_image_on_X(C1394CameraNode &cam)
   /* make a Window */
   char tmp[256];
   snprintf(tmp,sizeof(tmp),"-- Live image from #%llu/ %2dch --",
-	   MAKE_CAMERA_ID(cam.m_ChipID), channel );
+	   MAKE_CAMERA_ID(cam.GetID(), magic_number), channel );
 
   CXview xview;
   if (!xview.CreateWindow(w,h,tmp)){
@@ -194,6 +277,7 @@ int display_live_image_on_X(C1394CameraNode &cam)
     xview.UpDate(tmp);
   }
 }
+
 
 int main(int argc, char *argv[]){
 
@@ -212,6 +296,8 @@ int main(int argc, char *argv[]){
 
     memset(cp, 0, sizeof(cp));
 
+    const char *opt_magic_string = NULL ;  /* magic number for camera id. */
+
     FORMAT    cp_format = Format_X;
     VMODE     cp_mode   = Mode_X;
     FRAMERATE cp_rate   = FrameRate_X;
@@ -227,6 +313,8 @@ int main(int argc, char *argv[]){
     int  do_start   =-1;
     int  do_stop    =-1;
     int  do_query   =-1;
+
+    int  do_version_show =-1;
 
     bool is_all=false; // if target cameras are all camera, then set true
 
@@ -277,63 +365,72 @@ int main(int argc, char *argv[]){
 
     struct poptOption quality_optionsTable[] = {
 	{ "brightness", '\0', POPT_ARG_STRING, &cp[BRIGHTNESS], 0,
-	  "brightness", "{BRIGHTNESS|off|manual|auto|one_push}" } ,
+	  "brightness", "{BRIGHTNESS|on|off|manual|auto|one_push}" } ,
 	{ "auto_exposure", '\0', POPT_ARG_STRING, &cp[AUTO_EXPOSURE], 0,
-	  "auto exposure", "{AUTO_EXPOSURE|off|manual|auto|one_push}" } ,
+	  "auto exposure", "{AUTO_EXPOSURE|on|off|manual|auto|one_push}" } ,
 	{ "sharpness", '\0', POPT_ARG_STRING, &cp[SHARPNESS], 0,
-	  "sharpness", "{SHARPNESS|off|manual|auto|one_push}" } ,
+	  "sharpness", "{SHARPNESS|on|off|manual|auto|one_push}" } ,
 	{ "white_balance", '\0', POPT_ARG_STRING, &cp[WHITE_BALANCE], 0,
-	  "white balance", "{WHITE_BALANCE|off|manual|auto|one_push}" } ,
+	  "white balance", "{WHITE_BALANCE|on|off|manual|auto|one_push}" } ,
 	{ "hue", '\0', POPT_ARG_STRING, &cp[HUE], 0,
-	  "hue", "{HUE|off|manual|auto|one_push}" } ,
+	  "hue", "{HUE|on|off|manual|auto|one_push}" } ,
 	{ "saturation", '\0', POPT_ARG_STRING, &cp[SATURATION], 0,
-	  "saturation", "{SATURATION|off|manual|auto|one_push}" } ,
+	  "saturation", "{SATURATION|on|off|manual|auto|one_push}" } ,
 	{ "gamma", '\0', POPT_ARG_STRING, &cp[GAMMA], 0,
-	  "gamma", "{GAMMA|off|manual|auto|one_push}" } ,
+	  "gamma", "{GAMMA|on|off|manual|auto|one_push}" } ,
 	{ "shutter", '\0', POPT_ARG_STRING, &cp[SHUTTER], 0,
-	  "shutter", "{SHUTTER|off|manual|auto|one_push}" } ,
+	  "shutter", "{SHUTTER|on|off|manual|auto|one_push}" } ,
 	{ "gain", '\0', POPT_ARG_STRING, &cp[GAIN], 0,
-	  "gain", "{GAIN|off|manual|auto|one_push}" } ,
+	  "gain", "{GAIN|on|off|manual|auto|one_push}" } ,
 	{ "iris", '\0', POPT_ARG_STRING, &cp[IRIS], 0,
-	  "iris", "{IRIS|off|manual|auto|one_push}" } ,
+	  "iris", "{IRIS|on|off|manual|auto|one_push}" } ,
 	{ "focus", '\0', POPT_ARG_STRING, &cp[FOCUS], 0,
-	  "focus", "{FOCUS|off|manual|auto|one_push}" } ,
+	  "focus", "{FOCUS|on|off|manual|auto|one_push}" } ,
 	{ "temperature", '\0', POPT_ARG_STRING, &cp[TEMPERATURE], 0,
-	  "temperature", "{TEMPERATURE|off|manual|auto|one_push}" } ,
+	  "temperature", "{TEMPERATURE|on|off|manual|auto|one_push}" } ,
 	{ "trigger", '\0', POPT_ARG_STRING, &cp[TRIGGER], 0,
-	  "trigger", "{TRIGGER|off|manual|auto|one_push}" } ,
-
+	  "trigger", "{on|off}" } ,
 	{ "zoom", '\0', POPT_ARG_STRING, &cp[ZOOM], 0,
-	  "zoom", "{ZOOM|off|manual|auto|one_push}" } ,
+	  "zoom", "{ZOOM|on|off|manual|auto|one_push}" } ,
 	{ "pan", '\0', POPT_ARG_STRING, &cp[PAN], 0,
-	  "pan",  "{PAN|off|manual|auto|one_push}" } ,
+	  "pan",  "{PAN|on|off|manual|auto|one_push}" } ,
 	{ "tilt", '\0', POPT_ARG_STRING, &cp[TILT], 0,
-	  "tilt", "{TILT|off|manual|auto|one_push}" } ,
+	  "tilt", "{TILT|on|off|manual|auto|one_push}" } ,
+	{ "optical_filter", '\0', POPT_ARG_STRING, &cp[OPTICAL_FILTER], 0,
+	  "optical_filter", "{TILT|on|off|manual|auto|one_push}" } ,
 
+	{ NULL, 0, 0, NULL, 0 }
+    };
+
+    struct poptOption common_optionsTable[] = {
+	{ "magic", 0,  POPT_ARG_STRING, &opt_magic_string, 0,
+	  "magic number for camera id", NULL } ,   
 	{ NULL, 0, 0, NULL, 0 }
     };
 
     struct poptOption optionsTable[] = {
 
 	{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, control_optionsTable, 0,
-	  "Control options",NULL},
+	  "Control options:",NULL},
     
 //    { "dev",      'd',  POPT_ARG_INT, &card_no, 'd',
 //      "device no", "DEVICE" } ,
 
 	{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, query_optionsTable, 0,
-	  "Query options",NULL},
+	  "Query options:",NULL},
 
 	{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, format_optionsTable, 0,
-	  "Image format options",NULL},
+	  "Image format options:",NULL},
 
 	{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, save_optionsTable, 0,
-	  "Save options",NULL},
+	  "Save options:",NULL},
 
 	{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, quality_optionsTable, 0,
-	  "Image quality options",NULL},
+	  "Image quality options:",NULL},
 
-    
+	{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, common_optionsTable, 0,
+	  "Common options options:",NULL},   
+	
 	POPT_AUTOHELP
 	{ NULL, 0, 0, NULL, 0 }
     };
@@ -361,6 +458,14 @@ int main(int argc, char *argv[]){
     target_cameras = poptGetArg(optCon);
     poptFreeContext(optCon);
   
+    if ( opt_magic_string ){
+	char *end=NULL;
+	magic_number = strtoll( opt_magic_string, &end, 0 );
+	if (*end!='\0'){
+	    // failure parse the opt_magic_string
+	    magic_number = 0;
+	}
+    }
     // *** initialize 1394 port
 
     // get handle 
@@ -404,7 +509,7 @@ int main(int argc, char *argv[]){
 	    exit(-1);      
 	}
 	CCameraList::iterator cam;
-	cam=find_camera_by_id(CameraList,MAKE_CHIP_ID(camera_id) );
+	cam=find_camera_by_id(CameraList,MAKE_CHIP_ID(camera_id,magic_number));
 	if (cam==CameraList.end()){
 	    ERR(" not found camera which id is "<<camera_id);
 	    return -2;
@@ -412,87 +517,16 @@ int main(int argc, char *argv[]){
 	TargetList.push_back( *cam );
     }
 
-
+    CCameraList::iterator cam;
     if ( do_query != -1 ){
-	CCameraList::iterator cam;
 	for (cam=TargetList.begin(); cam!=TargetList.end(); cam++){
-	    C1394CAMERA_FEATURE feat;
-	    
-	    printf("#     feature          value    supported-state \n");
-
-	    for (feat=BRIGHTNESS;feat<END_OF_FEATURE;
-		 feat=(C1394CAMERA_FEATURE)((int)feat+1)){
-
-		if (!cam->HasFeature(feat))
-		    break;
-
-		unsigned int value;
-		cam->GetParameter(feat, &value);
-		const char *fname = cam->GetFeatureName(feat) ;
-		printf("%20s %7d ", fname, value);
-
-		C1394CAMERA_FSTATE st,cur_st;
-		cam->GetFeatureState(feat, &cur_st);
-		for (st=OFF; st<END_OF_FSTATE; 
-		     st=(C1394CAMERA_FSTATE)(st+1)){
-		    
-		    if (cam->HasCapability(feat,st)){
-			printf("%s%s ", (st==cur_st)?"*":"",
-			       cam->GetFeatureStateName(st));
-		    }
-		}
-		printf("\n");
-	    }
+	    show_camera_feature( &(*cam) );
 	}
     }
 
     // set camera register for each feature.
-    //
-    CCameraList::iterator cam;
     for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++){
-	C1394CAMERA_FEATURE feat;
-	for (feat=BRIGHTNESS;feat<END_OF_FEATURE;
-	     feat=(C1394CAMERA_FEATURE)((int)feat+1)){
-	    
-            //    LOG(cam->GetFeatureName(feat)<<" "<<cp[feat]);
-	    if (!cp[feat])
-		continue;
-	    
-	    if (!strcasecmp("off",cp[feat])){
-		LOG("off "<<cam->GetFeatureName(feat)<<" feat ");
-		if (!cam->DisableFeature(feat))
-		    ERR(cam->GetFeatureName(feat)<< " is not available.");
-	    } else if (!strcasecmp("on",cp[feat])){
-		if (!cam->EnableFeature(feat))
-		    ERR(cam->GetFeatureName(feat)<< " is not available.");
-	    } else if (!strcasecmp("manual",cp[feat])){
-		if (!cam->SetFeatureState(feat, MANUAL))
-		    ERR("manual mode feature is not available.");
-	    } else if (!strcasecmp("auto",cp[feat])) {
-		LOG("set "<<cam->GetFeatureName(feat)<<" auto mode");
-		if (!cam->SetFeatureState(feat, AUTO))
-		    ERR("auto mode feature is not available.");
-	    } else if (!strcasecmp("one_push",cp[feat])) {
-		LOG("set "<<cam->GetFeatureName(feat)<<" one_push mode");
-		if (!cam->SetFeatureState(feat, ONE_PUSH))
-		    ERR("one_push mode feature is not available.");
-	    } else {
-		int val;
-		char *end=NULL;
-		val=strtol(cp[feat],&end,0);
-		if (*end!='\0'){
-		    ERR(cam->GetFeatureName(feat) 
-			<< ": invalid param, " << cp[feat] );
-		    exit(-1);
-		}
-		LOG("set "<<cam->GetFeatureName(feat)<<" feat "<<val);
-		if (!cam->SetParameter(feat, val)){
-		    ERR("specified parameter "<<cp[feat]
-			<<" is out of "<< cam->GetFeatureName(feat) 
-			<< " range, skip..");
-		}
-	    }
-	}
+	set_camera_feature( &(*cam), cp);
     }  
 
     // set camera channel
@@ -515,8 +549,18 @@ int main(int argc, char *argv[]){
     }
     // set iso speed
     if (spd!=-1) {
-	for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++)
-	    cam->SetIsoSpeed((SPD)spd);
+	for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++){
+	    FORMAT f; VMODE m; FRAMERATE r;
+	    SPD req_speed;
+	    cam->QueryFormat(&f,&m,&r);
+	    req_speed=GetRequiredSpeed(f,m,r);
+	    if (spd >= req_speed ){
+		cam->SetIsoSpeed((SPD)spd);
+	    }else{
+		ERR("camera "<< MAKE_CAMERA_ID(cam->GetID(), magic_number) 
+		    << " requires " << GetSpeedString(req_speed) << ".");
+	    }
+	}
     }
       
     // stop camere(s)
@@ -562,11 +606,11 @@ int main(int argc, char *argv[]){
 	char fname[1024];
 	
 	if (NULL==opt_filename)
-	    snprintf(fname,sizeof(fname),
-		     "%llu_%%02d.yuv",MAKE_CAMERA_ID(cam->m_ChipID));
+	    snprintf(fname,sizeof(fname),"%llu_%%02d.yuv",
+		     MAKE_CAMERA_ID(cam->GetID(),magic_number));
 	else
-	    snprintf(fname,sizeof(fname),
-		     opt_filename, MAKE_CAMERA_ID(cam->m_ChipID));
+	    snprintf(fname,sizeof(fname),opt_filename, 
+		     MAKE_CAMERA_ID(cam->GetID(),magic_number));
 
 	cam=TargetList.begin();
 	savetofile(*cam, fname);
@@ -585,11 +629,11 @@ int main(int argc, char *argv[]){
 	    char fname[1024];
 	    
 	    if (NULL==opt_filename)
-		snprintf(fname,sizeof(fname),
-			 "%llu.ppm",MAKE_CAMERA_ID(cam->m_ChipID));
+		snprintf(fname,sizeof(fname),"%llu.ppm",
+			 MAKE_CAMERA_ID(cam->GetID(),magic_number));
 	    else
-		snprintf(fname,sizeof(fname),
-			 opt_filename, MAKE_CAMERA_ID(cam->m_ChipID));
+		snprintf(fname,sizeof(fname),opt_filename, 
+			 MAKE_CAMERA_ID(cam->GetID(),magic_number));
 	    
 
 	    cam->UpDateFrameBuffer();
@@ -597,6 +641,7 @@ int main(int argc, char *argv[]){
 	}
 
     }
+
 
     return 0;
 }

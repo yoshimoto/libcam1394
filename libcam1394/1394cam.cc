@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.21 2003-08-22 01:54:02 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.22 2003-10-07 13:16:27 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -79,12 +79,12 @@ static const char *feature_hi_table[]={
     "iris" ,        
     "focus" ,  
     "temperature" , 
-    "triger"         ,  //+12
+    "trigger"         ,  //+12
 
     "reserved","reserved","reserved","reserved","reserved",
     "reserved","reserved","reserved","reserved","reserved",
     "reserved","reserved","reserved","reserved","reserved",
-    "reserved","reserved","reserved","reserved","reserved",
+    "reserved","reserved","reserved","reserved",
     
     "zoom", // +32
     "pan",
@@ -137,11 +137,11 @@ callback_1394Camera(raw1394_handle* handle, nodeid_t node_id,
     if (!EQU(tmp,0xff000000,0x8d000000)){
 	return false;
     }
-    tmp&=~0x8d000000;
-    tmp*=4;
-    addr=ADDR_INDIRECT_OFFSET+tmp+4;
+    tmp &= ~0x8d000000;
+    tmp *= 4;
+    addr = ADDR_INDIRECT_OFFSET+tmp+4;
     //  LOG(VAR32(addr));
-    quadlet_t chip_id_hi,chip_id_lo;
+    quadlet_t chip_id_hi, chip_id_lo;
 
     WAIT;    
     TRY( raw1394_read(handle, node_id,
@@ -155,8 +155,9 @@ callback_1394Camera(raw1394_handle* handle, nodeid_t node_id,
 		      addr, 4, 
 		      &chip_id_lo));
     chip_id_lo=ntohl(chip_id_lo);
-    pNode->m_VenderID =chip_id_hi>>8;
-    pNode->m_ChipID   =(((uint64_t)chip_id_hi&0xff)<<32)+(chip_id_lo);
+
+    pNode->m_VenderID = chip_id_hi>>8;
+    pNode->m_ChipID   = (((uint64_t)chip_id_hi&0xff)<<32)+(uint64_t)chip_id_lo;
 
   
     addr=ADDR_UNIT_DIRECTORY_OFFSET;   /* addr<=RootDirectory ¤ÎÀèÆ¬ */
@@ -209,16 +210,18 @@ callback_1394Camera(raw1394_handle* handle, nodeid_t node_id,
  * @return  
  */
 CCameraList::iterator
-find_camera_by_id(CCameraList& CameraList,uint64_t id)
+find_camera_by_id(CCameraList& CameraList, uint64_t id)
 {
-  CCameraList::iterator ite;
-  for (ite=CameraList.begin();ite!=CameraList.end();ite++){
-    if ((*ite).m_ChipID == id){
-      return ite;
-    }
-  } 
-  return CameraList.end();
+    CCameraList::iterator ite;
+    for (ite=CameraList.begin();ite!=CameraList.end();ite++){
+	if ((*ite).GetID() == id){
+	    return ite;
+	}
+    } 
+    return CameraList.end();
 }
+
+
 
 //typedef int (*ENUM1394_CALLBACK)(T* node,void* id);
 
@@ -355,6 +358,8 @@ C1394CameraNode::~C1394CameraNode()
 #endif //#if defined(_WITH_ISO_FRAME_BUFFER_)
 }
 
+
+
 /** 
  * get model name
  * 
@@ -386,6 +391,18 @@ const char*
 GetVenderName(char* lpBuffer,size_t* lpLength)
 {
   return 0;
+}
+
+
+/** 
+ * 
+ * 
+ * 
+ * @return 
+ */
+uint64_t C1394CameraNode::GetID(void) const
+{
+    return ((uint64_t)m_VenderID<<40) | m_ChipID;
 }
 
 /** 
@@ -526,9 +543,7 @@ bool C1394CameraNode::SetFeatureState(C1394CAMERA_FEATURE feat,
   case OFF:
     if (GetParam(BRIGHTNESS_INQ,On_Off_Inq,inq)){      
       tmp |=  SetParam(BRIGHTNESS,Presence_Inq,1);
-      // tmp &= ~SetParam(BRIGHTNESS,One_Push, 1);  
       tmp &= ~SetParam(BRIGHTNESS,ON_OFF,1);  
-      // tmp &= ~SetParam(BRIGHTNESS,A_M_Mode,1);    
       WriteReg(Addr(BRIGHTNESS)+4*feat, &tmp);
       r = true;
     }
@@ -537,7 +552,6 @@ bool C1394CameraNode::SetFeatureState(C1394CAMERA_FEATURE feat,
     if (GetParam(BRIGHTNESS_INQ,Manual_Inq,inq)){      
       ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
       tmp |=  SetParam(BRIGHTNESS,Presence_Inq,1);
-      // tmp &= ~SetParam(BRIGHTNESS,One_Push, 1);  
       tmp |=  SetParam(BRIGHTNESS,ON_OFF,1);  
       tmp &= ~SetParam(BRIGHTNESS,A_M_Mode,1);    
       WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
@@ -548,7 +562,6 @@ bool C1394CameraNode::SetFeatureState(C1394CAMERA_FEATURE feat,
     if (GetParam(BRIGHTNESS_INQ,Auto_Inq,inq)){      
       ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
       tmp |=  SetParam(BRIGHTNESS,Presence_Inq,1);
-      //tmp &= ~SetParam(BRIGHTNESS,One_Push, 1);  
       tmp |=  SetParam(BRIGHTNESS,ON_OFF,1);  
       tmp |=  SetParam(BRIGHTNESS,A_M_Mode,1);    
       WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
@@ -581,27 +594,26 @@ bool C1394CameraNode::SetFeatureState(C1394CAMERA_FEATURE feat,
 bool C1394CameraNode::GetFeatureState(C1394CAMERA_FEATURE feat, 
 				      C1394CAMERA_FSTATE  *fstate)
 {
-  quadlet_t tmp=0;
+    quadlet_t tmp=0;
 
-  if (!fstate)
-    return false;
+    if (!fstate)
+	return false;
   
-  // we must check not Inquiry register but status register.
-  ReadReg(Addr(BRIGHTNESS)+4*feat,&tmp);
+    // we must check not Inquiry register but status register.
+    ReadReg(Addr(BRIGHTNESS)+4*feat,&tmp);
 
-  if (
-    0==GetParam(BRIGHTNESS,Presence_Inq,tmp) ||
-    0==GetParam(BRIGHTNESS,ON_OFF,tmp)){
-    *fstate = OFF;
-  } else if (1==GetParam(BRIGHTNESS,A_M_Mode,tmp)){
-    *fstate = AUTO;
-  } else if (1==GetParam(BRIGHTNESS,One_Push,tmp)){
-    *fstate = ONE_PUSH;
-  } else {
-    *fstate = MANUAL;
-  }
+    if (0==GetParam(BRIGHTNESS,Presence_Inq,tmp) ||
+	0==GetParam(BRIGHTNESS,ON_OFF,tmp)){
+	*fstate = OFF;
+    } else if (1==GetParam(BRIGHTNESS,A_M_Mode,tmp)){
+	*fstate = AUTO;
+    } else if (1==GetParam(BRIGHTNESS,One_Push,tmp)){
+	*fstate = ONE_PUSH;
+    } else {	
+	*fstate = MANUAL;
+    }
 
-  return true;
+    return true;
 }
 
 /** 
@@ -720,13 +732,10 @@ C1394CameraNode::GetParameter(C1394CAMERA_FEATURE feat,unsigned int *value)
 }
 
 /** 
- * 
+ * disable feature 
  * 
  * @param feat 
  * 
- * @note this function is obsolete. please use SetFeatureState(feat,
- * OFF)
- *
  * @return 
  */
 bool
@@ -736,21 +745,33 @@ C1394CameraNode::DisableFeature(C1394CAMERA_FEATURE feat)
 }
 
 /** 
- * enable the feature
+ * enable feature
  * 
  * @param feat 
  *
- * @note this function is obsolete. please use 
- * SetFeatureState(feat,new_state), where new_state will take the
- * value of MANUAL, AUTO or
- * One_Push.
- * 
  * @return 
  */
 bool
 C1394CameraNode::EnableFeature(C1394CAMERA_FEATURE feat)
 {
-  return SetFeatureState(feat, MANUAL);
+    quadlet_t tmp=0;
+    quadlet_t inq=0;
+
+    ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&inq);
+    if (0==GetParam(BRIGHTNESS_INQ,Presence_Inq,inq)){
+	ERR("the feature "<<feature_hi_table[feat]<<" is not available");
+	return false;
+    }
+    if (0==GetParam(BRIGHTNESS_INQ,On_Off_Inq,inq)){
+	ERR("the feature "<<feature_hi_table[feat]<<" has no ON/OFF cap.");
+	return false;
+    }
+    
+    ReadReg(Addr(BRIGHTNESS)+4*feat,&tmp);
+    tmp |= SetParam(BRIGHTNESS,ON_OFF,1); 
+    WriteReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+
+    return true;
 }
 
 /** 
@@ -890,19 +911,26 @@ C1394CameraNode::SetFormat(FORMAT    fmt,
     // check fmt,mode,frame_rate
     if (fmt!=Format_X){
 	tmp=SetParam(Cur_V_Format,,fmt);
-	WriteReg(Addr(Cur_V_Format),&tmp);
-	
+	WriteReg(Addr(Cur_V_Format),&tmp);	
     }
     if (mode!=Mode_X){
 	tmp=SetParam(Cur_V_Mode,,mode); 
-	WriteReg(Addr(Cur_V_Mode),&tmp);
-	
+	WriteReg(Addr(Cur_V_Mode),&tmp);	
     }
     if (frame_rate!=FrameRate_X){
 	tmp=SetParam(Cur_V_Frm_Rate,,frame_rate);
 	WriteReg(Addr(Cur_V_Frm_Rate),&tmp);
 	
     }
+
+    FORMAT f; VMODE m; FRAMERATE r;
+    SPD cur_speed, req_speed;
+    QueryIsoSpeed(&cur_speed);
+    QueryFormat(&f,&m,&r);
+    req_speed=GetRequiredSpeed(f,m,r);
+    if (req_speed > cur_speed)
+	SetIsoSpeed(req_speed);	    
+
     return true;  
 }
 
@@ -1097,19 +1125,8 @@ bool
 C1394CameraNode:: SetTriggerOn()
 {
     quadlet_t tmp;
-    ReadReg(Addr(TRIGGER_INQ),	&tmp);  
-    ReadReg(Addr(TRIGGER_MODE), &tmp);  
-    LOG(" SetTriggerOn"<<tmp);
-    tmp=0x82010000;
-/*
-  SetParam(TRIGGER_MODE,  Presence_Inq, 1)
-  |SetParam(TRIGGER_MODE, ON_OFF, 1)
-  |SetParam(TRIGGER_MODE, Trigger_Polarity, 1)
-  |SetParam(TRIGGER_MODE, Trigger_Mode,1<<4); */
-    LOG(" SetTriggerOn "<<tmp);
-    WriteReg(
-	Addr(TRIGGER_MODE),
-	&tmp);
+    tmp=0x82000000;
+    WriteReg(Addr(TRIGGER_MODE),&tmp);
     return true;
 }
 
@@ -1124,19 +1141,8 @@ C1394CameraNode:: SetTriggerOff()
 {
     LOG("SetTriggerOff");
     quadlet_t tmp;
-    ReadReg(Addr(TRIGGER_INQ),&tmp);  
-    
-    ReadReg(Addr(TRIGGER_MODE),&tmp);  
-    
-    tmp=0x80010000;
-  
-/*  SetParam(TRIGGER_MODE,  Presence_Inq, 1)
-    |SetParam(TRIGGER_MODE, ON_OFF, 1)
-    |SetParam(TRIGGER_MODE, Trigger_Polarity, 1)
-    |SetParam(TRIGGER_MODE, Trigger_Mode,1<<4); */
-  
-    WriteReg(Addr(TRIGGER_MODE),&tmp);
-     
+    tmp=0x80000000;
+    WriteReg(Addr(TRIGGER_MODE),&tmp);     
     return true;
 }
 
@@ -1718,7 +1724,7 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
 	return -1;
     }
 
-
+    
     SetFormat(fmt,mode,rate);
     if ((fmt==Format_X)||(mode==Mode_X)||(rate==FrameRate_X)){
 	FORMAT f; VMODE m; FRAMERATE r;
@@ -1727,9 +1733,6 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
 	if (mode==Mode_X)      mode=m;
 	if (rate==FrameRate_X) rate=r;
     }
-
-    SPD spd=::GetRequiredSpeed(fmt,mode,rate);
-    SetIsoSpeed(spd);
 
     m_packet_sz  = ::GetPacketSize(fmt,mode,rate);
     m_packet_sz += 8;
@@ -1744,7 +1747,7 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
     snprintf(devname, sizeof(devname), "/dev/isofb%d", this->m_port_no);
     fd=open(devname,O_RDWR);
     if (-1==fd){
-	cerr << "can't open "<<devname<<" "<<strerror(errno)<<endl;
+	cerr << "can't open " << devname << " " << strerror(errno) << endl;
 	return -1;
     }
   
@@ -1753,7 +1756,7 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
   
     rxparam.sz_packet      = m_packet_sz ;
     rxparam.num_packet     = m_num_packet ;
-    rxparam.num_frames     = 3 ;
+    rxparam.num_frames     = 4;
     rxparam.packet_per_buf = 0;
     rxparam.wait           = 1;
     rxparam.sync           = 1;
@@ -1881,6 +1884,45 @@ int C1394CameraNode::CopyIplImage(IplImage *dest)
 	::copy_YUV444toIplImage(dest,m_lpFrameBuffer,
 				m_packet_sz,m_num_packet,
 				REMOVE_HEADER);
+    break;
+    default:
+	LOG("not support this pixel format yet.");
+	break;
+    }
+  
+    return 0;
+#endif //#if !defined HAVE_CV_H && !defined HAVE_OPENCV_CV_H
+}
+
+/** 
+ * copy caputured image to IplImage buffer.
+ * This function will be enabled if you have Intel's IPL.
+ * 
+ * @param dest 
+ * 
+ * @return if you don't have IPL, returns -1
+ */
+int C1394CameraNode::CopyIplImageGray(IplImage *dest)
+{
+#if !defined HAVE_CV_H && !defined HAVE_OPENCV_CV_H
+    LOG("This system don't have ipl or OpenCV library.");
+    return -1;
+#else
+    switch  ( m_pixel_format ){
+    case VFMT_YUV422:
+	::copy_YUV422toIplImageGray(dest,m_lpFrameBuffer,
+				    m_packet_sz,m_num_packet,
+				    REMOVE_HEADER);
+    break;
+    case VFMT_YUV411:
+	::copy_YUV411toIplImageGray(dest,m_lpFrameBuffer,
+				    m_packet_sz,m_num_packet,
+				    REMOVE_HEADER);
+    break;
+    case VFMT_YUV444:
+	::copy_YUV444toIplImageGray(dest,m_lpFrameBuffer,
+				    m_packet_sz,m_num_packet,
+				    REMOVE_HEADER);
     break;
     default:
 	LOG("not support this pixel format yet.");

@@ -2,8 +2,8 @@
   @file    yuv.h
   @brief   convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv.h,v 1.2 2003-01-08 18:38:01 yosimoto Exp $
-  @date    $Date: 2003-01-08 18:38:01 $
+  @version $Id: yuv.h,v 1.3 2003-10-07 13:16:27 yosimoto Exp $
+  @date    $Date: 2003-10-07 13:16:27 $
  */
 
 #if !defined(_YUV_H_INCLUDED_)
@@ -40,9 +40,8 @@ bool copy_YUV422toRGBA(RGBA* lpRGBA, const void* lpYUV422,
 		       int sz_packet, int num_packet, int flag);
 bool copy_YUV444toRGBA(RGBA* lpRGBA, const void* lpYUV444,
 		       int sz_packet, int num_packet, int flag);
-
-int SaveRGBAtoFile(char *pFile, const RGBA* img, int w, int h, int fmt=0);
-int CreateYUVtoRGBAMap();
+int  SaveRGBAtoFile(char *pFile, const RGBA* img, int w, int h, int fmt=0);
+int  CreateYUVtoRGBAMap();
 
 #if defined OPENCVAPI
 bool copy_YUV411toIplImage(IplImage* dst, const void* lpYUV411,
@@ -51,6 +50,13 @@ bool copy_YUV422toIplImage(IplImage* dst, const void* lpYUV422,
 			   int sz_packet, int num_packet, int flag);
 bool copy_YUV444toIplImage(IplImage* dst, const void* lpYUV444,
 			   int sz_packet, int num_packet, int flag);
+
+bool copy_YUV411toIplImageGray(IplImage* dst, const void* lpYUV411,
+			       int sz_packet, int num_packet, int flag);
+bool copy_YUV422toIplImageGray(IplImage* dst, const void* lpYUV422,
+			       int sz_packet, int num_packet, int flag);
+bool copy_YUV444toIplImageGray(IplImage* dst, const void* lpYUV444,
+			       int sz_packet, int num_packet, int flag);
 #endif // #if !defined IPL_IMAGE_MAGIC_VAL
 
 
