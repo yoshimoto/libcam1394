@@ -2,8 +2,8 @@
   @file  lz.h 
   @brief 1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.4 2002-02-12 14:41:02 yosimoto Exp $
-  @date    $Date: 2002-02-12 14:41:02 $
+  @version $Id: 1394cam.cc,v 1.5 2002-02-15 19:50:24 yosimoto Exp $
+  @date    $Date: 2002-02-15 19:50:24 $
  */
 
 // Copyright (C) 2000,2001 by Hiromasa Yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp> 
@@ -18,6 +18,7 @@
 // Thu Sep 27 08:21:43 2001  YOSHIMOTO Hiromasa 
 // Sat Oct 20 10:15:35 2001  YOSHIMOTO Hiromasa 
 
+#include "config.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h> // for bzero()
@@ -36,10 +37,17 @@ using namespace std;
 #include <iostream>
 #include <iomanip>
 #include <list>
-
 #include <linux/ohci1394_iso.h>
+#if defined USE_IPL
+#include <ipl.h>
+#endif // #if defined USE_IPL
+
 #include "common.h"
 #include "1394cam.h"
+
+#if defined USE_IPL
+#include <ipl.h>
+#endif // #if defined USE_IPL
 
 #define QUAD(h,l)  0x##h##l
 #define CHK_PARAM(exp) {if (!(exp)) MSG( "illegal param passed. " << __STRING(exp)); }
@@ -1193,6 +1201,42 @@ C1394CameraNode::GetImageHeight()
 {
   return m_Image_H;
 }
+
+#if defined IPLAPI
+/** 
+ * 
+ * 
+ * @param dest 
+ * 
+ * @return 
+ */
+int 
+C1394CameraNode::CopyIplImage(IplImage *dest)
+{
+    switch  ( m_pixel_format ){
+    case VFMT_YUV422:
+	::copy_YUV422toIplImage(dest,m_lpFrameBuffer,
+				m_packet_sz,m_num_packet,
+				REMOVE_HEADER);
+    break;
+    case VFMT_YUV411:
+	::copy_YUV411toIplImage(dest,m_lpFrameBuffer,
+				m_packet_sz,m_num_packet,
+				REMOVE_HEADER);
+    break;
+    case VFMT_YUV444:
+	::copy_YUV444toIplImage(dest,m_lpFrameBuffer,
+				m_packet_sz,m_num_packet,
+				REMOVE_HEADER);
+    break;
+    default:
+	LOG("not support this pixel format yet.");
+	break;
+    }
+  
+    return 0;
+}
+#endif //#if defined IPLAPI
 
 int
 C1394CameraNode::CopyRGBAImage(void* dest)

@@ -2,18 +2,15 @@
   @file  yuv2rgb.cc
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv2rgb.cc,v 1.2 2002-02-12 14:41:02 yosimoto Exp $
-  @date    $Date: 2002-02-12 14:41:02 $
+  @version $Id: yuv2rgb.cc,v 1.3 2002-02-15 19:50:24 yosimoto Exp $
+  @date    $Date: 2002-02-15 19:50:24 $
  */
-//
-// yuv2rgb.cc - convert YUV to RGBA
-//
-// by hiromasa yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp> 
-//
-// Sun Jan 30 03:13:43 2000 By hiromasa yoshimoto  
-// Fri Jun  2 10:09:42 2000 By hiromasa yoshimoto  エンディアンの変更
 
+#include "config.h"
 #include <stdio.h>
+#if defined USE_IPL
+#include <ipl.h>
+#endif // #if defined USE_IPL
 
 #include "yuv.h"
 
@@ -51,6 +48,27 @@ CreateYUVtoRGBAMap()
 /* yuv->rgbaへの計算を実際に行なう
    この部分はMMX化すると良いかも知れません  */
 // Fri Jun  2 10:31:22 2000 By hiromasa yoshimoto 
+static inline void
+conv_YUVtoRGB(signed int& r, signed int& g, signed int& b,
+	      UCHAR Y,UCHAR u,UCHAR v)
+{
+    r=FIX2INT(table_y[Y]+table_r[v]);
+    g=FIX2INT(table_y[Y]+table_g0[v]+table_g1[u]);
+    b=FIX2INT(table_y[Y]+table_b[u]);
+    if (255<r)
+	r=255;
+    else if (r<0)
+	r=0;
+    if (255<g)
+	g=255;
+    else if (g<0)
+	g=0;
+    if (255<b)
+	b=255;
+    else if (b<0)
+	b=0;
+}
+
 static inline void
 conv_YUVtoRGBA(RGBA* p,UCHAR Y,UCHAR u,UCHAR v)
 {
@@ -195,6 +213,52 @@ SaveRGBAtoFile(char *pFile,const RGBA* img,int w,int h,int fmt)
   }
   return result;
 }
+
+#if defined USE_IPL
+/** 
+ * 
+ * 
+ * @param img 
+ * @param lpYUV422 
+ * @param packet_sz 
+ * @param num_packet 
+ * @param flag 
+ */void
+copy_YUV422toIplImage(IplImage* img, const void *lpYUV422, 
+		      int packet_sz,
+		      int num_packet, int flag)
+{
+    uchar *dst = (uchar*)img->imageData;
+    
+    UCHAR *p=(UCHAR*)lpYUV422;
+    int i;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
+    }
+    while (num_packet-->0){
+	for (i=0;i<packet_sz/4;i++){
+	    int r,g,b;
+	    UCHAR Y,u,v;
+	    u=*p++;
+	    Y=*p++;
+	    v=*p++;
+	    conv_YUVtoRGB(r,g,b,Y,u,v);
+	    *dst++=r;
+	    *dst++=g;
+	    *dst++=b;
+	    Y=*p++;
+	    conv_YUVtoRGB(r,g,b,Y,u,v);
+	    *dst++=r;
+	    *dst++=g;
+	    *dst++=b;
+	} //     for (i=0;i<packet_sz/4;i++){
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    } //   while (num_packet-->0) {
+}
+
+#endif // #if defined USE_IPL
 
 /*
  * Local Variables:

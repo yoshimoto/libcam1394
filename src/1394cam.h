@@ -2,26 +2,18 @@
   @file  1394cam.h
   @brief 1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.h,v 1.2 2002-02-12 14:41:02 yosimoto Exp $
-  @date    $Date: 2002-02-12 14:41:02 $
+  @version $Id: 1394cam.h,v 1.3 2002-02-15 19:50:24 yosimoto Exp $
+  @date    $Date: 2002-02-15 19:50:24 $
  */
-// 1394cam.h - 1394-based Digital Camera control class
-//
-// Copyright (C) 2000,2001 by YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp> 
-// http://limu.is.kyushu-u.ac.jp/~yosimoto/ieee1394/
-//
-// class C1394CameraNode
-//
-// Sat Dec 11 05:50:55 1999 1st
-// Wed Aug  1 13:44:09 2001 
-// Thu Sep 27 08:18:31 2001  YOSHIMOTO Hiromasa  code clean up for gcc-2.96
-// Sat Oct 20 10:15:35 2001  YOSHIMOTO Hiromasa 
-
 #if !defined(_1394cam_h_included_)
 #define _1394cam_h_included_
 
 #include <list>
 #include <netinet/in.h>
+
+#if !defined IPLAPI
+class IplImage { };
+#endif // #if defined IPLAPI
 
 #define WAIT usleep(1)
 
@@ -444,6 +436,8 @@ public:
   int    GetImageHeight();
   
   int    CopyRGBAImage(void* dest);
+  int    CopyIplImage(IplImage* dest);
+
 //  int    WriteRGBAImage(int fd);
 //  int    WriteRawImage(int fd);
   int    SaveToFile(char* filename,FILE_TYPE type=FILETYPE_PPM);  // save current frame

@@ -86,7 +86,7 @@ main(int argc, char **argv)
   CCameraList CameraList;
   if (! GetCameraList(handle,&CameraList) ){
     cout<<" there's no camera?? ."<<endl;
-    exit(-1);
+    return -1;
   }
 
   int i;

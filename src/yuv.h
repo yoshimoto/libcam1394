@@ -2,8 +2,8 @@
   @file yuv.h
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv.h,v 1.2 2002-02-12 14:41:02 yosimoto Exp $
-  @date    $Date: 2002-02-12 14:41:02 $
+  @version $Id: yuv.h,v 1.3 2002-02-15 19:50:24 yosimoto Exp $
+  @date    $Date: 2002-02-15 19:50:24 $
  */
 // yuv.h - convert YUV to RGBA
 //
@@ -43,6 +43,15 @@ void copy_YUV444toRGBA(RGBA* lpRGBA,const void* lpYUV444,
 
 int SaveRGBAtoFile(char *pFile,const RGBA* img,int w,int h,int fmt=0);
 int CreateYUVtoRGBAMap();
+
+#if defined IPLAPI
+void copy_YUV411toIplImage(IplImage* dst ,const void* lpYUV411,
+		       int sz_packet,int num_packet,int flag);
+void copy_YUV422toIplImage(IplImage* dst ,const void* lpYUV422,
+		       int sz_packet,int num_packet,int flag);
+void copy_YUV444toIplImage(IplImage* dst ,const void* lpYUV444,
+		       int sz_packet,int num_packet,int flag);
+#endif // #if defined IPLAPI
 
 #endif //#if !defined(_YUV_H_INCLUDED_) 
 /*
