@@ -2,7 +2,7 @@
   @file  1394cam_registers.h
   @brief 1394-based Digital Camera command registers
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam_registers.h,v 1.3 2002-03-16 13:00:53 yosimoto Exp $
+  @version $Id: 1394cam_registers.h,v 1.4 2002-03-16 16:26:19 yosimoto Exp $
  */
 
 #if !defined(_1394cam_registers_h_included_)
@@ -27,6 +27,9 @@ RegInfo(0x0188,V_MODE_INQ_2)
 //RegInfo(0x0194,V_MODE_INQ_5)
 RegInfo(0x0198,V_MODE_INQ_6)
 RegInfo(0x019c,V_MODE_INQ_7)
+
+RegInfo(0x02e0,V_CSR_INQ_7_0)
+
 RegInfo(0x0400,BASIC_FUNC_INQ)  // *inquiry register for basic function
 RegInfo(0x0404,Feature_Hi_Inq)  // *inquiry register for feature presence
 RegInfo(0x0408,Feature_Lo_Inq) 
@@ -82,6 +85,20 @@ RegInfo(0x0880,ZOOM)
 RegInfo(0x0884,PAN)
 RegInfo(0x0888,TILT)
 //  video mode csr for format_7
+    RegInfo(0x000,MAX_IMAGE_SIZE_INQ)
+    RegInfo(0x004,UNIT_SIZE_INQ)
+    RegInfo(0x008,IMAGE_POSITION)
+    RegInfo(0x00c,IMAGE_SIZE)
+    RegInfo(0x010,COLOR_CODING_ID)
+    RegInfo(0x014,COLOR_CODING_INQ)
+    RegInfo(0x034,PIXEL_NUMBER_INQ)
+    RegInfo(0x038,TOTAL_BYTES_HI_INQ)
+    RegInfo(0x03c,TOTAL_BYTES_LO_INQ)
+    RegInfo(0x040,PACKET_PARA_INQ)
+    RegInfo(0x044,BYTE_PER_PACKET)
+    RegInfo(0x048,PACKET_PER_FRAME_INQ)
+    RegInfo(0x04c,UNIT_POSITION_INQ)
+    RegInfo(0x07c,VALUE_SETTING)
 
 //=========================================================
 
@@ -217,6 +234,22 @@ BitInfo_ctrl_reg_for_feat(TILT)
 BitInfo_ctrl_reg_for_feat(OPTICAL_FILTER)
 BitInfo_ctrl_reg_for_feat(CAPTURE_SIZE)
 BitInfo_ctrl_reg_for_feat(CAPTURE_QUALITY)
+
+//-- Video Mode CSR for Format_7
+    BitInfo(MAX_IMAGE_SIZE_INQ,Hmax,0,15)
+    BitInfo(MAX_IMAGE_SIZE_INQ,Vmax,16,31) 
+    BitInfo(UNIT_SIZE_INQ,Hunit,0,15)
+    BitInfo(UNIT_SIZE_INQ,Vunit,16,31)
+    BitInfo(IMAGE_POSITION,Left,0,15)
+    BitInfo(IMAGE_POSITION,Top,16,31)
+    BitInfo(IMAGE_SIZE,Width,0,15)
+    BitInfo(IMAGE_SIZE,Height,16,31)
+    BitInfo(COLOR_CODING_ID,Coding_ID,0,7)
+    BitInfo(VALUE_SETTING,Presence   ,0,1)
+    BitInfo(VALUE_SETTING,Setting_1  ,1,2)
+    BitInfo(VALUE_SETTING,ErrorFlag_1,8,9)
+    BitInfo(VALUE_SETTING,ErrorFlag_2,9,10)
+    
 #undef BitInfo_ctrl_reg_for_feat
 #undef RegInfo
 #undef BitInfo

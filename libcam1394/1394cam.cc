@@ -2,7 +2,7 @@
   @file  lz.h 
   @brief 1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.3 2002-03-16 13:00:53 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.4 2002-03-16 16:26:19 yosimoto Exp $
  */
 // Copyright (C) 1999-2002 by YOSHIMOTO Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp> 
 //
@@ -64,7 +64,7 @@ using namespace std;
 // for unit dependent directory
 #define OFFSET_COMMAND_REGS_BASE                 0x0004       
 
-
+#define WAIT usleep(10000)
 
 static const char *feature_hi_table[]={
     "brightness" ,   // +0
@@ -118,10 +118,11 @@ callback_1394Camera(raw1394_handle* handle,nodeid_t node_id,
     quadlet_t tmp;
     addr=ADDR_INDIRECT_OFFSET;
     
+    WAIT;    
     TRY( raw1394_read(handle, node_id,
 		      addr, 4, &tmp) );
     tmp=ntohl(tmp);
-    //  LOG(VAR32(indirect_offset));
+    // LOG(VAR32(indirect_offset));
     if (!EQU(tmp,0xff000000,0x8d000000)){
 	return false;
     }
@@ -130,12 +131,14 @@ callback_1394Camera(raw1394_handle* handle,nodeid_t node_id,
     addr=ADDR_INDIRECT_OFFSET+tmp+4;
     //  LOG(VAR32(addr));
     quadlet_t chip_id_hi,chip_id_lo;
-    
+
+    WAIT;    
     TRY( raw1394_read(handle, node_id,
 		      addr, 4, 
 		      &chip_id_hi));
     chip_id_hi=ntohl(chip_id_hi);
     
+    WAIT;    
     addr+=4;
     TRY( raw1394_read(handle, node_id,
 		      addr, 4, 
@@ -147,6 +150,7 @@ callback_1394Camera(raw1394_handle* handle,nodeid_t node_id,
   
     addr=ADDR_UNIT_DIRECTORY_OFFSET;   /* addr<=RootDirectory の先頭 */
     
+    WAIT;    
     /* RootDirectory.unit_directory_offset の取得 */
     TRY( raw1394_read(handle, node_id,
 		      addr,sizeof(tmp),&tmp));
@@ -156,6 +160,7 @@ callback_1394Camera(raw1394_handle* handle,nodeid_t node_id,
     }
     addr+=(tmp&~0xff000000)*4;        /* addr <= Unit directory の先頭 */
     
+    WAIT;    
     /* Unit Directory.unit_dependent_directory_offset の取得 */
     addr+=OFFSET_UNIT_DEPENDENT_DIRECTORY_OFFSET;
     TRY( raw1394_read(handle, node_id,
@@ -166,6 +171,7 @@ callback_1394Camera(raw1394_handle* handle,nodeid_t node_id,
     }
     addr+=(tmp&~0xff000000)*4;        /* addr <= Unit directory の先頭 */
     
+    WAIT;    
     /* Unit Dependent Directory.command_regs_base の取得 */
     addr+=OFFSET_COMMAND_REGS_BASE;
     TRY( raw1394_read(handle, node_id,
@@ -274,46 +280,54 @@ GetCameraList(raw1394handle_t handle,CCameraList* pList)
   printf("  nodes on bus: %2d, card name: %s\n", portinfo[i].nodes,
   portinfo[i].name);
   }
+  printf("using first card found: %d nodes on bus, local ID is %d\n",
+  raw1394_get_nodecount(handle),
+  raw1394_get_local_id(handle) & 0x3f);
 */      
-    if (raw1394_set_port(handle, 0) < 0) {
-	perror("couldn't set port");
-	return false;
+    int i;
+    for (i = 0; i< numcards; i++) {
+	if (raw1394_set_port(handle, i) < 0) {
+	    perror("couldn't set port");
+	    return false;
+	}
+	Enum1394Node(handle,&portinfo[i],
+		     pList,callback_1394Camera,NULL);
     }
-
-    
-/*  printf("using first card found: %d nodes on bus, local ID is %d\n",
-    raw1394_get_nodecount(handle),
-    raw1394_get_local_id(handle) & 0x3f);
-
-*/
-    Enum1394Node(handle,&portinfo[0],
-		 pList,callback_1394Camera,NULL);
-
     return true;
 }
 
 // ------------------------------------------------------------
 
+/** 
+ * read the register
+ * 
+ * @param addr 
+ * @param value 
+ * 
+ * @return 
+ */
 bool C1394CameraNode::ReadReg(nodeaddr_t addr,quadlet_t* value)
 {
-  *value=0x12345678;
-  TRY(raw1394_read(m_handle, m_node_id,
-		   addr, 4,
-		   value));
-      
-  *value=(quadlet_t)ntohl((unsigned long int)*value);
-
-  return true;
+    WAIT;
+    *value=0x12345678;
+    TRY(raw1394_read(m_handle, m_node_id, addr, 4, value));
+    *value=(quadlet_t)ntohl((unsigned long int)*value);    
+    return true;
 }
+/** 
+ * write the register
+ * 
+ * @param addr 
+ * @param value 
+ * 
+ * @return 
+ */
 bool C1394CameraNode::WriteReg(nodeaddr_t addr,quadlet_t* value)
 {
-  quadlet_t tmp=htonl(*value);
-    
-  TRY(raw1394_write(m_handle, m_node_id,
-		    addr,4, 
-		    &tmp));
-  
-  return true;
+    quadlet_t tmp=htonl(*value);
+    WAIT;
+    TRY(raw1394_write(m_handle, m_node_id, addr, 4, &tmp));
+    return true;
 }
 
 
@@ -810,12 +824,55 @@ C1394CameraNode::QueryFormat(FORMAT*    fmt,
 {
     quadlet_t tmp;
 
+    WriteReg(Addr(INITIALIZE),&tmp);
+    
+    tmp=0;
+    WriteReg(Addr(Cur_V_Mode),&tmp);
+
+    tmp=SetParam(Cur_V_Format,,7);
+    WriteReg(Addr(Cur_V_Format),&tmp);
+
+
+//     tmp=SetParam(IMAGE_SIZE,Width,320);
+//     tmp=SetParam(IMAGE_SIZE,Height,240);
+//     WriteReg(CSR_REGISTER_BASE + 0x80400*4 + OFFSET_IMAGE_SIZE,&tmp);
+
+//     tmp=SetParam(IMAGE_POSITION,Left,0);
+//     tmp=SetParam(IMAGE_POSITION,Top,0);
+//     WriteReg(CSR_REGISTER_BASE + 0x80400*4 + OFFSET_IMAGE_POSITION,&tmp);
+
+    tmp = SetParam( COLOR_CODING_ID, Coding_ID, 2);
+    WriteReg( CSR_REGISTER_BASE + 0x80400*4 + OFFSET_COLOR_CODING_ID, &tmp);
+
+    WriteReg( CSR_REGISTER_BASE + 0x80400*4 + OFFSET_VALUE_SETTING, & tmp);
     tmp = 0;
     ReadReg(Addr(V_FORMAT_INQ),&tmp);
     cout <<"V_FORMAT_INQ:"<<hex<<tmp<<dec<<endl;
 
-    ReadReg(Addr(V_MODE_INQ_0),&tmp);
-    cout <<"V_MODE_INQ_0:"<<hex<<tmp<<dec<<endl;
+    ReadReg(Addr(V_MODE_INQ_7),&tmp);
+    cout <<"V_MODE_INQ_7:"<<hex<<tmp<<dec<<endl;
+
+    for (int i=0;i<32;i++){
+	ReadReg(Addr(V_CSR_INQ_7_0)+i*4,&tmp);
+	cout <<i <<" "<<hex<<tmp<<dec<<endl;
+    }
+    
+    for (int i=0;i<=0x7C;i+=4){	
+	WAIT;
+	ReadReg(CSR_REGISTER_BASE + 0x80400*4 + i,&tmp);
+	WAIT;
+	cout << hex << i<<" : "<<tmp<<dec<<endl;
+    }
+
+    ReadReg(Addr(BASIC_FUNC_INQ),&tmp);
+    cout <<"BASIC_FUNC_INQ:"<<hex<<tmp<<dec<<endl;
+
+
+    ReadReg(Addr(Feature_Hi_Inq),&tmp);
+    cout <<"Feature_Hi_Inq:"<<hex<<tmp<<dec<<endl;
+    ReadReg(Addr(Feature_Lo_Inq),&tmp);
+    cout <<"Feature_Lo_Inq:"<<hex<<tmp<<dec<<endl;
+    
 
     if (fmt){
 	ReadReg(Addr(Cur_V_Format),&tmp);
@@ -1003,15 +1060,11 @@ C1394CameraNode:: SetTriggerOn()
 {
     quadlet_t tmp;
 
-    ReadReg(
-	Addr(TRIGGER_INQ),
-	&tmp);  
+    ReadReg(Addr(TRIGGER_INQ),	&tmp);  
     
 
 
-    ReadReg(
-	Addr(TRIGGER_MODE),
-	&tmp);  
+    ReadReg(Addr(TRIGGER_MODE), &tmp);  
     
 
     LOG(" SetTriggerOn"<<tmp);
@@ -1467,10 +1520,14 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
     }
 //    SPD spd=::GetRequiredSpeed(fmt,mode,rate);
 
-
     m_packet_sz  = ::GetPacketSize(fmt,mode,rate);
     m_packet_sz += 8;
     m_num_packet = ::GetNumPackets(fmt,mode,rate);
+    
+    if ( m_num_packet < 0 ){
+	cerr << "packet size is too big"<<endl;
+	return -2;
+    }
 
     fd=open("/dev/isofb0", O_RDWR);
     if (-1==fd){
@@ -1488,7 +1545,6 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
     rxparam.wait           = 1;
     rxparam.sync           = 1;
     rxparam.channelNum     = channel ;
-
 
     TRY( ioctl(fd, IOCTL_CREATE_RXBUF, &rxparam) );
 
