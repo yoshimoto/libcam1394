@@ -2,8 +2,8 @@
   @file  yuv2rgb.cc
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv2rgb.cc,v 1.4 2002-02-15 19:56:22 yosimoto Exp $
-  @date    $Date: 2002-02-15 19:56:22 $
+  @version $Id: yuv2rgb.cc,v 1.5 2002-02-15 20:01:01 yosimoto Exp $
+  @date    $Date: 2002-02-15 20:01:01 $
  */
 
 #include "config.h"
@@ -244,14 +244,14 @@ copy_YUV422toIplImage(IplImage* img, const void *lpYUV422,
 	    Y=*p++;
 	    v=*p++;
 	    conv_YUVtoRGB(r,g,b,Y,u,v);
-	    *dst++=r;
-	    *dst++=g;
 	    *dst++=b;
+	    *dst++=g;
+	    *dst++=r;
 	    Y=*p++;
 	    conv_YUVtoRGB(r,g,b,Y,u,v);
-	    *dst++=r;
-	    *dst++=g;
 	    *dst++=b;
+	    *dst++=g;
+	    *dst++=r;
 	} //     for (i=0;i<packet_sz/4;i++){
 	if (flag&REMOVE_HEADER)
 	    p+=4*2;
@@ -286,25 +286,25 @@ copy_YUV411toIplImage(IplImage* img, const void *lpYUV411,
 	    Y=*p++;
 	    v=p[1]; // read v(K+0)      
 	    conv_YUVtoRGB(r,g,b,Y,u,v); // Y(K+0)
-	    *dst++=r;
-	    *dst++=g;
 	    *dst++=b;
+	    *dst++=g;
+	    *dst++=r;
 	    Y=*p++;
 	    conv_YUVtoRGB(r,g,b,Y,u,v); // Y(K+1)
-	    *dst++=r;
-	    *dst++=g;
 	    *dst++=b;
+	    *dst++=g;
+	    *dst++=r;
 	    p++;  // skip v(K+0)
 	    Y=*p++;
 	    conv_YUVtoRGB(r,g,b,Y,u,v); // Y(K+2)
-	    *dst++=r;
-	    *dst++=g;
 	    *dst++=b;
+	    *dst++=g;
+	    *dst++=r;
 	    Y=*p++;
 	    conv_YUVtoRGB(r,g,b,Y,u,v); // Y(K+3)
-	    *dst++=r;
-	    *dst++=g;
 	    *dst++=b;
+	    *dst++=g;
+	    *dst++=r;
 	}
 	if (flag&REMOVE_HEADER)
 	    p+=4*2;
