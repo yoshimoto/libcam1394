@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.8 2002-07-22 18:51:31 yosimoto Exp $
-  @date    $Date: 2002-07-22 18:51:31 $
+  @version $Id: cam1394.cc,v 1.9 2002-07-22 19:26:39 yosimoto Exp $
+  @date    $Date: 2002-07-22 19:26:39 $
  */
 #include <stdio.h>
 #include <unistd.h>
@@ -195,11 +195,11 @@ int display_live_image_on_X(C1394CameraNode &cam)
 
 int main(int argc, char *argv[]){
 
-    poptContext optCon;   /* context for parsing command-line options */
-    char c;             /* for parse options */
+    poptContext optCon;  /* context for parsing command-line options */
+    char c;              /* for parse options */
     int channel=-1;      /* iso channel */
-    int card_no=0;      /* oh1394 interface number */
-    int spd=2;          /* bus speed 0=100M 1=200M 2=400M */
+    int card_no=0;       /* oh1394 interface number */
+    int spd=2;           /* bus speed 0=100M 1=200M 2=400M */
 
     const char *target_cameras=NULL; /* target camera(s) */
     const char *save_filename =NULL;
@@ -208,6 +208,8 @@ int main(int argc, char *argv[]){
     const char *cp[END_OF_FEATURE]; /* camera's parameter. 
 				       "NULL"  means the value isn't set. */
 
+    memset(cp, 0, sizeof(cp));
+
     FORMAT    cp_format = Format_X;
     VMODE     cp_mode   = Mode_X;
     FRAMERATE cp_rate   = FrameRate_X;
@@ -215,17 +217,17 @@ int main(int argc, char *argv[]){
 //  int r_value=-1;   /* white balance param */
 //  int b_value=-1;
   
-    int  do_list=-1;
-    int  do_info=-1;
-    int  do_disp=-1;
+    int  do_list    =-1;
+    int  do_info    =-1;
+    int  do_disp    =-1;
     int  do_save_bin=-1;
     int  do_save_ppm=-1;
-    int  do_oneshot=-1;
-
-    int do_start=-1;
-    int do_stop=-1;
+    int  do_oneshot =-1;
+    int  do_start   =-1;
+    int  do_stop    =-1;
 
     bool is_all=false; // if target cameras are all camera, then set true
+
 
     struct poptOption control_optionsTable[] = {
 	{ "start", 'S',  POPT_ARG_NONE, &do_start, 'S',
@@ -271,38 +273,38 @@ int main(int argc, char *argv[]){
 
     struct poptOption quality_optionsTable[] = {
 	{ "brightness", '\0', POPT_ARG_STRING, &cp[BRIGHTNESS], 0,
-	  "brightness", "{BRIGHTNESS|off|auto|one_push}" } ,
+	  "brightness", "{BRIGHTNESS|off|manual|auto|one_push}" } ,
 	{ "auto_exposure", '\0', POPT_ARG_STRING, &cp[AUTO_EXPOSURE], 0,
-	  "auto exposure", "{AUTO_EXPOSURE|off|auto|one_push}" } ,
+	  "auto exposure", "{AUTO_EXPOSURE|off|manual|auto|one_push}" } ,
 	{ "sharpness", '\0', POPT_ARG_STRING, &cp[SHARPNESS], 0,
-	  "sharpness", "{SHARPNESS|off|auto|one_push}" } ,
+	  "sharpness", "{SHARPNESS|off|manual|auto|one_push}" } ,
 	{ "white_balance", '\0', POPT_ARG_STRING, &cp[WHITE_BALANCE], 0,
-	  "white balance", "{WHITE_BALANCE|off|auto|one_push}" } ,
+	  "white balance", "{WHITE_BALANCE|off|manual|auto|one_push}" } ,
 	{ "hue", '\0', POPT_ARG_STRING, &cp[HUE], 0,
-	  "hue", "{HUE|off|auto|one_push}" } ,
+	  "hue", "{HUE|off|manual|auto|one_push}" } ,
 	{ "saturation", '\0', POPT_ARG_STRING, &cp[SATURATION], 0,
-	  "saturation", "{SATURATION|off|auto|one_push}" } ,
+	  "saturation", "{SATURATION|off|manual|auto|one_push}" } ,
 	{ "gamma", '\0', POPT_ARG_STRING, &cp[GAMMA], 0,
-	  "gamma", "{GAMMA|off|auto|one_push}" } ,
+	  "gamma", "{GAMMA|off|manual|auto|one_push}" } ,
 	{ "shutter", '\0', POPT_ARG_STRING, &cp[SHUTTER], 0,
-	  "shutter", "{SHUTTER|off|auto|one_push}" } ,
+	  "shutter", "{SHUTTER|off|manual|auto|one_push}" } ,
 	{ "gain", '\0', POPT_ARG_STRING, &cp[GAIN], 0,
-	  "gain", "{GAIN|off|auto|one_push}" } ,
+	  "gain", "{GAIN|off|manual|auto|one_push}" } ,
 	{ "iris", '\0', POPT_ARG_STRING, &cp[IRIS], 0,
-	  "iris", "{IRIS|off|auto|one_push}" } ,
+	  "iris", "{IRIS|off|manual|auto|one_push}" } ,
 	{ "focus", '\0', POPT_ARG_STRING, &cp[FOCUS], 0,
-	  "focus", "{FOCUS|off|auto|one_push}" } ,
+	  "focus", "{FOCUS|off|manual|auto|one_push}" } ,
 	{ "temperature", '\0', POPT_ARG_STRING, &cp[TEMPERATURE], 0,
-	  "temperature", "{TEMPERATURE|off|auto|one_push}" } ,
+	  "temperature", "{TEMPERATURE|off|manual|auto|one_push}" } ,
 	{ "trigger", '\0', POPT_ARG_STRING, &cp[TRIGGER], 0,
-	  "trigger", "{TRIGGER|off|auto|one_push}" } ,
+	  "trigger", "{TRIGGER|off|manual|auto|one_push}" } ,
 
 	{ "zoom", '\0', POPT_ARG_STRING, &cp[ZOOM], 0,
-	  "zoom", "{ZOOM|off|auto|one_push}" } ,
+	  "zoom", "{ZOOM|off|manual|auto|one_push}" } ,
 	{ "pan", '\0', POPT_ARG_STRING, &cp[PAN], 0,
-	  "pan",  "{PAN|off|auto|one_push}" } ,
+	  "pan",  "{PAN|off|manual|auto|one_push}" } ,
 	{ "tilt", '\0', POPT_ARG_STRING, &cp[TILT], 0,
-	  "tilt", "{TILT|off|auto|one_push}" } ,
+	  "tilt", "{TILT|off|manual|auto|one_push}" } ,
 
 	{ NULL, 0, 0, NULL, 0 }
     };
@@ -355,6 +357,7 @@ int main(int argc, char *argv[]){
     target_cameras = poptGetArg(optCon);
     poptFreeContext(optCon);
   
+    // *** initialize 1394 port
 
     // get handle 
     raw1394handle_t handle;
@@ -368,18 +371,16 @@ int main(int argc, char *argv[]){
 	return -3;
     }
 
-    // list up  all cameras on the bus 
-    //
+    // *** list up  all cameras on the bus 
+
     CCameraList CameraList;
     if (! GetCameraList(handle,&CameraList) ){
 	ERR(" there's no camera.");
 	return -1;
     }
 
+    //  *** select an camera if camera_id is specified.
     CCameraList TargetList;
-  
-    // select an camera if camera_id is specified.
-    //
     if ( target_cameras == NULL ){
 	CCameraList::iterator cam=CameraList.begin();
 	if (cam==CameraList.end()){
@@ -408,27 +409,25 @@ int main(int argc, char *argv[]){
     }
 
 
-    CCameraList::iterator cam;
-    //
     // set camera register for each feature.
     //
+    CCameraList::iterator cam;
     for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++){
 	C1394CAMERA_FEATURE feat;
-	for (feat=BRIGHTNESS;feat<=END_OF_FEATURE;
+	for (feat=BRIGHTNESS;feat<END_OF_FEATURE;
 	     feat=(C1394CAMERA_FEATURE)((int)feat+1)){
-	      
-//    LOG(cam->GetFeatureName(feat)<<" "<<cp[feat]);
-	      
+	    
+            //    LOG(cam->GetFeatureName(feat)<<" "<<cp[feat]);
 	    if (!cp[feat])
 		continue;
-
+	    
 	    if (!strcasecmp("off",cp[feat])){
 		LOG("off "<<cam->GetFeatureName(feat)<<" feat ");
 		cam->DisableFeature(feat);
 	    } else if (!strcasecmp("on",cp[feat])){
 		cam->EnableFeature(feat);
-//    } else if (!strcasecmp("manual",cp[feat])){
-//      cam->AutoModeOff(feat);
+	    } else if (!strcasecmp("manual",cp[feat])){
+		cam->AutoModeOff(feat);
 	    } else if (!strcasecmp("auto",cp[feat])) {
 		LOG("set "<<cam->GetFeatureName(feat)<<" auto mode");
 		cam->AutoModeOn(feat);
