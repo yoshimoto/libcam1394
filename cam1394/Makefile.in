@@ -79,13 +79,13 @@ lt_revision = @lt_revision@
 
 bin_PROGRAMS = cam1394 cam1394_save
 
-cam1394_SOURCES = cam1394.cc common.h xview.h
-cam1394_LDADD = ../src/libcam1394.la ../src/libxview.a
-cam1394_LDFLAGS = @LIBRAW1394_LIBS@ @X_LIBS@ -lX11 
+cam1394_SOURCES = cam1394.cc mmx_bgs.s common.h xview.cc xview.h
+cam1394_LDADD = ../src/libcam1394.la
+cam1394_LDFLAGS = @LIBRAW1394_LIBS@ @X_LIBS@ -lX11
 
-cam1394_save_SOURCES = cam1394_save.cc common.h xview.h
-cam1394_save_LDADD = ../src/libcam1394.la ../src/libxview.a
-cam1394_save_LDFLAGS = @LIBRAW1394_LIBS@ @X_LIBS@ -lX11 
+cam1394_save_SOURCES = cam1394_save.cc common.h xview.cc xview.h
+cam1394_save_LDADD = ../src/libcam1394.la
+cam1394_save_LDFLAGS = @LIBRAW1394_LIBS@ @X_LIBS@ -lX11
 
 CXXFLAGS = @LIBRAW1394_CPPFLAGS@
 INCLUDES = -I../src
@@ -103,10 +103,10 @@ X_CFLAGS = @X_CFLAGS@
 X_LIBS = @X_LIBS@
 X_EXTRA_LIBS = @X_EXTRA_LIBS@
 X_PRE_LIBS = @X_PRE_LIBS@
-cam1394_OBJECTS =  cam1394.o
-cam1394_DEPENDENCIES =  ../src/libcam1394.la ../src/libxview.a
-cam1394_save_OBJECTS =  cam1394_save.o
-cam1394_save_DEPENDENCIES =  ../src/libcam1394.la ../src/libxview.a
+cam1394_OBJECTS =  cam1394.o mmx_bgs.o xview.o
+cam1394_DEPENDENCIES =  ../src/libcam1394.la
+cam1394_save_OBJECTS =  cam1394_save.o xview.o
+cam1394_save_DEPENDENCIES =  ../src/libcam1394.la
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -123,7 +123,8 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = gtar
 GZIP_ENV = --best
-DEP_FILES =  .deps/cam1394.P .deps/cam1394_save.P
+DEP_FILES =  .deps/cam1394.P .deps/cam1394_save.P .deps/mmx_bgs.P \
+.deps/xview.P
 SOURCES = $(cam1394_SOURCES) $(cam1394_save_SOURCES)
 OBJECTS = $(cam1394_OBJECTS) $(cam1394_save_OBJECTS)
 

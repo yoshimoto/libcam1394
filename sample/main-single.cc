@@ -3,9 +3,8 @@
  *
  * By Hiromasa Yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp>
 
-// Thu Mar 15 17:53:25 2001  YOSHIMOTO Hiromasa 
-// Sun Sep 23 18:10:50 2001  YOSHIMOTO Hiromasa 
-// Wed Oct 24 00:12:50 2001  YOSHIMOTO Hiromasa 
+// Thu Mar 15 17:53:25 2001  YOSHIMOTO Hiromasa 1st
+// Mon Dec 10 21:19:32 2001  YOSHIMOTO Hiromasa 
  */
 #include <stdio.h>
 #include <unistd.h>
@@ -99,11 +98,11 @@ main(int argc, char **argv)
 #endif
 
   /* make a Window */
-  char tmp[256];
-  sprintf(tmp,"-- Live image from #%5d/ %2dch --",
+  char title[256];
+  sprintf(title,"-- Live image from #%5d/ %2dch --",
 	  (int)MAKE_CAMERA_ID(camera->m_ChipID),channel );
   CXview xview;
-  if (!xview.CreateWindow(W,H,tmp)){
+  if (!xview.CreateWindow(W,H,title)){
     cerr << " failure @ create X window" << endl;
     return -1;
   }

@@ -119,11 +119,11 @@ main(int argc, char **argv)
     camera[i]->AllocateFrameBuffer();
 
     /* make a Window */
-    char tmp[256];
-    sprintf(tmp,"-- Live image from #%5d/ %2dch --",
+    char title[256];
+    sprintf(title,"-- Live image from #%5d/ %2dch --",
 	    (int)MAKE_CAMERA_ID(camera[i]->m_ChipID),cinfo[i].channel );
-
-    if (!xview[i].CreateWindow(W,H,tmp)){
+    
+    if (!xview[i].CreateWindow(W,H,title)){
       cerr<<" failure @ create X window"<<endl;
       return -1;
     }
