@@ -1,5 +1,5 @@
 /**
-   @file   $Id: xview.cpp,v 1.3 2003-01-09 15:17:23 yosimoto Exp $
+   @file   $Id: xview.cpp,v 1.4 2004-09-15 09:24:22 yosimoto Exp $
    @author YOSHIMOTO Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
    @date   Sat Aug 31 03:58:46 2002
    @brief    
@@ -47,6 +47,7 @@ void CXview::calc_pixel_param(UINT *wait,UINT *shift,UINT mask)
 */
 bool CXview::CreateWindow(int w,int h,const char* strCaption)
 {
+    unsigned int border_width = 1;
     width =w;
     height=h;
 
@@ -60,14 +61,19 @@ bool CXview::CreateWindow(int w,int h,const char* strCaption)
 				       DefaultRootWindow(display), 
 				       0, 0, 
 				       width, height, 
-				       0,1,
-				       0);
-  
-  
-    long event_mask = ExposureMask | KeyPressMask | ButtonPressMask;
-    XSelectInput (display, view_window, event_mask);
-    XMapWindow (display, view_window); 
+				       border_width,
+				       1, 0);
+    
+    // long event_mask = ExposureMask | KeyPressMask | ButtonPressMask;
+    // XSelectInput (display, view_window, event_mask);
+
+    // set title bar string.
     XStoreName (display, view_window, strCaption); 
+    // set icon name.
+    XSetIconName (display, view_window, strCaption);
+
+    // show window
+    XMapWindow (display, view_window); 
 
     // create GC.
     XGCValues values;
@@ -78,10 +84,10 @@ bool CXview::CreateWindow(int w,int h,const char* strCaption)
 		    &values);
   
     // set a window's WM_HINTS property 
-    XWMHints wmhints;
-    wmhints.input = True; 
-    wmhints.flags = InputHint;
-    XSetWMHints(display,view_window,&wmhints);
+    //XWMHints wmhints;
+    //wmhints.input = True; 
+    //wmhints.flags = InputHint;
+    //XSetWMHints(display,view_window,&wmhints);
 
     // 
     int depth= DefaultDepth(display,DefaultScreen(display));
@@ -125,7 +131,7 @@ bool CXview::CreateWindow(int w,int h,const char* strCaption)
     }
     image->byte_order=LSBFirst;
   
-
+    XFlush(display);
     XSync(display,False);
      
     return true;
