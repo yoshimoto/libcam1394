@@ -1,4 +1,4 @@
-# $Id: configure.in,v 1.15 2002-11-28 13:26:12 yosimoto Exp $
+# $Id: configure.in,v 1.16 2002-11-28 13:55:21 yosimoto Exp $
 
 
 AC_INIT(Makefile.am)
@@ -10,7 +10,6 @@ AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
-AC_LANG_CPLUSPLUS
 
 AC_PATH_XTRA 
 AC_HEADER_STDC
@@ -24,6 +23,7 @@ if test "$ac_libraw1394_found" != "yes"; then
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.
+AC_LANG_CPLUSPLUS
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
