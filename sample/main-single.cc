@@ -35,10 +35,17 @@
    実際に使用する1394カメラの仕様書等で確認してください。*/
 
 /* カメラを320x240(YUV422)@30fps に設定する場合 */
-const int W=320;
+/*const int W=320;
 const int H=240;
 const int format=0; 
 const int mode=1;    
+const int frame_rate=4;
+*/
+
+const int W=640;
+const int H=480;
+const int format=0; 
+const int mode=3;    
 const int frame_rate=4;
 
 /* カメラのIDなど */
