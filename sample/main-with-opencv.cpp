@@ -1,9 +1,9 @@
 /*!
   @file    main-with-opencv.cpp
   @brief   sample code ( with OpenCV )
-  @version $Id: main-with-opencv.cpp,v 1.4 2003-01-09 15:17:23 yosimoto Exp $
+  @version $Id: main-with-opencv.cpp,v 1.5 2003-01-27 18:21:11 yosimoto Exp $
   @author  $Author: yosimoto $
-  @date    $Date: 2003-01-09 15:17:23 $
+  @date    $Date: 2003-01-27 18:21:11 $
  */
 
 
@@ -64,8 +64,8 @@ main(int argc, char **argv)
      camera->AllocateFrameBuffer();
      
      /* make a buffer and window */
-     cvvInitSystem(argc, argv);
-     cvvNamedWindow( "win", 0 );
+     cvInitSystem(argc, argv);
+     cvNamedWindow( "win", 0 );
      
      CvSize sz={camera->GetImageWidth(),
 		camera->GetImageHeight()};
@@ -83,7 +83,9 @@ main(int argc, char **argv)
 
 	  camera->CopyIplImage(image);
 	  
- 	  cvvShowImage("win", image);
+ 	  cvShowImage("win", image);
+
+	  cvWaitKey(33);
      }
 
      return 0;

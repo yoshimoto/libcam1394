@@ -1,5 +1,5 @@
 CPPFLAGS=-I/usr/local/include
-LDFLAGS+= -L/usr/X11R6/lib -lX11  -lpopt 
+LDFLAGS+=-L/usr/X11R6/lib -lX11  -lpopt 
 LDFLAGS+=-L/usr/local/lib -lraw1394 -lcam1394
 LDFLAGS+=-L/usr/local/lib -lopencv -lhighgui
 CPPFLAGS+=-g

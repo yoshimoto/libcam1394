@@ -2,7 +2,7 @@
   @file    1394cam.cc
   @brief   1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.15 2003-01-08 18:38:01 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.16 2003-01-27 18:21:10 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -30,9 +30,6 @@
 #include <popt.h>
 #include <libraw1394/raw1394.h>
 #include <libraw1394/csr.h>
-#include <iostream>
-#include <iomanip>
-#include <list>
 #include <linux/ohci1394_iso.h>
 
 #if defined HAVE_CV_H
@@ -54,14 +51,6 @@ using namespace std;
 
 #define Addr(name) (m_command_regs_base+OFFSET_##name)
 #define EQU(val,mask,pattern)  (0==(((val)&(mask))^(pattern)))
-
-//#define QUAD(h,l)  0x##h##l
-//#define HEX(var)     hex<<setw(8)<<var<<dec
-//#define VAR32(var)   #var" := 0x"<<HEX(var)
-//#define VAR(var)     #var" :="<<var
-//#define CHR(var)    CHR_( ((var)&0xff) )
-//#define CHR_(c)     ((0x20<=(c) && (c)<='z')?(char)(c):'.')
-
 
 #define ADDR_CONFIGURATION_ROM        (CSR_REGISTER_BASE + CSR_CONFIG_ROM)
 // for root directory
@@ -1485,12 +1474,13 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
 		       PROT_READ|PROT_WRITE,
 		       MAP_SHARED, 
 		       fd,0);
+    m_lpFrameBuffer=pMaped;
 
     TRY( ioctl(fd, IOCTL_START_RX) );
-  
+    
     m_Image_W=::GetImageWidth(fmt,mode);
     m_Image_H=::GetImageHeight(fmt,mode);
-  
+    
     m_BufferSize=m_packet_sz*m_num_packet;
     m_pixel_format=video_image_info[fmt][mode].pixel_format;
  

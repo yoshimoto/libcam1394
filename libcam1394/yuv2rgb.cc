@@ -2,7 +2,7 @@
   @file  yuv2rgb.cc
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv2rgb.cc,v 1.4 2003-01-08 18:38:01 yosimoto Exp $
+  @version $Id: yuv2rgb.cc,v 1.5 2003-01-27 18:21:11 yosimoto Exp $
  */
 
 #include "config.h"
@@ -257,7 +257,7 @@ copy_YUV422toIplImage(IplImage* img, const void *lpYUV422,
 		      int packet_sz,
 		      int num_packet, int flag)
 {
-    uchar *dst = (uchar*)img->imageData;
+    uchar *dst = (uchar*)(img->imageData);
     
     UCHAR *p=(UCHAR*)lpYUV422;
     int i;
