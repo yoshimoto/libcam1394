@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.13 2003-01-08 18:38:01 yosimoto Exp $
-  @date    $Date: 2003-01-08 18:38:01 $
+  @version $Id: cam1394.cc,v 1.14 2003-02-23 08:34:36 yosimoto Exp $
+  @date    $Date: 2003-02-23 08:34:36 $
  */
 #include "config.h"
 
@@ -220,7 +220,6 @@ int main(int argc, char *argv[]){
 //  int r_value=-1;   /* white balance param */
 //  int b_value=-1;
   
-    int  do_list    =-1;
     int  do_info    =-1;
     int  do_disp    =-1;
     int  do_save_bin=-1;
@@ -228,6 +227,7 @@ int main(int argc, char *argv[]){
     int  do_oneshot =-1;
     int  do_start   =-1;
     int  do_stop    =-1;
+    int  do_query   =-1;
 
     bool is_all=false; // if target cameras are all camera, then set true
 
@@ -245,10 +245,10 @@ int main(int argc, char *argv[]){
     };
 
     struct poptOption query_optionsTable[] = {
-	{ "list", 'L',  POPT_ARG_NONE, &do_list, 'L',
-	  " list up all cameras on the bus.", NULL } ,    
 	{ "info", 'I',  POPT_ARG_NONE, &do_info, 'I',
 	  " show infomation camera", NULL } ,   
+	{ "query", 'Q', POPT_ARG_NONE, &do_query, 'Q',
+	  " query setting", NULL},
 	{ NULL, 0, 0, NULL, 0 }
     };
 
@@ -411,6 +411,21 @@ int main(int argc, char *argv[]){
 	TargetList.push_back( *cam );
     }
 
+
+    if ( do_query != -1 ){
+	CCameraList::iterator cam;
+	for (cam=TargetList.begin(); cam!=TargetList.end(); cam++){
+	    C1394CAMERA_FEATURE feat;
+	    for (feat=BRIGHTNESS;feat<END_OF_FEATURE;
+		 feat=(C1394CAMERA_FEATURE)((int)feat+1)){
+		unsigned int value;
+		if ( cam->GetParameter(feat, &value) ){
+		cout << cam->GetFeatureName(feat) << " " <<
+		    value << endl;
+		}
+	    }
+	}
+    }
 
     // set camera register for each feature.
     //

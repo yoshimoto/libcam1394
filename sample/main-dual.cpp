@@ -37,7 +37,7 @@ bool use_auto_mode = false; // カメラパラメータを自動調整するならば true
 /* カメラの個別情報 */
 
 struct camera_info {
-     int id;
+     int64_t id;
      int channel;
      int buf_count;
 };
@@ -46,8 +46,8 @@ const int NUM_CAM=2;
 
 struct camera_info cinfo[NUM_CAM]={
      // {camera's ID, channel, number of buffer}
-     {165561, 4, 4},
-     {100692, 3, 4},
+     {MAKE_CHIP_ID(100692), 4, 4},
+     {MAKE_CHIP_ID(165561), 3, 4},
 };
 
 CCameraList::iterator camera[NUM_CAM];  
@@ -78,7 +78,7 @@ int main(int argc, char **argv)
      int i;
      for (i=0;i<NUM_CAM;i++){
 	  camera[i]=find_camera_by_id(CameraList,
-				      MAKE_CHIP_ID(cinfo[i].id) );
+				      cinfo[i].id );
 	  if (camera[i]==CameraList.end()){
 	       fprintf(stderr, "there's no camera which id is %ld\n",
 		       cinfo[i].id);
@@ -99,9 +99,13 @@ int main(int argc, char **argv)
 	       camera[i]->SetParameter(SATURATION,    0x80);
 	       // 0x82=liner
 	       camera[i]->SetParameter(GAMMA,         0x82);
-	       // shutter speed 1/30sec=0x800 1/20,000sec=0xa0d
-	       camera[i]->SetParameter(SHUTTER,       0x800); 
-	       camera[i]->SetParameter(GAIN,          0x02); // def=0x00
+	       // shutter speed is 
+	       // 1/30sec  2048
+	       // 1/50sec  2258 
+	       // 1/75sec  2363
+	       // 1/100sec 2416
+	       camera[i]->SetParameter(SHUTTER,       2258); 
+	       camera[i]->SetParameter(GAIN,          0x04); // def=0x00
 	  }
      }
 

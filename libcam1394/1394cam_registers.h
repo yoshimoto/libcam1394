@@ -2,7 +2,7 @@
   @file  1394cam_registers.h
   @brief 1394-based Digital Camera command registers
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam_registers.h,v 1.4 2002-03-16 16:26:19 yosimoto Exp $
+  @version $Id: 1394cam_registers.h,v 1.5 2003-02-23 08:34:36 yosimoto Exp $
  */
 
 #if !defined(_1394cam_registers_h_included_)
@@ -140,9 +140,10 @@ BitInfo(Advanced_Feature_Inq,Advanced_Feature_Quadlet_Offset,0,31)
 
 #define BitInfo_feature_element(name) \
 BitInfo(name,  Presence_Inq,           0, 0) \
+BitInfo(name,  Abs_Control_Inq,       1, 1) \
 BitInfo(name,  One_Push_Inq,          3, 3) \
 BitInfo(name,  ReadOut_Inq,           4, 4) \
-BitInfo(name,  On_Off_Inq,             5, 5) \
+BitInfo(name,  On_Off_Inq,            5, 5) \
 BitInfo(name,  Auto_Inq,              6, 6) \
 BitInfo(name,  Manual_Inq,            7, 7) \
 BitInfo(name,  MIN_Value,             8,19) \
