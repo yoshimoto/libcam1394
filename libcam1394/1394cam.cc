@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.24 2003-11-30 08:53:43 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.25 2003-12-02 15:34:31 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -982,8 +982,6 @@ C1394CameraNode::QueryFormat(FORMAT*    fmt,
 			     FRAMERATE* frame_rate)
 {
     quadlet_t tmp;
-
-    WriteReg(Addr(INITIALIZE),&tmp);
 
     if (fmt){
 	ReadReg(Addr(Cur_V_Format),&tmp);
