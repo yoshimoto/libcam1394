@@ -238,13 +238,41 @@ int parse_unit_directory(raw1394handle_t handle,
      return result;
 }
 
+int parse_bus_information_block(raw1394handle_t handle,
+			    nodeid_t nodeid, nodeaddr_t addr)
+{
+     LOG(setw(8)<<setfill('0')<<hex);
+     quadlet_t tmp;
+
+     try_raw1394_read(handle,nodeid, addr+0x00, sizeof(tmp), &tmp);
+     tmp = ntohl( tmp );
+     int bus_info_length = (tmp >> 24)*sizeof(quadlet_t);
+     LOG(" bus info length             : "<< setw(8) << bus_info_length);
+
+     try_raw1394_read(handle,nodeid, addr+0x04, sizeof(tmp), &tmp);
+     tmp = ntohl( tmp );
+     LOG(" bus name (=0x31333934)      : "<< setw(8) << tmp);
+     try_raw1394_read(handle,nodeid, addr+0x08, sizeof(tmp), &tmp);
+     tmp = ntohl( tmp );    
+     LOG(" bus-depended Information    : "<< setw(8) << tmp);
+     try_raw1394_read(handle,nodeid, addr+0x0c, sizeof(tmp), &tmp);
+     tmp = ntohl( tmp );     
+     LOG(" Extended Unique Identififer : "<< setw(8) << tmp);
+     try_raw1394_read(handle,nodeid, addr+0x10, sizeof(tmp), &tmp);
+     tmp = ntohl( tmp );
+     LOG(" Extended Unique Identififer : "<< setw(8) << tmp);
+     
+
+     return bus_info_length;
+}
 
 int parse_root_directory(raw1394handle_t handle,
 			 nodeid_t nodeid, nodeaddr_t addr)
 {
      LOG(setw(8)<<setfill('0')<<hex);
-
      quadlet_t tmp;
+
+ 
      try_raw1394_read(handle,nodeid, addr+0x0c, sizeof(tmp), &tmp);
      tmp = ntohl( tmp );
      quadlet_t node_vendor_id = tmp>>8;
@@ -332,8 +360,9 @@ int main()
 	  nodeid_t nodeid = 0xffc0 | i;
 
 	  LOG("node:" << setfill('0') << i);
-	  nodeaddr_t root_dir = ADDR_CONFIGURATION_ROM + 0x14;
-
+	  nodeaddr_t businfo_dir = ADDR_CONFIGURATION_ROM ;
+	  nodeaddr_t root_dir = businfo_dir + sizeof(quadlet_t);
+	  root_dir += parse_bus_information_block(handle, nodeid, businfo_dir);
 	  parse_root_directory(handle, nodeid, root_dir);
      }
 

@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.27 2003-12-19 12:40:25 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.28 2004-01-09 15:29:13 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -102,6 +102,19 @@ static const char *featurestate_table[]=
 };
 
 
+/**
+ * read  CSR space 
+ *
+ * @param  handle
+ * @param  nodeid
+ * @param  addr
+ * @param  len
+ * @param  buf
+ *
+ * @return 0 on success, otherwize -1.
+ *
+ * @sa IEEE1212
+ */
 static int 
 try_raw1394_read(raw1394handle_t handle, nodeid_t nodeid,
 			    nodeaddr_t addr, int len, quadlet_t *buf)
@@ -289,7 +302,7 @@ static int get_name_leaf(char *buf, int size,
  * @param addr_root 
  * @param len_root 
  * 
- * @return 
+ * @return  0 on success, otherwize -1.
  */
 static int
 get_vendor_and_chip_id(C1394CameraNode *pNode,
@@ -307,16 +320,47 @@ get_vendor_and_chip_id(C1394CameraNode *pNode,
 	return -1;
     
     quadlet_t tmp;
-    try_raw1394_read(handle,node_id, 
-		     addr_node_uniq_id_leaf + 4, sizeof(tmp), &tmp);
+    if (0!=try_raw1394_read(handle,node_id, 
+			    addr_node_uniq_id_leaf + 4, sizeof(tmp), &tmp))
+	return -1;
     tmp = ntohl( tmp );
     pNode->m_VenderID = tmp>>8;
     quadlet_t chip_id_hi = tmp&0xff;
-    try_raw1394_read(handle,node_id, addr_node_uniq_id_leaf + 8, 
-		     sizeof(tmp), &tmp);     
+    if (0!=try_raw1394_read(handle,node_id, addr_node_uniq_id_leaf + 8, 
+			    sizeof(tmp), &tmp))
+	return -1;
     tmp = ntohl( tmp );
-    pNode->m_ChipID   = (((uint64_t)chip_id_hi)<<32)+(uint64_t)tmp;
+    pNode->m_ChipID = (((uint64_t)chip_id_hi)<<32)+(uint64_t)tmp;
+    return 0;
+}
 
+/**
+ * returns euid (Extended Unique identifier) of the node.
+ *
+ * @param pNode
+ * @param  handle
+ * @param  node_id
+ *
+ * @return  0 on success,  otherwize -1.
+ */
+static int
+get_extended_unique_identifier(C1394CameraNode *pNode,
+			       raw1394handle_t handle, 
+			       nodeid_t node_id)
+{
+    quadlet_t tmp;
+
+    nodeaddr_t addr = ADDR_CONFIGURATION_ROM + 0x0c;
+    if (0!=try_raw1394_read(handle, node_id, addr, sizeof(tmp), &tmp))
+	return -1;    
+    tmp = ntohl( tmp );
+    pNode->m_VenderID = tmp >> 8;
+    quadlet_t chip_id_hi = tmp&0xff;
+    addr += sizeof(tmp);
+    if (0!=try_raw1394_read(handle, node_id, addr, sizeof(tmp), &tmp))
+	return -1;
+    tmp = ntohl( tmp );
+    pNode->m_ChipID = (((uint64_t)chip_id_hi)<<32)+(uint64_t)tmp;
     return 0;
 }
 
@@ -404,7 +448,17 @@ callback_1394Camera(raw1394handle_t handle, nodeid_t node_id,
     // search "unit_dependent_directory"
     pNode->m_VenderID = 0;
     pNode->m_ChipID = 0;
-    get_vendor_and_chip_id(pNode, handle, node_id, addr_root, len_root);
+    if (0!=get_vendor_and_chip_id(pNode, handle, node_id, 
+				  addr_root, len_root)){
+	// Because some camera such as ptgey's dragonfly  has no
+	// vendor_id leaf on its unit_dependent_directory,
+	// we'll try to use euid-64 alternatively.
+	if (0!=get_extended_unique_identifier(pNode, handle, node_id)){
+	    // Accroding to the IEEE1212 spec,
+	    // all of 1394 nodes shall contain euid-64 field,
+	    // so the get_extended_unique_identifier() will not failed.
+	}
+    }
     
     // store the infomation of this camera-device.
     pNode->m_handle  = handle;

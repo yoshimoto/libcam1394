@@ -12,14 +12,14 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include <libraw1394/raw1394.h>  /* libraw1394関連 */
-#include <linux/ohci1394_iso.h> /* ドライバとのインタフェイス関連 */
+#include <libraw1394/raw1394.h>  /* libraw1394  */
+#include <linux/ohci1394_iso.h> /* for original driver */
 #include <libcam1394/1394cam.h>
 #include <libcam1394/yuv.h>     /* for conversion yuv to rgb */
 
-#include "xview.h"              /* Xの表示オブジェクト*/
+#include "xview.h"    
 
-std::vector<CXview> xview;
+std::vector<CXview*> xview;
 
 int main(int argc, char **argv)
 {
@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 	       perror("couldn't get handle");
 	       printf("driver is not loaded");
 	  }
-	  return false;
+	  return -1;
      }
 
      /* list up  all cameras on bus */
@@ -62,13 +62,15 @@ int main(int argc, char **argv)
 	  char tmp[256];
 	  sprintf(tmp,"Live image from ch.#%d", channel );
 
-	  xview.reserve(channel+1);
-	  if (!xview[channel].CreateWindow(cam->GetImageWidth(),
-					   cam->GetImageHeight(), tmp))
+	  CXview *view = new CXview;
+	  if (!view->CreateWindow(cam->GetImageWidth(),
+				 cam->GetImageHeight(), tmp))
 	  {
-	       fprintf(stderr, " couldn't create X window.");
-	       return -1;
+	      fprintf(stderr, " couldn't create X window.");
+	      return -1;
 	  }	  
+
+	  xview.push_back( view );
 
 	  // increment channel. 
 	  channel++;
@@ -96,10 +98,10 @@ int main(int argc, char **argv)
 	  for (cam=CameraList.begin(); cam!=CameraList.end(); cam++){	
 	       cam->UpDateFrameBuffer();
 	       cam->CopyRGBAImage(image[n]);
-	       xview[n].UpDate(image[n]);
+	       xview[n]->UpDate(image[n]);
 	       n++;
 	  }
      }
 
-     exit(0);
+     return 0;
 } 
