@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.19 2004-06-12 04:37:06 yosimoto Exp $
-  @date    $Date: 2004-06-12 04:37:06 $
+  @version $Id: cam1394.cc,v 1.20 2004-06-12 04:58:38 yosimoto Exp $
+  @date    $Date: 2004-06-12 04:58:38 $
  */
 #include "config.h"
 
@@ -27,7 +27,6 @@
 
 #include <iostream>
 
-#include <linux/ohci1394_iso.h> /* ドライバとのインタフェイス関連 */
 #include <libcam1394/1394cam.h>
 #include <libcam1394/yuv.h>                /* 色変換 */
 #include "common.h"

@@ -23,7 +23,6 @@
 #include <libraw1394/raw1394.h> 
 #include <libraw1394/csr.h>
 
-#include <linux/ohci1394_iso.h> /* ドライバとのインタフェイス関連 */
 #include <libcam1394/1394cam.h>
 #include <libcam1394/yuv.h>                /* 色変換 */
 #include "common.h"
