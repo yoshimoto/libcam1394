@@ -1,9 +1,9 @@
 /*!
   @file    
   @brief   
-  @version $Id: main-with-opencv.cc,v 1.1 2002-02-15 19:50:24 yosimoto Exp $
+  @version $Id: main-with-opencv.cc,v 1.2 2002-02-15 20:15:04 yosimoto Exp $
   @author  $Author: yosimoto $
-  @date    $Date: 2002-02-15 19:50:24 $
+  @date    $Date: 2002-02-15 20:15:04 $
  */
 
 #include <cv.h>
@@ -61,23 +61,6 @@ main(int argc, char **argv)
      camera->SetFormat((FORMAT)format,(VMODE)mode,(FRAMERATE)frame_rate);
      camera->AllocateFrameBuffer();
 
-#if !0
-     camera->AutoModeOn_All();
-#else
-     camera->SetParameter(BRIGHTNESS,    0x80);
-     camera->SetParameter(AUTO_EXPOSURE, 0x80);
-     camera->SetParameter(SHARPNESS,     0x80);
-     // default 0x80080
-     camera->SetParameter(WHITE_BALANCE, (0x80<<12)|0xe0);
-     camera->SetParameter(HUE,           0x80);
-     camera->SetParameter(SATURATION,    0x80);
-     camera->SetParameter(GAMMA,         0x82); // 0x82=liner
-     // shutter speed 1/30sec=0x800 1/20,000sec=0xa0d
-     camera->SetParameter(SHUTTER,       0x800); 
-     camera->SetParameter(GAIN,          0x02); // def=0x00
-#endif
-
-
      /* make a buffer and window */
      cvvInitSystem(argc, argv);
      cvvNamedWindow( "win", 0 );
@@ -88,7 +71,6 @@ main(int argc, char **argv)
      /* create look-up table */
      ::CreateYUVtoRGBAMap();
      
-
      /* start */
      camera->StartIsoTx();
 
