@@ -1,4 +1,4 @@
-# $Id: configure.in,v 1.6 2002-03-15 20:45:13 yosimoto Exp $
+# $Id: configure.in,v 1.7 2002-03-15 21:08:30 yosimoto Exp $
 
 AC_INIT(Makefile.am)
 AM_INIT_AUTOMAKE(libcam1394, 0.1.1)
@@ -37,4 +37,4 @@ fi
 
 CXXFLAGS="$CXXFLAGS -Wall -Wunused"
 
-AC_OUTPUT([Makefile src/Makefile cam1394/Makefile])
+AC_OUTPUT([Makefile libcam1394/Makefile cam1394/Makefile])

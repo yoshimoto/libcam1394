@@ -24,8 +24,8 @@
 #include <libraw1394/csr.h>
 
 #include <linux/ohci1394_iso.h> /* ドライバとのインタフェイス関連 */
-#include "1394cam.h"
-#include "yuv.h"                /* 色変換 */
+#include <libcam1394/1394cam.h>
+#include <libcam1394/yuv.h>                /* 色変換 */
 #include "common.h"
 #include "xview.h"              /* Xの表示オブジェクト*/
 

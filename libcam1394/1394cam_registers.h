@@ -2,7 +2,7 @@
   @file  1394cam_registers.h
   @brief 1394-based Digital Camera command registers
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam_registers.h,v 1.1 2002-03-15 20:45:13 yosimoto Exp $
+  @version $Id: 1394cam_registers.h,v 1.2 2002-03-15 21:08:31 yosimoto Exp $
  */
 
 #if !defined(_1394cam_registers_h_included_)
@@ -220,7 +220,6 @@ BitInfo_ctrl_reg_for_feat(CAPTURE_QUALITY)
 #undef BitInfo_ctrl_reg_for_feat
 #undef RegInfo
 #undef BitInfo
-#undef CAT
 
 //---------------------------------------------------------------
 

@@ -2,7 +2,7 @@
   @file  xview.cc
   @brief 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: xview.cc,v 1.2 2002-02-12 14:41:02 yosimoto Exp $
+  @version $Id: xview.cc,v 1.3 2002-03-15 21:08:31 yosimoto Exp $
   @date
 */
 //
@@ -16,7 +16,7 @@ using namespace std;
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-#include "yuv.h"
+#include <libcam1394/yuv.h>
 #include "xview.h"
 
 #define ERR(msg) cerr<< msg <<endl

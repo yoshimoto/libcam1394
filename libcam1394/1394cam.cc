@@ -2,7 +2,7 @@
   @file  lz.h 
   @brief 1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.1 2002-03-15 20:45:13 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.2 2002-03-15 21:08:31 yosimoto Exp $
  */
 // Copyright (C) 1999-2002 by YOSHIMOTO Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp> 
 //
@@ -36,9 +36,9 @@ using namespace std;
 #include <ipl.h>
 #endif
 
-#include "common.h"
-#include "1394cam_registers.h"
-#include "1394cam.h"
+#include "./common.h"
+#include "./1394cam_registers.h"
+#include "./1394cam.h"
 
 
 #define QUAD(h,l)  0x##h##l
