@@ -1,5 +1,5 @@
 /*
- * $Id: main-dual.cpp,v 1.5 2003-03-13 11:27:10 yosimoto Exp $
+ * $Id: main-dual.cpp,v 1.6 2003-08-25 15:39:17 yosimoto Exp $
  * main-dual.cc - 1394カメラ2台利用サンプルプログラム
  *
  * By Hiromasa Yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp>
@@ -99,7 +99,7 @@ int main(int argc, char **argv)
 	       camera[i]->SetParameter(SATURATION,    0x80);
 	       // 0x82=liner
 	       camera[i]->SetParameter(GAMMA,         0x82);
-	       // shutter speed is 
+	       // shutter speed  
 	       // 1/30sec  2048
 	       // 1/50sec  2258 
 	       // 1/75sec  2363
@@ -119,8 +119,9 @@ int main(int argc, char **argv)
 	  
 	  /* make a Window */
 	  char tmp[256];
-	  sprintf(tmp,"-- Live image from #%5d/ %2dch --",
-		  (int)MAKE_CAMERA_ID(camera[i]->m_ChipID),cinfo[i].channel );
+	  sprintf(tmp,"-- Live image from #%llu/ %2dch --",
+		  MAKE_CAMERA_ID(camera[i]->m_ChipID),
+		  cinfo[i].channel );
 	  
 	  if (!xview[i].CreateWindow(camera[i]->GetImageWidth(),
 				     camera[i]->GetImageHeight(), tmp))
@@ -146,7 +147,7 @@ int main(int argc, char **argv)
      }
 
      while (1){
-	  /* UpDateFrameBuffer() は画像を一枚とりおえるまで
+	  /* UpDateFrameBuffer() は画像を一枚取り終えるまで
 	     return してきません。本来なら別スレッドとするべきですが
 	     このサンプルは何も考えず交互に表示を繰り返します。*/
 	  camera[0]->UpDateFrameBuffer();

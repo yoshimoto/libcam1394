@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.16 2003-08-22 01:54:02 yosimoto Exp $
-  @date    $Date: 2003-08-22 01:54:02 $
+  @version $Id: cam1394.cc,v 1.17 2003-08-25 15:39:16 yosimoto Exp $
+  @date    $Date: 2003-08-25 15:39:16 $
  */
 #include "config.h"
 
@@ -37,8 +37,8 @@
 using namespace std;
 
 #define DWFV500_MAGICNUMBER 8589965664ULL
-#define MAKE_CAMERA_ID(x) ((int64_t)(x)-DWFV500_MAGICNUMBER)
-#define MAKE_CHIP_ID(x)   ((int64_t)(x)+DWFV500_MAGICNUMBER)
+#define MAKE_CAMERA_ID(x) ((uint64_t)(x)-DWFV500_MAGICNUMBER)
+#define MAKE_CHIP_ID(x)   ((uint64_t)(x)+DWFV500_MAGICNUMBER)
 
 
 // const 
@@ -178,8 +178,8 @@ int display_live_image_on_X(C1394CameraNode &cam)
 
   /* make a Window */
   char tmp[256];
-  sprintf(tmp,"-- Live image from #%5d/ %2dch --",
-	  (int)MAKE_CAMERA_ID(cam.m_ChipID),channel );
+  snprintf(tmp,sizeof(tmp),"-- Live image from #%llu/ %2dch --",
+	   MAKE_CAMERA_ID(cam.m_ChipID), channel );
 
   CXview xview;
   if (!xview.CreateWindow(w,h,tmp)){
@@ -398,7 +398,7 @@ int main(int argc, char *argv[]){
 	TargetList = CameraList;
     } else {
 	char *end=NULL;
-	int camera_id=strtol(target_cameras, &end, 0);
+	uint64_t camera_id=strtoll(target_cameras, &end, 0);
 	if (*end!='\0'){
 	    ERR(" please set CAMERA_ID or all " << target_cameras );
 	    exit(-1);      
@@ -563,7 +563,7 @@ int main(int argc, char *argv[]){
 	
 	if (NULL==opt_filename)
 	    snprintf(fname,sizeof(fname),
-		     "%d_%%0d.yuv",MAKE_CAMERA_ID(cam->m_ChipID));
+		     "%llu_%%02d.yuv",MAKE_CAMERA_ID(cam->m_ChipID));
 	else
 	    snprintf(fname,sizeof(fname),
 		     opt_filename, MAKE_CAMERA_ID(cam->m_ChipID));
@@ -586,7 +586,7 @@ int main(int argc, char *argv[]){
 	    
 	    if (NULL==opt_filename)
 		snprintf(fname,sizeof(fname),
-			 "%0d.ppm",MAKE_CAMERA_ID(cam->m_ChipID));
+			 "%llu.ppm",MAKE_CAMERA_ID(cam->m_ChipID));
 	    else
 		snprintf(fname,sizeof(fname),
 			 opt_filename, MAKE_CAMERA_ID(cam->m_ChipID));

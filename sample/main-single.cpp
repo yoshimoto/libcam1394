@@ -1,5 +1,5 @@
 /*
- * $Id: main-single.cpp,v 1.5 2003-08-22 01:54:02 yosimoto Exp $
+ * $Id: main-single.cpp,v 1.6 2003-08-25 15:39:17 yosimoto Exp $
  * main-single.cc - 1394カメラ1台利用サンプルプログラム
  *
  * By Hiromasa Yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp>
@@ -111,7 +111,7 @@ main(int argc, char **argv)
 	  camera->UpDateFrameBuffer();
 	  camera->CopyRGBAImage(image);
 	  xview.UpDate(image);
-i     }
+     }
 
      return 0;
 }
