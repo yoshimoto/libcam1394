@@ -1,9 +1,37 @@
+---------------------------------------------
+  libcam1394 installation
+---------------------------------------------
+
+Installation 
+------------
+
 For installation you can use these commands:
 
 ./configure
 make
 make install
 
-If the configure script cannot find header file ohci_iso.h (usually in /usr/include/linux directory), please check if you have installed driver for for current version of your kernel. The driver is available at my web site, 
-http://limu.is.kyushu-u.ac.jp/~yosimoto/ieee1394/
+If the configure script cannot find header file ohci_iso.h (usually in
+/usr/include/linux directory), please check if you have installed
+driver for for current version of your kernel. The driver is available
+at my web site, http://limu.is.kyushu-u.ac.jp/~yosimoto/ieee1394/
+
+Note: If you change kernel sources frequently, please, check if you have
+      installed ieee1394 driver for current version of your kernel.
+
+
+Compilation of static library
+-----------------------------
+
+If you would like to use the static libcam1394 library, you need to
+use these options for the configure script:
+
+./configure --enable-shared=no --enable-static=yes
+
+Unfortunately, due to bug in the libtool script, the shared and static
+library cannot be built together.
+
+
+
+
 

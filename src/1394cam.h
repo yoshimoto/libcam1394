@@ -2,9 +2,9 @@
   @file  1394cam.h
   @brief 1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.h,v 1.3 2002-02-15 19:50:24 yosimoto Exp $
-  @date    $Date: 2002-02-15 19:50:24 $
+  @version $Id: 1394cam.h,v 1.4 2002-03-11 16:47:19 yosimoto Exp $
  */
+
 #if !defined(_1394cam_h_included_)
 #define _1394cam_h_included_
 
@@ -267,12 +267,12 @@ enum VMODE {
 };
 
 enum FRAMERATE {
-  FrameRate_0  =0x00,  /* 1.875fps */
-  FrameRate_1  =0x01,  /* 3.75fps  */
-  FrameRate_2  =0x02,  /* 7.5fps   */
-  FrameRate_3  =0x03,  /* 15fps    */
-  FrameRate_4  =0x04,  /* 30fps    */
-  FrameRate_5  =0x05,  /* 30fps    */
+    FrameRate_0  =0x00,  //!< 1.875fps 
+    FrameRate_1  =0x01,  //!< 3.75fps  
+    FrameRate_2  =0x02,  //!< 7.5fps   
+    FrameRate_3  =0x03,  //!< 15fps    
+    FrameRate_4  =0x04,  //!< 30fps    
+    FrameRate_5  =0x05,  //!< 60fps    
 
   FrameRate_X=-1,
 };
@@ -324,127 +324,127 @@ class C1394CameraNode : public C1394Node {
 //  typedef quadlet_t CAMERA_ID; // uniq id 
 //  CAMERA_ID m_CameraID;        // uniq id of camera
 private:
-  enum {
-    MAX_COUNT_NUMBER=0xffffffff,
-  };
+    enum {
+	MAX_COUNT_NUMBER=0xffffffff,
+    };
 protected:
-  unsigned is_format6:1;           // '1':format_6 /  '0':other format
+    unsigned is_format6:1;           // '1':format_6 /  '0':other format
 //  FORMAT m_Format;
 //  VMODE   m_mode;
 //  FRAMERATE m_rate;
-  int   m_channel;                 // -1 or "isochronus channel"
-  int   m_iso_speed;               // isochronus speed
+    int   m_channel;                 // -1 or "isochronus channel"
+    int   m_iso_speed;               // isochronus speed
 
-  char* m_lpModelName;             // camera name
-  char* m_lpVecderName;            // camera vender name
-  nodeaddr_t CMD(nodeaddr_t reg) ;
+    char* m_lpModelName;             // camera name
+    char* m_lpVecderName;            // camera vender name
+    nodeaddr_t CMD(nodeaddr_t reg) ;
 //  int On_BusReset();
 
 public:
 
-  raw1394handle_t m_handle;        // handle of 1394 I/F
-  nodeid_t m_node_id;              // node_id of this node
-  nodeaddr_t m_command_regs_base;  // base address of camera's cmd reg
+    raw1394handle_t m_handle;        // handle of 1394 I/F
+    nodeid_t m_node_id;              // node_id of this node
+    nodeaddr_t m_command_regs_base;  // base address of camera's cmd reg
 
-  int fd;
-  char *pMaped;
+    int fd;
+    char *pMaped;
 
-  C1394CameraNode();
-  virtual ~C1394CameraNode();
+    C1394CameraNode();
+    virtual ~C1394CameraNode();
   
-  char* GetModelName(char* lpBuffer,size_t* lpLength);
-  char* GetVenderName(char* lpBuffer,size_t* lpLength);
+    char* GetModelName(char* lpBuffer,size_t* lpLength);
+    char* GetVenderName(char* lpBuffer,size_t* lpLength);
 
-  bool ReadReg(nodeaddr_t addr,quadlet_t* value);
-  bool WriteReg(nodeaddr_t addr,quadlet_t* value);
+    bool ReadReg(nodeaddr_t addr,quadlet_t* value);
+    bool WriteReg(nodeaddr_t addr,quadlet_t* value);
 
-  bool ResetToInitialState();
-  bool PowerDown();
-  bool PowerUp();  
+    bool ResetToInitialState();
+    bool PowerDown();
+    bool PowerUp();  
 
-  bool SetParameter(C1394CAMERA_FEATURE feat, unsigned int value);
-  bool GetParameter(C1394CAMERA_FEATURE feat, unsigned int* value);
-  const char* GetFeatureName(C1394CAMERA_FEATURE feat);
+    bool SetParameter(C1394CAMERA_FEATURE feat, unsigned int value);
+    bool GetParameter(C1394CAMERA_FEATURE feat, unsigned int* value);
+    const char* GetFeatureName(C1394CAMERA_FEATURE feat);
 
-  // Thu Sep 27 08:26:16 2001  YOSHIMOTO Hiromasa add
-  bool HasFeature(C1394CAMERA_FEATURE feat);
-  bool EnableFeature(C1394CAMERA_FEATURE feat);
-  bool DisableFeature(C1394CAMERA_FEATURE feat);
-  bool AutoModeOn(C1394CAMERA_FEATURE feat);
-  bool AutoModeOff(C1394CAMERA_FEATURE feat);
-  bool OnePush(C1394CAMERA_FEATURE feat);
+    // Thu Sep 27 08:26:16 2001  YOSHIMOTO Hiromasa add
+    bool HasFeature(C1394CAMERA_FEATURE feat);
+    bool EnableFeature(C1394CAMERA_FEATURE feat);
+    bool DisableFeature(C1394CAMERA_FEATURE feat);
+    bool AutoModeOn(C1394CAMERA_FEATURE feat);
+    bool AutoModeOff(C1394CAMERA_FEATURE feat);
+    bool OnePush(C1394CAMERA_FEATURE feat);
 
-  bool PreSet_All(void);
-  bool AutoModeOn_All(void);
-  bool AutoModeOff_All(void);
-  bool OnePush_All(void);
+    bool PreSet_All(void);
+    bool AutoModeOn_All(void);
+    bool AutoModeOff_All(void);
+    bool OnePush_All(void);
 
-  bool SetTriggerOn();
-  bool SetTriggerOff();
+    bool SetTriggerOn();
+    bool SetTriggerOff();
 
-  bool  QueryInfo();
-  bool  QueryIsoChannel(int* channel);
-  bool  QueryIsoSpeed(SPD* iso_speed);
-  bool  QueryFormat(FORMAT* fmt,VMODE* mode, FRAMERATE* rate);
+    bool  QueryInfo();
+    bool  QueryIsoChannel(int* channel);
+    bool  QueryIsoSpeed(SPD* iso_speed);
+    bool  QueryFormat(FORMAT* fmt,VMODE* mode, FRAMERATE* rate);
 
-  bool  SetFormat(FORMAT  fmt,VMODE  mode, FRAMERATE  rate);
-  bool  SetIsoChannel(int  channel);
-  bool  SetIsoSpeed(SPD  iso_speed);
+    bool  SetFormat(FORMAT  fmt,VMODE  mode, FRAMERATE  rate);
+    bool  SetIsoChannel(int  channel);
+    bool  SetIsoSpeed(SPD  iso_speed);
 
-  bool  OneShot();
-  bool  StartIsoTx(unsigned int count_number =MAX_COUNT_NUMBER);
-  bool  StopIsoTx();
+    bool  OneShot();
+    bool  StartIsoTx(unsigned int count_number =MAX_COUNT_NUMBER);
+    bool  StopIsoTx();
   
-  int   GetChannel(){return m_channel;}
+    int   GetChannel(){return m_channel;}
 
 private:
-  PIXEL_FORMAT m_pixel_format;
-  int   m_BufferSize;
-  char*  m_lpFrameBuffer;     // point to frame buffer.
-  int  m_Image_W;
-  int  m_Image_H;
-  int  m_packet_sz;
-  int  m_num_packet;
+    PIXEL_FORMAT m_pixel_format;
+    int   m_BufferSize;
+    char*  m_lpFrameBuffer;     // point to frame buffer.
+    int  m_Image_W;
+    int  m_Image_H;
+    int  m_packet_sz;
+    int  m_num_packet;
   
-  bool  m_bIsInitalized;
+    bool  m_bIsInitalized;
 //  FrameBufferInfo m_BufInfo;
 public:
-  int m_last_read_frame;
-  enum BUFFER_OPTION {
-    BUFFER_DEFAULT    = 0 ,
-    LAST              ,   // read last  captured image.
-    AS_FIFO           ,   // read first captured image.   
-    WAIT_NEW_FRAME    ,   // block till new frame will be caputerd.
-  };
-  enum FILE_TYPE {
-    FILETYPE_PPM =0x000,  
-    FILETYPE_PNM =0x001,  
-    FILETYPE_PGM =0x002,  
-  };
+    int m_last_read_frame;
+    enum BUFFER_OPTION {
+	BUFFER_DEFAULT    = 0 ,
+	LAST              ,   // read last  captured image.
+	AS_FIFO           ,   // read first captured image.   
+	WAIT_NEW_FRAME    ,   // block till new frame will be caputerd.
+    };
+    enum FILE_TYPE {
+	FILETYPE_PPM =0x000,  
+	FILETYPE_PNM =0x001,  
+	FILETYPE_PGM =0x002,  
+    };
 public:
-  int  AllocateFrameBuffer(int       channel = -1         ,
-			   FORMAT    fmt     = Format_X   ,
-			   VMODE     mode    = Mode_X     ,
-			   FRAMERATE rate    = FrameRate_X);
+    int  AllocateFrameBuffer(int       channel = -1         ,
+			     FORMAT    fmt     = Format_X   ,
+			     VMODE     mode    = Mode_X     ,
+			     FRAMERATE rate    = FrameRate_X);
   
-  int    GetFrameCount(int*);
-  int    SetFrameCount(int);
-  void*  UpDateFrameBuffer(BUFFER_OPTION opt=BUFFER_DEFAULT,
-			   BufferInfo* info=0);
-  int    GetFrameBufferSize();
-  int    GetImageWidth();
-  int    GetImageHeight();
+    int    GetFrameCount(int*);
+    int    SetFrameCount(int);
+    void*  UpDateFrameBuffer(BUFFER_OPTION opt=BUFFER_DEFAULT,
+			     BufferInfo* info=0);
+    int    GetFrameBufferSize();
+    int    GetImageWidth();
+    int    GetImageHeight();
   
-  int    CopyRGBAImage(void* dest);
-  int    CopyIplImage(IplImage* dest);
+    int    CopyRGBAImage(void* dest);
+    int    CopyIplImage(IplImage* dest);
 
 //  int    WriteRGBAImage(int fd);
 //  int    WriteRawImage(int fd);
-  int    SaveToFile(char* filename,FILE_TYPE type=FILETYPE_PPM);  // save current frame
+    int    SaveToFile(char* filename,FILE_TYPE type=FILETYPE_PPM);  // save current frame
 
 protected:
-  int    AllocateBuffer();  // (re)allocate buffer for current-mode
-  int    ReleaseBuffer();
+    int    AllocateBuffer();  // (re)allocate buffer for current-mode
+    int    ReleaseBuffer();
 
 };
 
@@ -488,12 +488,12 @@ Enum1394Node(raw1394_handle* handle,
 		     T* pNode,void* arg),
 	     void* arg)
 {
-  T the_node;
-  int i;
-  for (i = 0; i < pPort->nodes; i++)
-    if ((*func)(handle, 0xffc0 | i,&the_node,arg))
-      pList->push_back(the_node);
-  return 0;
+    T the_node;
+    int i;
+    for (i = 0; i < pPort->nodes; i++)
+	if ((*func)(handle, 0xffc0 | i,&the_node,arg))
+	    pList->push_back(the_node);
+    return 0;
 }
 typedef list<C1394CameraNode> CCameraList;
 

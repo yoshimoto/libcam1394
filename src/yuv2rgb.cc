@@ -2,15 +2,14 @@
   @file  yuv2rgb.cc
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv2rgb.cc,v 1.5 2002-02-15 20:01:01 yosimoto Exp $
-  @date    $Date: 2002-02-15 20:01:01 $
+  @version $Id: yuv2rgb.cc,v 1.6 2002-03-11 16:47:20 yosimoto Exp $
  */
 
 #include "config.h"
 #include <stdio.h>
-#if defined USE_IPL
+#if defined HAVE_IPL_H
 #include <ipl.h>
-#endif // #if defined USE_IPL
+#endif
 
 #include "yuv.h"
 
@@ -20,214 +19,233 @@ typedef signed int FIX ; /*  32bit整数を固定小数点として利用しています */
 #define FLOAT2FIX(f)  (FIX)(f*(float)(1<<FIX_BASE))
 #define FIX2INT(F)    ((F)>>FIX_BASE)
 
-static  FIX table_y [256];  // Y
-static  FIX table_r [256];  // u
-static  FIX table_g0[256];  // u
-static  FIX table_g1[256];  // v
-static  FIX table_b [256];  // v
+static  FIX table_y [256];  //!< LUT for  Y component
+static  FIX table_r [256];  //!< LUT for  u component
+static  FIX table_g0[256];  //!< LUT for  u component
+static  FIX table_g1[256];  //!< LUT for  v component
+static  FIX table_b [256];  //!< LUT for  v component
 
-/* YUV->RGBA の積和計算のためのテーブルの計算
- * 最初に一度だけ呼び出す必要があります。
+/** 
+ * setup LUT for YUV to RGBA conversion.
+ * YOU MAST CALL THIS FUNCTION FIRST.
+ * 
+ * @return   0 success
  */
 int
 CreateYUVtoRGBAMap()
 {
-  int i;
-  for (i=0;i<256;i++){
-    UCHAR y,u,v;
-    y=u=v=i;
-    table_y [y]=FLOAT2FIX(1.164f*((y>16)?(y-16):0));
-    table_r [v]=FLOAT2FIX( 1.596f*(v-128));
-    table_g0[v]=FLOAT2FIX(-0.813f*(v-128));
-    table_g1[u]=FLOAT2FIX(-0.391f*(u-128));
-    table_b [u]=FLOAT2FIX( 2.018f*(u-128));
-  }
-  return 0;
+    int i;
+    for (i=0;i<256;i++){
+	UCHAR y,u,v;
+	y=u=v=i;
+	table_y [y]=FLOAT2FIX(1.164f*((y>16)?(y-16):0));
+	table_r [v]=FLOAT2FIX( 1.596f*(v-128));
+	table_g0[v]=FLOAT2FIX(-0.813f*(v-128));
+	table_g1[u]=FLOAT2FIX(-0.391f*(u-128));
+	table_b [u]=FLOAT2FIX( 2.018f*(u-128));
+    }
+    return 0;
 }
 
-/* yuv->rgbaへの計算を実際に行なう
-   この部分はMMX化すると良いかも知れません  */
-// Fri Jun  2 10:31:22 2000 By hiromasa yoshimoto 
-static inline void
-conv_YUVtoRGB(signed int& r, signed int& g, signed int& b,
-	      UCHAR Y,UCHAR u,UCHAR v)
-{
-    r=FIX2INT(table_y[Y]+table_r[v]);
-    g=FIX2INT(table_y[Y]+table_g0[v]+table_g1[u]);
-    b=FIX2INT(table_y[Y]+table_b[u]);
-    if (255<r)
-	r=255;
-    else if (r<0)
-	r=0;
-    if (255<g)
-	g=255;
-    else if (g<0)
-	g=0;
-    if (255<b)
-	b=255;
-    else if (b<0)
-	b=0;
-}
-
-static inline void
-conv_YUVtoRGBA(RGBA* p,UCHAR Y,UCHAR u,UCHAR v)
-{
-  signed int r=FIX2INT(table_y[Y]+table_r[v]);
-  signed int g=FIX2INT(table_y[Y]+table_g0[v]+table_g1[u]);
-  signed int b=FIX2INT(table_y[Y]+table_b[u]);
-  if (255<r)
-    r=255;
-  else if (r<0)
-    r=0;
-  if (255<g)
-    g=255;
-  else if (g<0)
-    g=0;
-  if (255<b)
-    b=255;
-  else if (b<0)
-    b=0;
-  p->r=r;p->g=g;p->b=b;
-}
-
-/* YUV422 -> RGBA への変換
- *
- * flag
- *  REMOVE_HEADER : remove packet's  header/trailer.
- */
-void
-copy_YUV422toRGBA(RGBA* lpRGBA,const void *lpYUV422,int packet_sz,
-		  int num_packet,int flag)
-{
-  UCHAR *p=(UCHAR*)lpYUV422;
-  int i;
-  if (flag&REMOVE_HEADER){
-    packet_sz-=8;
-    p+=4;
-  }
-  while (num_packet-->0){
-    for (i=0;i<packet_sz/4;i++){
-      UCHAR Y,u,v;
-      u=*p++;
-      Y=*p++;
-      v=*p++;
-      conv_YUVtoRGBA(lpRGBA,Y,u,v);
-      lpRGBA++;
-      Y=*p++;
-      conv_YUVtoRGBA(lpRGBA,Y,u,v);
-      lpRGBA++;
-    } //     for (i=0;i<packet_sz/4;i++){
-    if (flag&REMOVE_HEADER)
-      p+=4*2;
-  } //   while (num_packet-->0) {
-}
-
-/* YUV(4:4:4) -> RGBA への変換
+/** 
+ * convert YUV to RGB
  * 
- *
- * flag
- *  REMOVE_HEADER : remove packet's  header/trailer.
+ * Fri Jun  2 10:31:22 2000 By hiromasa yoshimoto 
+ * 
+ * @param r  
+ * @param g 
+ * @param b 
+ * @param Y 
+ * @param u 
+ * @param v 
  */
-void
+static inline void
+conv_YUVtoRGB(UCHAR* r, UCHAR* g, UCHAR* b,
+	      UCHAR Y, UCHAR u, UCHAR v)
+{
+    signed int r_=FIX2INT(table_y[Y]+table_r[v]);
+    signed int g_=FIX2INT(table_y[Y]+table_g0[v]+table_g1[u]);
+    signed int b_=FIX2INT(table_y[Y]+table_b[u]);
+    if (255<r_)
+	r_=255;
+    else if (r_<0)
+	r_=0;
+    if (255<g_)
+	g_=255;
+    else if (g_<0)
+	g_=0;
+    if (255<b_)
+	b_=255;
+    else if (b_<0)
+	b_=0;
+    
+    *r=r_;    *g=g_;    *b=b_;
+}
+
+/** 
+ * YUV422 -> RGBA への変換
+ * 
+ * @param lpRGBA      pointer to destnation image data.
+ * @param lpYUV422    pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
+ */
+bool
+copy_YUV422toRGBA(RGBA* lpRGBA, const void *lpYUV422, int packet_sz,
+		  int num_packet, int flag)
+{
+    UCHAR *p=(UCHAR*)lpYUV422;
+    int i;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
+    }
+    while (num_packet-->0){
+	for (i=0;i<packet_sz/4;i++){
+	    UCHAR Y,u,v;
+	    u=*p++;
+	    Y=*p++;
+	    v=*p++;
+	    conv_YUVtoRGB(&lpRGBA->r, &lpRGBA->g, &lpRGBA->b, Y, u, v);
+	    lpRGBA++;
+	    Y=*p++;
+	    conv_YUVtoRGB(&lpRGBA->r, &lpRGBA->g, &lpRGBA->b, Y, u, v);
+	    lpRGBA++;
+	} //     for (i=0;i<packet_sz/4;i++){
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    } //   while (num_packet-->0) {
+    return true;
+}
+
+/** convert YUV444 to RGBA
+ * 
+ * @param lpRGBA      pointer to destnation image data.
+ * @param lpYUV444    pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
+ */
+bool
 copy_YUV444toRGBA(RGBA* lpRGBA,const void *lpYUV444,
 		  int packet_sz,int num_packet,int flag)
 {
-  UCHAR *p=(UCHAR*)lpYUV444;
-  if (flag&REMOVE_HEADER){
-    packet_sz-=8;
-    p+=4;
-  }
-  while (num_packet-->0){
-    for (int i=0;i<packet_sz/3;i++){      
-      UCHAR Y,u,v; 
-      u=*p++;
-      Y=*p++;
-      v=*p++; // read v(K+0)      
-      conv_YUVtoRGBA(lpRGBA,Y,u,v); // Y(K+0)
-      lpRGBA++;
+    UCHAR *p=(UCHAR*)lpYUV444;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
     }
-    if (flag&REMOVE_HEADER)
-      p+=4*2;
-  }
+    while (num_packet-->0){
+	for (int i=0;i<packet_sz/3;i++){      
+	    UCHAR Y,u,v; 
+	    u=*p++;
+	    Y=*p++;
+	    v=*p++; // read v(K+0)      
+	    conv_YUVtoRGB(&lpRGBA->r, &lpRGBA->g, &lpRGBA->b, Y, u, v);// Y(K+0)
+	    lpRGBA++;
+	}
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    }
+    return true;
 }
 
 
-/* YUV(4:1:1) -> RGBA への変換
+/* YUV411 -> RGBA への変換
  * 
- *
- * flag
- *  REMOVE_HEADER : remove packet's  header/trailer.
+ * @param lpRGBA      pointer to destnation image data.
+ * @param lpYUV411    pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
  */
-void
+bool
 copy_YUV411toRGBA(RGBA* lpRGBA,const void *lpYUV411,
 		  int packet_sz,int num_packet,int flag)
 {
-  UCHAR *p=(UCHAR*)lpYUV411;
-  if (flag&REMOVE_HEADER){
-    packet_sz-=8;
-    p+=4;
-  }
-  while (num_packet-->0){
-    for (int i=0;i<packet_sz/(2*3);i++){      
-      UCHAR Y,u,v; 
-      u=*p++;
-      Y=*p++;
-      v=p[1]; // read v(K+0)      
-      conv_YUVtoRGBA(lpRGBA,Y,u,v); // Y(K+0)
-      lpRGBA++;
-      Y=*p++;
-      conv_YUVtoRGBA(lpRGBA,Y,u,v); // Y(K+1)
-      lpRGBA++;
-      p++;  // skip v(K+0)
-      Y=*p++;
-      conv_YUVtoRGBA(lpRGBA,Y,u,v); // Y(K+2)
-      lpRGBA++;
-      Y=*p++;
-      conv_YUVtoRGBA(lpRGBA,Y,u,v); // Y(K+3)
-      lpRGBA++;
+    UCHAR *p=(UCHAR*)lpYUV411;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
     }
-    if (flag&REMOVE_HEADER)
-      p+=4*2;
-  }
+    while (num_packet-->0){
+	for (int i=0;i<packet_sz/(2*3);i++){      
+	    UCHAR Y,u,v; 
+	    u=*p++;
+	    Y=*p++;
+	    v=p[1]; // read v(K+0)      
+	    conv_YUVtoRGB(&lpRGBA->r, &lpRGBA->g, &lpRGBA->b, Y, u, v);// Y(K+0)
+	    lpRGBA++;
+	    Y=*p++;
+	    conv_YUVtoRGB(&lpRGBA->r, &lpRGBA->g, &lpRGBA->b, Y, u, v);// Y(K+1)
+	    lpRGBA++;
+	    p++;  // skip v(K+0)
+	    Y=*p++;
+	    conv_YUVtoRGB(&lpRGBA->r, &lpRGBA->g, &lpRGBA->b, Y, u, v);// Y(K+2)
+	    lpRGBA++;
+	    Y=*p++;
+	    conv_YUVtoRGB(&lpRGBA->r, &lpRGBA->g, &lpRGBA->b, Y, u, v);// Y(K+3)
+	    lpRGBA++;
+	}
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    }
+    return true;
 }
 
 /* ファイルへの吐きだし。現時点では ppm format のみサポートです
  */
+/** 
+ * save RGBA image to the file.
+ * 
+ * @param pFile   filename
+ * @param img     pointer to the image.
+ * @param w 
+ * @param h 
+ * @param fmt     file format.  currently only supports PPM.
+ * 
+ * @return        true or false
+ */
 int 
 SaveRGBAtoFile(char *pFile,const RGBA* img,int w,int h,int fmt)
 {
-  bool result=false;
-  FILE* fp=fopen(pFile,"w");
-  if (fp){
-    int i;
-    fprintf(fp,"P6\n %d %d\n 255\n",w ,h);
-    for (i=0;i<w*h;i++){
-      fwrite(&img->r,1,1,fp);
-      fwrite(&img->g,1,1,fp);
-      fwrite(&img->b,1,1,fp);
-      img++;
+    bool result=false;
+    FILE* fp=fopen(pFile,"w");
+    if (fp){
+	int i;
+	fprintf(fp,"P6\n %d %d\n 255\n",w ,h);
+	for (i=0;i<w*h;i++){
+	    fwrite(&img->r,1,1,fp);
+	    fwrite(&img->g,1,1,fp);
+	    fwrite(&img->b,1,1,fp);
+	    img++;
+	}
+	fclose(fp);
+    }else{
+	fprintf(stderr,"can't create file %s \n",pFile);
     }
-    fclose(fp);
-  }else{
-    fprintf(stderr,"can't create file %s \n",pFile);
-  }
-  return result;
+    return result;
 }
 
-#if defined USE_IPL
 /** 
  * 
  * 
- * @param img 
- * @param lpYUV422 
- * @param packet_sz 
- * @param num_packet 
- * @param flag 
- */void
+ * 
+ * @param img         pointer to IplImage object.
+ * @param lpYUV422    pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
+ */
+bool
 copy_YUV422toIplImage(IplImage* img, const void *lpYUV422, 
 		      int packet_sz,
 		      int num_packet, int flag)
 {
+#if !defined HAVE_IPL_H
+    return false;
+#else //#if defined HAVE_IPL_H
     uchar *dst = (uchar*)img->imageData;
     
     UCHAR *p=(UCHAR*)lpYUV422;
@@ -243,12 +261,12 @@ copy_YUV422toIplImage(IplImage* img, const void *lpYUV422,
 	    u=*p++;
 	    Y=*p++;
 	    v=*p++;
-	    conv_YUVtoRGB(r,g,b,Y,u,v);
+	    conv_YUVtoRGB(&r,&g,&b,Y,u,v);
 	    *dst++=b;
 	    *dst++=g;
 	    *dst++=r;
 	    Y=*p++;
-	    conv_YUVtoRGB(r,g,b,Y,u,v);
+	    conv_YUVtoRGB(&r,&g,&b,Y,u,v);
 	    *dst++=b;
 	    *dst++=g;
 	    *dst++=r;
@@ -256,22 +274,28 @@ copy_YUV422toIplImage(IplImage* img, const void *lpYUV422,
 	if (flag&REMOVE_HEADER)
 	    p+=4*2;
     } //   while (num_packet-->0) {
+#endif //#if !defined HAVE_IPL_H
+    return true;
 }
 
 /** 
  * 
  * 
- * @param img 
- * @param lpYUV422 
- * @param packet_sz 
- * @param num_packet 
- * @param flag 
+ * 
+ * @param img         pointer to IplImage object.
+ * @param lpYUV411    pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
  */
-void
+bool
 copy_YUV411toIplImage(IplImage* img, const void *lpYUV411, 
 		      int packet_sz,
 		      int num_packet, int flag)
 {
+#if !defined HAVE_IPL_H
+    return false;
+#else //#if defined HAVE_IPL_H
     uchar *dst = (uchar*)img->imageData;
     UCHAR *p=(UCHAR*)lpYUV411;
     if (flag&REMOVE_HEADER){
@@ -285,23 +309,23 @@ copy_YUV411toIplImage(IplImage* img, const void *lpYUV411,
 	    u=*p++;
 	    Y=*p++;
 	    v=p[1]; // read v(K+0)      
-	    conv_YUVtoRGB(r,g,b,Y,u,v); // Y(K+0)
+	    conv_YUVtoRGB(&r,&g,&b,Y,u,v); // Y(K+0)
 	    *dst++=b;
 	    *dst++=g;
 	    *dst++=r;
 	    Y=*p++;
-	    conv_YUVtoRGB(r,g,b,Y,u,v); // Y(K+1)
+	    conv_YUVtoRGB(&r,&g,&b,Y,u,v); // Y(K+1)
 	    *dst++=b;
 	    *dst++=g;
 	    *dst++=r;
 	    p++;  // skip v(K+0)
 	    Y=*p++;
-	    conv_YUVtoRGB(r,g,b,Y,u,v); // Y(K+2)
+	    conv_YUVtoRGB(&r,&g,&b,Y,u,v); // Y(K+2)
 	    *dst++=b;
 	    *dst++=g;
 	    *dst++=r;
 	    Y=*p++;
-	    conv_YUVtoRGB(r,g,b,Y,u,v); // Y(K+3)
+	    conv_YUVtoRGB(&r,&g,&b,Y,u,v); // Y(K+3)
 	    *dst++=b;
 	    *dst++=g;
 	    *dst++=r;
@@ -309,25 +333,53 @@ copy_YUV411toIplImage(IplImage* img, const void *lpYUV411,
 	if (flag&REMOVE_HEADER)
 	    p+=4*2;
     } 
+#endif //#if !defined HAVE_IPL_H
+    return true;
 }
 
 /** 
  * 
  * 
- * @param img 
- * @param lpYUV422 
- * @param packet_sz 
- * @param num_packet 
- * @param flag 
- */void
+ * @param img         pointer to IplImage object.
+ * @param lpYUV444    pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
+ */
+bool
 copy_YUV444toIplImage(IplImage* img, const void *lpYUV444, 
 		      int packet_sz,
 		      int num_packet, int flag)
 {
-    
+#if !defined HAVE_IPL_H
+    return false;
+#else //#if defined HAVE_IPL_H
+    uchar *dst = (uchar*)img->imageData;
+    UCHAR *p=(UCHAR*)lpYUV444;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
+    }
+    while (num_packet-->0){
+	for (int i=0;i<packet_sz/3;i++){      
+	    signed int r,g,b;
+	    UCHAR Y,u,v; 
+	    u=*p++;
+	    Y=*p++;
+	    v=*p++; // read v(K+0)      
+	    conv_YUVtoRGB(&r,g,&b,Y,u,v); // Y(K+3)
+	    *dst++=b;
+	    *dst++=g;
+	    *dst++=r;
+	}
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    }
+#endif //#if !defined HAVE_IPL_H
+    return true;
 }
      
-#endif // #if defined USE_IPL
+#endif // #if defined HAVE_IPL_H
 
 /*
  * Local Variables:
