@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.20 2004-06-12 04:58:38 yosimoto Exp $
-  @date    $Date: 2004-06-12 04:58:38 $
+  @version $Id: cam1394.cc,v 1.21 2004-08-30 02:00:37 yosimoto Exp $
+  @date    $Date: 2004-08-30 02:00:37 $
  */
 #include "config.h"
 
@@ -474,7 +474,11 @@ int main(int argc, char *argv[]){
 	if (!errno) {
 	    ERR("not_compatible");
 	} else {
-	    ERR("driver is not loaded");
+	    ERR("Failed to open raw1394 device "
+		"("<< strerror(errno)<<")");
+	    ERR("The raw1394 module must be loaded, "
+		"and you must have read and write permission "
+		"to /dev/raw1394.");
 	}
 	return -3;
     }
@@ -526,7 +530,7 @@ int main(int argc, char *argv[]){
     // set camera register for each feature.
     for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++){
 	set_camera_feature( &(*cam), cp);
-    }  
+    }
 
     // set camera channel
     if (channel!=-1){

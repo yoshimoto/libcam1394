@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.34 2004-08-29 08:54:34 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.35 2004-08-30 02:00:37 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -1992,9 +1992,12 @@ static void* mmap_video1394(int port_no, int channel,
 		 char('a'+port_no));
 	*fd = open(devname, O_RDONLY);	
     }
+    // check whether the driver is loaded or not.
     if (*fd<0){
-	ERR("unable to open video1394 device "
-	    << devname << " " << strerror(errno) );
+	ERR("Failed to open video1394 device (" 
+	    << devname << ") : " << strerror(errno));
+	ERR("The video1394 module must be loaded, "
+	    "and you must have read and write permission to "<<devname<<".");
 	return NULL;
     }    
     
@@ -2029,7 +2032,7 @@ static void* mmap_video1394(int port_no, int channel,
         vwait.buffer = i;
         if (ioctl(*fd,VIDEO1394_IOC_LISTEN_QUEUE_BUFFER,&vwait) < 0)
         {
-	    printf("unlisten channel %d\n", channel);
+	    LOG("unlisten channel " << channel);
 	    ERR("VIDEO1394_IOC_LISTEN_QUEUE_BUFFER ioctl failed");
             ioctl(*fd,VIDEO1394_IOC_UNLISTEN_CHANNEL,&channel);
             return NULL;
@@ -2041,7 +2044,7 @@ static void* mmap_video1394(int port_no, int channel,
     buffer = mmap(0, vmmap.nb_buffers * vmmap.buf_size,
 		  PROT_READ,MAP_SHARED, *fd, 0);
     if (buffer == MAP_FAILED) {
-        ERR("mmap failed");
+        ERR("video1394_mmap failed");
         ioctl(*fd, VIDEO1394_IOC_UNLISTEN_CHANNEL, &vmmap.channel);
         return NULL;
     }
@@ -2060,7 +2063,10 @@ static void* mmap_isofb(int port_no, int channel,
     snprintf(devname, sizeof(devname), "/dev/isofb%d", port_no);
     *fd=open(devname,O_RDWR);
     if (-1==*fd){
-	ERR("can't open " << devname << " " << strerror(errno));
+	ERR("Failed to open isofb device (" 
+	    << devname << ") : " << strerror(errno));
+	ERR("The ohci1394_fb module must be loaded, "
+	    "and you must have read and write permission to "<<devname<<".");
 	return NULL;
     }
   
@@ -2089,7 +2095,7 @@ static void* mmap_isofb(int port_no, int channel,
 		  MAP_SHARED, 
 		  *fd,0);
     if (buffer == MAP_FAILED){
-	ERR("mmap failed");
+	ERR("isofb_mmap failed");
 	return NULL;
     }
 
@@ -2274,7 +2280,7 @@ void* C1394CameraNode::UpDateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
 #else
     ISO1394_Chunk chunk;
     if (0 > ioctl(fd, IOCTL_GET_RXBUF, &chunk) ){
-	ERR("");
+	ERR("ISOFB_IOCTL_GET_RXBUF failed.");
 	return NULL;
     }
     return m_lpFrameBuffer=(pMaped+chunk.offset);
@@ -2364,7 +2370,7 @@ int C1394CameraNode::CopyIplImage(IplImage *dest)
 			     REMOVE_HEADER);
     break;
     default:
-	LOG("not support this pixel format yet.");
+	LOG("this pixel format is not supported yet.");
 	break;
     }
   
@@ -2389,7 +2395,7 @@ int C1394CameraNode::CopyIplImage(IplImage *dest)
 int C1394CameraNode::CopyIplImageGray(IplImage *dest)
 {
 #ifndef IPL_IMG_SUPPORTED
-    LOG("This system don't have ipl or OpenCV library.");
+    LOG("This system doesn't  have ipl or OpenCV library.");
     return -1;
 #else
     switch  ( m_pixel_format ){
@@ -2424,7 +2430,7 @@ int C1394CameraNode::CopyIplImageGray(IplImage *dest)
 			       REMOVE_HEADER);
 	break;
     default:
-	LOG("not support this pixel format yet.");
+	LOG("this pixel format is not supported yet.");
 	break;
     }
   

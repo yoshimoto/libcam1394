@@ -1,0 +1,11 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libcam1394
+Description: library for 1394-based digital camera.
+Version: @libcam1394_version@
+#Requires: raw1394
+Libs: -L${libdir} -lcam1394 -lraw1394
+Cflags: -I${includedir}/libcam1394

@@ -1,0 +1,66 @@
+%define base_version @libcam1394_version@
+%define rel          1
+
+Summary: Library for 1394-based digital camera
+Name:	libcam1394
+Version: %{base_version}
+Release: %{rel}
+License: GPL
+Group: System Environment/Libraries
+URL: http://limu.is.kyushu-u.ac.jp/~yosimoto/
+Source0: http://limu.is.kyushu-u.ac.jp/~yosimoto/download/libcam1394-%{version}.tar.gz
+BuildRoot: %{_tmppath}/mstream-%{version}-root
+
+Requires:  raw1394
+
+BuildRequires: raw1394-devel
+BuildRequires: pkgconfig
+
+%description
+libcam1394 is an library for handling 1394-based digital camera.
+
+%package devel
+Summary: Development tools for libcam1394.
+Group:   Development/Libraries
+
+Requires: %{name} = %{version}
+%description devel
+The libcam1394-devel package contains the header files, static libraries,
+and developer docs for libcam1394.
+
+%prep
+%setup -q
+
+%build
+%configure
+make
+
+%install
+rm -rf $RPM_BUILD_ROOT
+%makeinstall
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%post -p /sbin/ldconfig
+
+%postun -p /sbin/ldconfig
+
+%files
+%defattr(-,root,root,-)
+
+%doc AUTHORS COPYING  ChangeLog NEWS README TODO
+%{_libdir}/libcam1394.so*
+%{_bindir}/cam1394
+
+%files devel
+%defattr(-,root,root,-)
+%{_includedir}/libcam1394/*.h
+%{_libdir}/libcam1394*.a
+%{_libdir}/libcam1394*.la
+%{_libdir}/pkgconfig/libcam1394.pc
+
+%changelog
+*Mon Aug 30 2004 Hiromasa YOSHIMOTO <yosimoto@limu.is.kyushu-u.ac.jp>
+- Initial build.
+
