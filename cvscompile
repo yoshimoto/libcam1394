@@ -1,9 +1,9 @@
 #!/bin/bash
 
 libtoolize --force --copy --automake
-aclocal-1.6 $ACLOCAL_FLAGS
+aclocal $ACLOCAL_FLAGS
 autoheader
-automake-1.6 --foreign --copy --add-missing
+automake --foreign --copy --add-missing
 autoconf
 ./configure --enable-maintainer-mode $@ || exit 1
 if [ -z "$CVSCOMPILE_NO_MAKE" ]; then

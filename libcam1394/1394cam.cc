@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.43 2004-10-28 22:48:58 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.44 2004-11-15 14:28:27 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -960,10 +960,6 @@ C1394CameraNode::SetParameter(C1394CAMERA_FEATURE feat,unsigned int value)
     ERR("the feature "<<feature_table[feat]<<" is not available.");
     return false;
   }
-  if (GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)==0){
-    ERR("the feature "<<feature_table[feat]<<" is not available.");
-    return false;
-  }
   
   switch(feat){
   case WHITE_BALANCE:
@@ -1086,20 +1082,19 @@ bool
 C1394CameraNode::SetAbsParameter(C1394CAMERA_FEATURE feat, float value)
 {
   quadlet_t tmp=0;
-  ReadReg(Addr(BRIGHTNESS)+4*feat,&tmp);
-  if (!GetParam(BRIGHTNESS,Presence_Inq,tmp)){
+  ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
+  if (!GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)){
       ERR("the feature ( "<<feature_table[feat]<<") is not available");
       return false;
   }
-  if (!GetParam(BRIGHTNESS,Abs_Control,tmp)){
+  if (!GetParam(BRIGHTNESS_INQ,Abs_Control_Inq,tmp)){
       ERR("the capability of control with absolute value ( "
 	  <<feature_table[feat]<<") is not available");
-    return false;
+      return false;
   }
 
-  // enable abs_control
-  tmp = 0;
-  tmp |= SetParam(BRIGHTNESS, Presence_Inq, 1);
+  // enable absolute control
+  ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
   tmp |= SetParam(BRIGHTNESS, Abs_Control, 1);
   tmp |= SetParam(BRIGHTNESS, ON_OFF, 1);
   WriteReg(Addr(BRIGHTNESS)+4*feat, &tmp);
