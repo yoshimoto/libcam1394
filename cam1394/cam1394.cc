@@ -2,9 +2,11 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.12 2002-11-25 12:24:32 yosimoto Exp $
-  @date    $Date: 2002-11-25 12:24:32 $
+  @version $Id: cam1394.cc,v 1.13 2003-01-08 18:38:01 yosimoto Exp $
+  @date    $Date: 2003-01-08 18:38:01 $
  */
+#include "config.h"
+
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>

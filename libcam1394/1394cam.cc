@@ -2,10 +2,10 @@
   @file    1394cam.cc
   @brief   1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.14 2002-11-25 13:05:00 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.15 2003-01-08 18:38:01 yosimoto Exp $
  */
 
-// Copyright (C) 1999-2002 by YOSHIMOTO Hiromasa
+// Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
 //
 // class C1394Node
 //  +- class C1394CameraNode
@@ -34,8 +34,12 @@
 #include <iomanip>
 #include <list>
 #include <linux/ohci1394_iso.h>
-#if defined HAVE_IPL_H
-#include <ipl.h>
+
+#if defined HAVE_CV_H
+#include <cv.h>
+#endif
+#if defined HAVE_OPENCV_CV_H
+#include <opencv/cv.h>
 #endif
 
 #include "./common.h"
@@ -1576,7 +1580,7 @@ int C1394CameraNode::GetImageHeight()
  */
 int C1394CameraNode::CopyIplImage(IplImage *dest)
 {
-#if !defined HAVE_IPL_H
+#if !defined HAVE_CV_H && !defined HAVE_OPENCV_CV_H
     LOG("This system don't have ipl or OpenCV library.");
     return -1;
 #else
@@ -1602,7 +1606,7 @@ int C1394CameraNode::CopyIplImage(IplImage *dest)
     }
   
     return 0;
-#endif //#if defined IPLAPI
+#endif //#if !defined HAVE_CV_H && !defined HAVE_OPENCV_CV_H
 }
 
 

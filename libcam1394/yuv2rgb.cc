@@ -2,13 +2,17 @@
   @file  yuv2rgb.cc
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv2rgb.cc,v 1.3 2002-10-31 09:49:30 yosimoto Exp $
+  @version $Id: yuv2rgb.cc,v 1.4 2003-01-08 18:38:01 yosimoto Exp $
  */
 
 #include "config.h"
 #include <stdio.h>
-#if defined HAVE_IPL_H
-#include <ipl.h>
+
+#if defined HAVE_CV_H
+#include <cv.h>
+#endif
+#if defined HAVE_OPENCV_CV_H
+#include <opencv/cv.h>
 #endif
 
 #include "yuv.h"
@@ -236,7 +240,8 @@ SaveRGBAtoFile(char *pFile,const RGBA* img,int w,int h,int fmt)
     return result;
 }
 
-#if defined HAVE_IPL_H
+
+#if defined OPENCVAPI
 /** 
  * convert YUV422 to IplImage. 
  * (This function will work, only when there is IPL.)
@@ -378,7 +383,7 @@ copy_YUV444toIplImage(IplImage* img, const void *lpYUV444,
     }
     return true;
 }
-#endif //#if !defined HAVE_IPL_H
+#endif // #if defined OPENCVAPI
 
 /*
  * Local Variables:
