@@ -1,0 +1,15 @@
+# $Id: README,v 1.1 2002-07-26 17:31:56 yosimoto Exp $
+# $Author: yosimoto $
+# $Date: 2002-07-26 17:31:56 $
+
+
+
+$ make 
+
+or
+
+$ make -f Makefile.debug
+
+or
+
+$ make -f Makefile.opencv
