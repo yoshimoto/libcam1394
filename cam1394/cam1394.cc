@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.5 2002-06-09 08:29:15 yosimoto Exp $
-  @date    $Date: 2002-06-09 08:29:15 $
+  @version $Id: cam1394.cc,v 1.6 2002-06-09 08:50:15 yosimoto Exp $
+  @date    $Date: 2002-06-09 08:50:15 $
  */
 #include <stdio.h>
 #include <unistd.h>
@@ -68,9 +68,9 @@ display_current_status(C1394CameraNode& camera)
   camera.QueryIsoSpeed(&speed);
   cout << " "<<::GetSpeedString(speed) <<endl;
 
-  cout << fmt <<endl;
-  cout << mode <<endl;
-  cout << rate <<endl;
+//  cout << fmt <<endl;
+//  cout << mode <<endl;
+//  cout << rate <<endl;
 
 
   return 0;
