@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.42 2004-10-19 09:41:41 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.43 2004-10-28 22:48:58 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -2480,8 +2480,11 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
  */
 int C1394CameraNode::GetFrameCount(int* count)
 {
+    if (!count)
+	return -EINVAL;
 #if !defined(HAVE_ISOFB)
-    return m_last_read_frame;
+    *count = m_last_read_frame;
+    return 0;
 #else
     return ::GetFrameCounter(fd,count);
 #endif

@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.26 2004-10-19 09:41:41 yosimoto Exp $
-  @date    $Date: 2004-10-19 09:41:41 $
+  @version $Id: cam1394.cc,v 1.27 2004-10-28 22:48:58 yosimoto Exp $
+  @date    $Date: 2004-10-28 22:48:58 $
  */
 #include "config.h"
 
@@ -242,7 +242,7 @@ savetofile(C1394CameraNode& camera,char *fname)
          
 	int fd=open(str, flag ,S_IRUSR|S_IWUSR);
 	if ( 0 > fd ){
-	    ERR( "can't open file : " << str << " " << strerror(errno));
+	    ERR( "can't open file (" << str << ") :" << strerror(errno));
 	    return -2;
 	}
          
@@ -257,7 +257,7 @@ savetofile(C1394CameraNode& camera,char *fname)
 	    camera.GetFrameCount(&frame_no);
 	    if ( last_frame+1 != frame_no ){
 		total_drop++;
-		ERR(" drop "
+		ERR(" drop a frame"
 		    <<"(rate "
 		    << (float)total_drop/(f_count*NUM_SEG + i)
 		    <<"%)");
@@ -267,7 +267,7 @@ savetofile(C1394CameraNode& camera,char *fname)
 
 	    int result = write( fd , p , frame_size );
 	    if ( result != frame_size ){
-		ERR(" write() says " << strerror(errno) );
+		ERR(" write() failed : " << strerror(errno) );
 	    }
 	}
 	close(fd);
