@@ -4,11 +4,13 @@ LDFLAGS+=-lopencv -lcvvis
 
 CXXFLAGS+=-g
 
-all: main-single main-dual  main-with-opencv
+TARGET= main-single main-dual  main-with-opencv
+
+all: $(TARGET)
 
 main-single: xview.o
 
 main-dual: xview.o
 
 clean: 
-	rm -f main-single main-dual *.o
+	rm -f $(TARGET) *~ *.o
