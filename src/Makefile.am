@@ -1,4 +1,4 @@
-#
+# $Id: Makefile.am,v 1.3 2002-02-12 14:41:02 yosimoto Exp $
 
 lib_LTLIBRARIES = libcam1394.la
 libcam1394_la_LDFLAGS = -version-info @lt_major@:@lt_revision@:@lt_age@

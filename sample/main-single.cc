@@ -2,9 +2,8 @@
  * main-single.cc - 1394カメラ1台利用サンプルプログラム
  *
  * By Hiromasa Yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp>
-
-// Thu Mar 15 17:53:25 2001  YOSHIMOTO Hiromasa 1st
-// Mon Dec 10 21:19:32 2001  YOSHIMOTO Hiromasa 
+// Thu Mar 15 17:53:25 2001  YOSHIMOTO Hiromasa 
+// Sun Sep 23 18:10:50 2001  YOSHIMOTO Hiromasa 
  */
 #include <stdio.h>
 #include <unistd.h>
@@ -34,23 +33,25 @@
    具体的な数値については1394-based Digital Camera Specや
    実際に使用する1394カメラの仕様書等で確認してください。*/
 
-/* カメラを320x240(YUV422)@30fps に設定する場合 */
-/*const int W=320;
+/* カメラを320x240(YUV422)@15fps に設定する場合 */
+
+/*
+const int W=320;
 const int H=240;
 const int format=0; 
 const int mode=1;    
-const int frame_rate=4;
+const int frame_rate=3;
 */
 
-const int W=640;
-const int H=480;
+const int W=320;
+const int H=240;
 const int format=0; 
-const int mode=3;    
-const int frame_rate=4;
+const int mode=1;    
+const int frame_rate=3;
 
 /* カメラのIDなど */
-const int camera_id=100692; /* 使用するカメラのID */
-const int channel=6;        /* チャネルは6番を使用 */
+const int camera_id=166647; /* 使用するカメラのID */
+const int channel=7;        /* チャネルは6番を使用 */
 const int buf_count=4;      /* 4フレーム分受信用バッファを確保 */
 
 int 
@@ -76,7 +77,8 @@ main(int argc, char **argv)
     exit(-1);
   }
   CCameraList::iterator camera;
-  camera=find_camera_by_id(CameraList,MAKE_CHIP_ID(camera_id) );
+//  camera=find_camera_by_id(CameraList,MAKE_CHIP_ID(camera_id) );
+  camera=CameraList.begin();
   if (camera==CameraList.end()){
     cerr << " not found camera (id:="<<camera_id<<")" << endl;
     return -2;
@@ -88,8 +90,8 @@ main(int argc, char **argv)
   camera->SetFormat((FORMAT)format,(VMODE)mode,(FRAMERATE)frame_rate);
   camera->AllocateFrameBuffer();
 
-#if 0
-  camera->AutoModeOn();
+#if !0
+  camera->AutoModeOn_All();
 #else
   camera->SetParameter(BRIGHTNESS,    0x80);
   camera->SetParameter(AUTO_EXPOSURE, 0x80);
@@ -104,12 +106,13 @@ main(int argc, char **argv)
   camera->SetParameter(GAIN,          0x02); // def=0x00
 #endif
 
+
   /* make a Window */
-  char title[256];
-  sprintf(title,"-- Live image from #%5d/ %2dch --",
+  char tmp[256];
+  sprintf(tmp,"-- Live image from #%5d/ %2dch --",
 	  (int)MAKE_CAMERA_ID(camera->m_ChipID),channel );
   CXview xview;
-  if (!xview.CreateWindow(W,H,title)){
+  if (!xview.CreateWindow(W,H,tmp)){
     cerr << " failure @ create X window" << endl;
     return -1;
   }

@@ -1,6 +1,11 @@
-//
-// 1394cam.cc - 1394-based Digital Camera control class
-//
+/*!
+  @file  lz.h 
+  @brief 1394-based Digital Camera control class
+  @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
+  @version $Id: 1394cam.cc,v 1.4 2002-02-12 14:41:02 yosimoto Exp $
+  @date    $Date: 2002-02-12 14:41:02 $
+ */
+
 // Copyright (C) 2000,2001 by Hiromasa Yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp> 
 //
 // class C1394Node
@@ -12,8 +17,7 @@
 // Tue Feb  8 21:13:45 2000 By hiromasa yoshimoto 
 // Thu Sep 27 08:21:43 2001  YOSHIMOTO Hiromasa 
 // Sat Oct 20 10:15:35 2001  YOSHIMOTO Hiromasa 
-// Thu Nov  1 10:20:59 2001  YOSHIMOTO Hiromasa  code clean up
- 
+
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h> // for bzero()
@@ -36,8 +40,6 @@ using namespace std;
 #include <linux/ohci1394_iso.h>
 #include "common.h"
 #include "1394cam.h"
-#include "yuv.h"
-
 
 #define QUAD(h,l)  0x##h##l
 #define CHK_PARAM(exp) {if (!(exp)) MSG( "illegal param passed. " << __STRING(exp)); }
@@ -62,139 +64,40 @@ using namespace std;
 // for unit dependent directory
 #define OFFSET_COMMAND_REGS_BASE                 0x0004       
 
-// Thu Nov  1 10:20:42 2001  YOSHIMOTO Hiromasa 
-//
 
-static const char *feature_hi_table[]=
-{
-  "brightness" , 
-  "auto_exposure",   
-  "sharpness" ,
-  "white_balance" ,
-  "hue" ,  
-  "saturation" ,
-  "gamma" ,       
-  "shutter",         
-  "gain" ,         
-  "iris" ,        
-  "focus" ,  
-  "temperature" , 
-  "triger"         ,
-};
 
-struct VideoPixelInfo{
-  char* name;
-  union {
-      int  R_weight;
-      int  G_weight;
-      int  B_weight;
-    } rgb;
-    struct YUVinfo{
-      int  Y_weight;
-      int  U_weight;
-      int  V_weight;
-    } yuv; 
-} info;
+static const char *feature_hi_table[]={
+  "brightness" ,   // +0
+    "auto_exposure" ,   
+    "sharpness" ,
+    "white_balance" ,
+    "hue" ,  
+    "saturation" ,
+    "gamma" ,       
+    "shutter",         
+    "gain" ,         
+    "iris" ,        
+    "focus" ,  
+    "temperature" , 
+    "triger"         ,  //+12
 
-struct VideoImageInfo{
-  PIXEL_FORMAT pixel_format;
-  int  w;
-  int  h;
-};
-struct VideoPacketInfo{
-  int packet_sz;
-  int num_packets;
-  SPD required_speed;
-};
+    "reserved","reserved","reserved","reserved","reserved",
+    "reserved","reserved","reserved","reserved","reserved",
+    "reserved","reserved","reserved","reserved","reserved",
+    "reserved","reserved","reserved","reserved","reserved",
+    
+    "zoom", // +32
+    "pan",
+    "tilt",
+    "optical_filter", // +35
 
-static struct VideoPixelInfo video_pixel_info[]=
-{
-  {"YUV(4:4:4)", 4,4,4   }, // VFMT_YUV444
-  {"YUV(4:2:2)", 4,2,2   }, // VFMT_VUV422
-  {"YUV(4:1:1)", 4,1,1   }, // VFMT_VUV411
-  {"RGB(8:8:8)", 8,8,8   },  // VFMT_RGB888
-  {" Y (Mono) ", 8,0,0   }, // VFMT_Y8
-
-  {" unknown  ",-1,-1,-1 },
-};
-
-#define RESERVED { VFMT_NOT_SUPPORTED, -1,-1}
-static struct VideoImageInfo video_image_info[][8]=  // format / mode
-{
-  // format_0
-  {   //  pixel info       width hight
-    {    VFMT_YUV444,       160,  120}, // format_0/mode_0
-    {    VFMT_YUV422,       320,  240}, // format_0/mode_1
-    {    VFMT_YUV411,       640,  480}, // format_0/mode_2
-    {    VFMT_YUV422,       640,  480}, // format_0/mode_3
-    {    VFMT_RGB888,       640,  480}, // format_0/mode_4
-    {    VFMT_Y8    ,       640,  480}, // format_0/mode_5
-    RESERVED,
-    RESERVED,
-  },
-  // format_1
-  // format_2
-};
-#undef RESERVED
-
-#define RESERVED  { -1,-1,SPD_100M}
-static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
-{
-  // format_0
-  {
-    { // mode_0 
-      RESERVED,                     // 1.875fps
-      RESERVED,                     // 3.75 fps
-      {  15*4, 120*8, SPD_100M  },  // 7.5  fps
-      {  30*4, 120*4, SPD_100M  },  // 15   fps
-      {  60*4, 120*2, SPD_100M  },  // 30   fps
-      RESERVED,                     // 60   fps
-    },
-    { // mode_1 
-      RESERVED,
-      {  20*4, 240*8 ,SPD_100M},
-      {  40*4, 240*4 ,SPD_100M},
-      {  80*4, 240*2 ,SPD_100M},
-      { 160*4, 240   ,SPD_100M},
-      RESERVED,
-    },
-    { // mode_2
-      RESERVED,
-      {  60*4, 480*4 ,SPD_100M},
-      { 120*4, 480*2 ,SPD_100M},
-      { 240*4, 480/1 ,SPD_100M},
-      { 480*4, 480/2 ,SPD_200M},
-      RESERVED,
-    },
-    {  // mode_3
-      RESERVED,
-      {  80*4, 480*4 ,SPD_100M},
-      { 160*4, 480*2 ,SPD_100M},
-      { 320*4, 480/1 ,SPD_200M},
-      { 640*4, 480/2 ,SPD_400M},
-      RESERVED,
-    },
-    { // mode_4
-      RESERVED,
-      { 120*4, 480*4 ,SPD_100M},
-      { 240*4, 480*2 ,SPD_100M},
-      { 480*4, 480*1 ,SPD_200M},
-      { 960*4, 480/2 ,SPD_400M},
-      RESERVED,
-    },
-    { // mode_5
-      RESERVED,
-      {  40*4, 480*4 ,SPD_100M},
-      {  80*4, 480*2 ,SPD_100M},
-      { 160*4, 480/1 ,SPD_100M},
-      { 320*4, 480/2 ,SPD_200M},
-      { 320*4, 480/4 ,SPD_400M},
-    },  
-  },
-  // format_1
-  // format_2
-};
-#undef RESERVED
+    "reserved","reserved","reserved","reserved","reserved",
+    "reserved","reserved","reserved","reserved","reserved",
+    "reserved","reserved","reserved",
+    
+    "capture_size",  // +48
+    "capture_quality",
+    };
 
 
 static char __buffer__[32+4+1];
@@ -246,7 +149,7 @@ callback_1394Camera(raw1394_handle* handle,nodeid_t node_id,
 		    &chip_id_lo));
   chip_id_lo=ntohl(chip_id_lo);
   pNode->m_VenderID =chip_id_hi>>8;
-  pNode->m_ChipID   =(((int64_t)chip_id_hi&0xff)<<32)+(chip_id_lo);
+  pNode->m_ChipID   =(((uint64_t)chip_id_hi&0xff)<<32)+(chip_id_lo);
 
   
   addr=ADDR_UNIT_DIRECTORY_OFFSET;   /* addr<=RootDirectory ¤ÎÀèÆ¬ */
@@ -388,7 +291,7 @@ C1394CameraNode::C1394CameraNode()
   m_lpFrameBuffer=NULL;
   m_BufferSize=0;
 #endif //#if defined(_WITH_ISO_FRAME_BUFFER_)
-//  m_last_read_frame=0;
+  m_last_read_frame=0;
 }
 
 C1394CameraNode::~C1394CameraNode()
@@ -397,6 +300,20 @@ C1394CameraNode::~C1394CameraNode()
     m_BufferSize=0;
 #endif //#if defined(_WITH_ISO_FRAME_BUFFER_)
 
+}
+
+// FIXME -- not implemented yet
+const char* 
+GetModelName(char* lpBuffer,size_t* lpLength)
+{
+  return 0;
+}
+
+// FIXME -- not implemented yet
+const char* 
+GetVenderName(char* lpBuffer,size_t* lpLength)
+{
+  return 0;
 }
 
 // to re-set camera to initial(factory setting value) state
@@ -448,6 +365,7 @@ C1394CameraNode::PowerUp()
   WAIT;
   return true;
 }
+
 
 //--------------------------------------------------------------------------
 const char*
@@ -607,6 +525,7 @@ C1394CameraNode::PreSet_All()
   return true;
 }
 
+
 /*
     WAIT;
     WAIT;
@@ -752,7 +671,9 @@ C1394CameraNode::SetIsoChannel(int channel)
   quadlet_t tmp;
   // ask IRM ???
   tmp=SetParam(ISO_Channel,,channel)|SetParam(ISO_Speed,,m_iso_speed);
-  WriteReg( Addr(ISO_Speed), &tmp);  
+  WriteReg(
+		      Addr(ISO_Speed),
+		      &tmp);  
   WAIT;
   m_channel=channel;
   return true;  
@@ -780,7 +701,10 @@ C1394CameraNode::QueryIsoChannel(int* channel)
   CHK_PARAM(channel!=NULL);
   quadlet_t tmp;
   WAIT; WAIT;
-  ReadReg(   Addr(ISO_Speed),    &tmp);  
+  ReadReg(
+    Addr(ISO_Speed),
+    &tmp);  
+
   WAIT;
   m_channel=
   *channel=GetParam(ISO_Channel,,tmp);
@@ -794,7 +718,9 @@ C1394CameraNode::QueryIsoSpeed(SPD* spd)
   CHK_PARAM(spd!=NULL);
   quadlet_t tmp;
   WAIT; WAIT;
-  ReadReg(    Addr(ISO_Speed),    &tmp);  
+  ReadReg(
+    Addr(ISO_Speed),
+    &tmp);  
   WAIT;
   *spd=(SPD)GetParam(ISO_Speed,,tmp);
   return true;
@@ -859,6 +785,8 @@ C1394CameraNode:: SetTriggerOn()
 		     Addr(TRIGGER_INQ),
 		     &tmp);  
   WAIT;
+
+
   ReadReg(
 		      Addr(TRIGGER_MODE),
 		     &tmp);  
@@ -917,6 +845,243 @@ C1394CameraNode:: StopIsoTx()
   return true;
 }
 
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+// only test impliment version
+//
+
+#include "yuv.h"
+
+struct VideoPixelInfo{
+  char* name;
+  union {
+      int  R_weight;
+      int  G_weight;
+      int  B_weight;
+    } rgb;
+    struct YUVinfo{
+      int  Y_weight;
+      int  U_weight;
+      int  V_weight;
+    } yuv; 
+} info;
+
+struct VideoImageInfo{
+  PIXEL_FORMAT pixel_format;
+  int  w;
+  int  h;
+};
+struct VideoPacketInfo{
+  int packet_sz;
+  int num_packets;
+  SPD required_speed;
+};
+
+static struct VideoPixelInfo video_pixel_info[]=
+{
+  {"YUV(4:4:4)", 4,4,4   }, // VFMT_YUV444
+  {"YUV(4:2:2)", 4,2,2   }, // VFMT_VUV422
+  {"YUV(4:1:1)", 4,1,1   }, // VFMT_VUV411
+  {"RGB(8:8:8)", 8,8,8   },  // VFMT_RGB888
+  {" Y (Mono) ", 8,0,0   }, // VFMT_Y8
+
+  {" unknown  ",-1,-1,-1 },
+};
+
+#define RESERVED { VFMT_NOT_SUPPORTED, -1,-1}
+static struct VideoImageInfo video_image_info[][8]=  // format / mode
+{
+  // format_0
+  {   //  pixel info       width hight
+    {    VFMT_YUV444,       160,  120}, // format_0/mode_0
+    {    VFMT_YUV422,       320,  240}, // format_0/mode_1
+    {    VFMT_YUV411,       640,  480}, // format_0/mode_2
+    {    VFMT_YUV422,       640,  480}, // format_0/mode_3
+    {    VFMT_RGB888,       640,  480}, // format_0/mode_4
+    {    VFMT_Y8    ,       640,  480}, // format_0/mode_5
+    RESERVED,
+    RESERVED,
+  },
+  // format_1
+  // format_2
+};
+#undef RESERVED
+
+#define RESERVED  { -1,-1,SPD_100M}
+static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
+{
+  // format_0
+  {
+    { // mode_0 
+      RESERVED,                     // 1.875fps
+      RESERVED,                     // 3.75 fps
+      {  15*4, 120*8, SPD_100M  },  // 7.5  fps
+      {  30*4, 120*4, SPD_100M  },  // 15   fps
+      {  60*4, 120*2, SPD_100M  },  // 30   fps
+      RESERVED,                     // 60   fps
+    },
+    { // mode_1 
+      RESERVED,
+      {  20*4, 240*8 ,SPD_100M},
+      {  40*4, 240*4 ,SPD_100M},
+      {  80*4, 240*2 ,SPD_100M},
+      { 160*4, 240   ,SPD_100M},
+      RESERVED,
+    },
+    { // mode_2
+      RESERVED,
+      {  60*4, 480*4 ,SPD_100M},
+      { 120*4, 480*2 ,SPD_100M},
+      { 240*4, 480/1 ,SPD_100M},
+      { 480*4, 480/2 ,SPD_200M},
+      RESERVED,
+    },
+    {  // mode_3
+      RESERVED,
+      {  80*4, 480*4 ,SPD_100M},
+      { 160*4, 480*2 ,SPD_100M},
+      { 320*4, 480/1 ,SPD_200M},
+      { 640*4, 480/2 ,SPD_400M},
+      RESERVED,
+    },
+    { // mode_4
+      RESERVED,
+      { 120*4, 480*4 ,SPD_100M},
+      { 240*4, 480*2 ,SPD_100M},
+      { 480*4, 480*1 ,SPD_200M},
+      { 960*4, 480/2 ,SPD_400M},
+      RESERVED,
+    },
+    { // mode_5
+      RESERVED,
+      {  40*4, 480*4 ,SPD_100M},
+      {  80*4, 480*2 ,SPD_100M},
+      { 160*4, 480/1 ,SPD_100M},
+      { 320*4, 480/2 ,SPD_200M},
+      { 320*4, 480/4 ,SPD_400M},
+    },  
+  },
+  // format_1
+  // format_2
+};
+#undef RESERVED
+
+const char*
+GetVideoFormatString(FORMAT fmt,VMODE mode)
+{
+  if (!(0<=fmt&&fmt<1))
+    return NULL;
+  
+  PIXEL_FORMAT pixel=video_image_info[fmt][mode].pixel_format;
+  return video_pixel_info[ pixel ].name;
+}
+const char*
+GetSpeedString(SPD spd)
+{
+  static char* speed_string[]=
+  {
+    "100Mbps",
+    "200Mbps",
+    "400Mbps",
+  };
+  return speed_string[spd];
+}
+int
+GetPacketSize(FORMAT fmt,VMODE mode,FRAMERATE frame_rate)
+{
+//  LOG("Format_"<<fmt<<" Mode_"<<mode<<" FrameRate_"<<frame_rate);
+  return video_packet_info[fmt][mode][frame_rate].packet_sz;
+}
+int 
+GetNumPackets(FORMAT fmt,VMODE mode,FRAMERATE frame_rate)
+{
+  return video_packet_info[fmt][mode][frame_rate].num_packets;
+}
+int
+GetImageWidth(FORMAT fmt,VMODE mode)
+{
+  return video_image_info[fmt][mode].w;
+}
+int
+GetImageHeight(FORMAT fmt,VMODE mode)
+{
+  return video_image_info[fmt][mode].h;
+}
+
+SPD
+GetRequiredSpeed(FORMAT fmt,VMODE mode,FRAMERATE frame_rate)
+{
+  return video_packet_info[fmt][mode][frame_rate].required_speed;
+}
+
+// 
+int 
+EnableCyclemaster(raw1394handle_t handle)
+{
+/*  if (0!=ioctl(handle->fd,OHCI_ENABLE_CYCLEMASTER,NULL)){
+    return false;
+  }*/
+  return true;
+}
+// 
+int 
+DisableCyclemaster(raw1394handle_t handle)
+{
+/*  if (0!=ioctl(handle->fd,OHCI_DISABLE_CYCLEMASTER,NULL)){
+    return false;
+  }  */
+  return true;
+}
+
+
+int
+SetFrameCounter(int fd, int counter)
+{
+  return  (0!=ioctl(fd,IOCTL_SET_COUNT,counter));
+}
+
+int
+GetFrameCounter(int fd, int* counter)
+{
+  if (NULL==counter)
+    return false;
+  return  (0!=ioctl(fd,IOCTL_GET_COUNT,counter));
+}
+
+
+
+int 
+EnableIsoChannel(raw1394handle_t handle,int channel)
+{
+  return true;
+}
+int 
+DisableIsoChannel(raw1394handle_t handle,int channel)
+{
+  return true;
+}
+
+int 
+AllocateIsoChannel(raw1394handle_t handle,
+		   int channel,SPD spd)
+{
+  return true;
+}
+
+int 
+ReleaseIsoChannel(raw1394handle_t handle,
+		 int channel)
+{
+  return true;
+}
+
+int 
+ReleaseIsoChannelAll(raw1394handle_t handle)
+{
+  return true;
+}
+
+// %%%%%%%%%%%%%%%%%%%%
 int
 C1394CameraNode::AllocateFrameBuffer(int channel,
 			  FORMAT fmt,
@@ -957,7 +1122,7 @@ C1394CameraNode::AllocateFrameBuffer(int channel,
 
   fd=open("/dev/isofb0", O_RDWR);
   if (-1==fd){
-    LOG( "can't open "<<"/dev/isofb0"<<" "<<strerror(errno) );
+    cerr << "can't open "<<"/dev/isofb0"<<" "<<strerror(errno)<<endl;
     return -1;
   }
   
@@ -992,6 +1157,7 @@ C1394CameraNode::AllocateFrameBuffer(int channel,
   return 0;
 }
 
+
 int    
 C1394CameraNode::GetFrameCount(int* count)
 {
@@ -1002,6 +1168,7 @@ C1394CameraNode::SetFrameCount(int tmp)
 {
   return SetFrameCounter(fd,tmp);
 }
+
 
 void*
 C1394CameraNode::UpDateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
@@ -1055,12 +1222,25 @@ C1394CameraNode::CopyRGBAImage(void* dest)
   return 0;
 }
 
+/*int 
+C1394CameraNode::WriteRGBAImage(int fd)
+{
+  return 0;
+}
+
+int
+C1394CameraNode::WriteRawImage(int fd)
+{
+  return 0;
+}
+*/
 
 // save current frame to file
 int  
 C1394CameraNode::SaveToFile(char* filename,FILE_TYPE type)
 {
 //  switch (type){
+ 
   {
     bool result=false;
     FILE* fp=fopen(filename,"w");
@@ -1087,68 +1267,12 @@ C1394CameraNode::SaveToFile(char* filename,FILE_TYPE type)
   return 0;
 }
 
-//--------------------------------------------------------------------------
-int
-SetFrameCounter(int fd, int counter)
-{
-  return  (0!=ioctl(fd,IOCTL_SET_COUNT,counter));
-}
-
-int
-GetFrameCounter(int fd, int* counter)
-{
-  if (NULL==counter)
-    return false;
-  return  (0!=ioctl(fd,IOCTL_GET_COUNT,counter));
-}
-
-//--------------------------------------------------------------------------
-const char*
-GetVideoFormatString(FORMAT fmt,VMODE mode)
-{
-  if (!(0<=fmt&&fmt<1))
-    return NULL;
-  
-  PIXEL_FORMAT pixel=video_image_info[fmt][mode].pixel_format;
-  return video_pixel_info[ pixel ].name;
-}
-const char*
-GetSpeedString(SPD spd)
-{
-  static char* speed_string[]=
-  {
-    "100Mbps",
-    "200Mbps",
-    "400Mbps",
-  };
-  return speed_string[spd];
-}
-int
-GetPacketSize(FORMAT fmt,VMODE mode,FRAMERATE frame_rate)
-{
-  return video_packet_info[fmt][mode][frame_rate].packet_sz;
-}
-int 
-GetNumPackets(FORMAT fmt,VMODE mode,FRAMERATE frame_rate)
-{
-  return video_packet_info[fmt][mode][frame_rate].num_packets;
-}
-int
-GetImageWidth(FORMAT fmt,VMODE mode)
-{
-  return video_image_info[fmt][mode].w;
-}
-int
-GetImageHeight(FORMAT fmt,VMODE mode)
-{
-  return video_image_info[fmt][mode].h;
-}
-
-SPD
-GetRequiredSpeed(FORMAT fmt,VMODE mode,FRAMERATE frame_rate)
-{
-  return video_packet_info[fmt][mode][frame_rate].required_speed;
-}
 
 // Sat Dec 11 07:00:47 1999 by hiromasa yoshimoto 
 // end of [1394cam.cc ]
+/*
+ * Local Variables:
+ * mode:c++
+ * c-basic-offset: 4
+ * End:
+ */

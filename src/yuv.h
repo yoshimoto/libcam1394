@@ -1,4 +1,10 @@
-//
+/*! 
+  @file yuv.h
+  @brief convert YUV to RGBA
+  @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
+  @version $Id: yuv.h,v 1.2 2002-02-12 14:41:02 yosimoto Exp $
+  @date    $Date: 2002-02-12 14:41:02 $
+ */
 // yuv.h - convert YUV to RGBA
 //
 // by hiromasa yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp> 
@@ -38,5 +44,10 @@ void copy_YUV444toRGBA(RGBA* lpRGBA,const void* lpYUV444,
 int SaveRGBAtoFile(char *pFile,const RGBA* img,int w,int h,int fmt=0);
 int CreateYUVtoRGBAMap();
 
-
 #endif //#if !defined(_YUV_H_INCLUDED_) 
+/*
+ * Local Variables:
+ * mode:c++
+ * c-basic-offset: 4
+ * End:
+ */

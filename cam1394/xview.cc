@@ -1,3 +1,10 @@
+/*!
+  @file  xview.cc
+  @brief 
+  @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
+  @version $Id: xview.cc,v 1.2 2002-02-12 14:41:02 yosimoto Exp $
+  @date
+*/
 //
 // xview.cc - 
 //
@@ -9,7 +16,7 @@ using namespace std;
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-#include <libcam1394/yuv.h>
+#include "yuv.h"
 #include "xview.h"
 
 #define ERR(msg) cerr<< msg <<endl
@@ -154,3 +161,9 @@ CXview::~CXview()
   XFreeGC(display,gc);
   XCloseDisplay(display);
 }
+/*
+ * Local Variables:
+ * mode:c++
+ * c-basic-offset: 4
+ * End:
+ */

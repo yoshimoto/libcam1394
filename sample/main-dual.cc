@@ -2,9 +2,7 @@
  * main-dual.cc - 1394カメラ2台利用サンプルプログラム
  *
  * By Hiromasa Yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp>
-
 // Thu Mar 15 18:23:53 2001 By YOSHIMOTO Hiromasa 
-// Wed Oct 24 00:12:41 2001  YOSHIMOTO Hiromasa 
  */
 #include <stdio.h>
 #include <unistd.h>
@@ -35,11 +33,19 @@
    実際に使用する1394カメラの仕様書等で確認してください。*/
 
 /* カメラを320x240(YUV422)@15fps に設定する場合 */
+/*
 const int W=320;
 const int H=240;
 const int format=0; 
 const int mode=1;    
 const int frame_rate=3;
+*/
+
+const int W=320;
+const int H=240;
+const int format=0; 
+const int mode=1;    
+const int frame_rate=4;
 
 /* カメラの個別情報 */
 
@@ -53,8 +59,8 @@ const int NUM_CAM=2;
 
 struct camera_info cinfo[NUM_CAM]={
   // {camera's ID, channel, number of buffer}
-  {100204, 4, 4},
-  {100697, 3, 4},
+  {100694, 4, 4},
+  {100692, 3, 4},
 };
 
 CCameraList::iterator camera[NUM_CAM];  
@@ -95,8 +101,8 @@ main(int argc, char **argv)
   }
  
   for (i=0;i<NUM_CAM;i++){
-#if 0
-    camera[i]->AutoModeOn();
+#if !0
+    camera[i]->AutoModeOn_All();
 #else
     camera[i]->SetParameter(BRIGHTNESS,    0x80);
     camera[i]->SetParameter(AUTO_EXPOSURE, 0x80);
@@ -119,11 +125,11 @@ main(int argc, char **argv)
     camera[i]->AllocateFrameBuffer();
 
     /* make a Window */
-    char title[256];
-    sprintf(title,"-- Live image from #%5d/ %2dch --",
+    char tmp[256];
+    sprintf(tmp,"-- Live image from #%5d/ %2dch --",
 	    (int)MAKE_CAMERA_ID(camera[i]->m_ChipID),cinfo[i].channel );
-    
-    if (!xview[i].CreateWindow(W,H,title)){
+
+    if (!xview[i].CreateWindow(W,H,tmp)){
       cerr<<" failure @ create X window"<<endl;
       return -1;
     }

@@ -1,4 +1,10 @@
-//
+/*!
+  @file  1394cam.h
+  @brief 1394-based Digital Camera control class
+  @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
+  @version $Id: 1394cam.h,v 1.2 2002-02-12 14:41:02 yosimoto Exp $
+  @date    $Date: 2002-02-12 14:41:02 $
+ */
 // 1394cam.h - 1394-based Digital Camera control class
 //
 // Copyright (C) 2000,2001 by YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp> 
@@ -17,7 +23,7 @@
 #include <list>
 #include <netinet/in.h>
 
-#define WAIT 
+#define WAIT usleep(1)
 
 #define CAT(a,b)  a##b
 #define RegInfo(offset,name) \
@@ -293,6 +299,14 @@ enum C1394CAMERA_FEATURE {
   FOCUS              ,
   TEMPERATURE         ,
   TRIGGER            ,
+  // reserved for other FEATURE_HI
+  ZOOM                =32,
+  PAN   ,
+  TILT  ,
+  OPTICAL_FILTER ,
+  // reserved for other FEATURE_LO
+  CAPTURE_SIZE = 48,
+  CAPTURE_QUALITY,
 };
 
 //-------------------------------------------------------
@@ -300,7 +314,7 @@ enum C1394CAMERA_FEATURE {
 class C1394Node {
 public:
   unsigned int m_VenderID;
-  int64_t  m_ChipID;
+  uint64_t  m_ChipID;
 #if 0
   virutal int On_BusReset()
   {
@@ -310,7 +324,7 @@ public:
 };
 
 struct BufferInfo {
-  int frame;       //  counter of received frames  
+  // FIXME -- not implemented yet
 };
 
 class C1394CameraNode : public C1394Node {
@@ -340,7 +354,7 @@ public:
   nodeid_t m_node_id;              // node_id of this node
   nodeaddr_t m_command_regs_base;  // base address of camera's cmd reg
 
-  int fd;                          // for mmap()
+  int fd;
   char *pMaped;
 
   C1394CameraNode();
@@ -403,7 +417,7 @@ private:
   bool  m_bIsInitalized;
 //  FrameBufferInfo m_BufInfo;
 public:
-//  int m_last_read_frame;
+  int m_last_read_frame;
   enum BUFFER_OPTION {
     BUFFER_DEFAULT    = 0 ,
     LAST              ,   // read last  captured image.
@@ -441,18 +455,33 @@ protected:
 };
 
 #define ISORX_ISOHEADER 0x000001
+int EnableCyclemaster(raw1394handle_t handle);
+int DisableCyclemaster(raw1394handle_t handle);
+int CopyFrameBuffer(raw1394handle_t handle,
+		    int channel,
+		    void* buf,int size);
+int AllocateIsoChannel(raw1394handle_t handle,
+		       int channel,SPD spd);
+int ReleaseIsoChannel(raw1394handle_t handle,
+		      int channel);
+int ReleaseIsoChannelAll(raw1394handle_t handle);
+int AllocateFrameBuffer(raw1394handle_t handle,
+			int channel,
+			SPD spd,
+			int packet_sz,
+			int num_packets,
+			int buf_count,
+			int flag);
+int SetFrameCounter(int fd,int counter);
+int GetFrameCounter(int fd,int* ounter);
 
+//
 int GetPacketSize(FORMAT fmt,VMODE mode,FRAMERATE frame_rate);
 int GetNumPackets(FORMAT fmt,VMODE mode,FRAMERATE frame_rate);
 int GetImageWidth(FORMAT fmt,VMODE mode);
 int GetImageHeight(FORMAT fmt,VMODE mode);
 const char* GetVideoFormatString(FORMAT fmt,VMODE mode);
 const char* GetSpeedString(SPD rate);
-SPD GetRequiredSpeed(FORMAT fmt,VMODE mode,FRAMERATE frame_rate);
-
-// kick ioctl
-int SetFrameCounter(int fd, int counter);
-int GetFrameCounter(int fd, int* counter);
 
 //typedef list<C1394CameraNode> C1394CameraNodeList;
 //typedef int (*ENUM1394_CALLBACK)(T* node,void* id);
@@ -489,3 +518,9 @@ CCameraList::iterator find_camera_by_id(CCameraList& CameraList,int64_t id);
 
 #endif // #if !defined(_1394cam_h_included_)
 // end of [1394cam.h]
+/*
+ * Local Variables:
+ * mode:c++
+ * c-basic-offset: 4
+ * End:
+ */

@@ -1,3 +1,10 @@
+/*!
+  @file  yuv2rgb.cc
+  @brief convert YUV to RGBA
+  @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
+  @version $Id: yuv2rgb.cc,v 1.2 2002-02-12 14:41:02 yosimoto Exp $
+  @date    $Date: 2002-02-12 14:41:02 $
+ */
 //
 // yuv2rgb.cc - convert YUV to RGBA
 //
@@ -189,5 +196,9 @@ SaveRGBAtoFile(char *pFile,const RGBA* img,int w,int h,int fmt)
   return result;
 }
 
-
-  
+/*
+ * Local Variables:
+ * mode:c++
+ * c-basic-offset: 4
+ * End:
+ */
