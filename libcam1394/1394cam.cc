@@ -1,8 +1,9 @@
-/*!
-  @file    1394cam.cc
-  @brief   1394-based Digital Camera control class
-  @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.20 2003-05-27 21:22:50 yosimoto Exp $
+/**
+ * @file    1394cam.cc
+ * @brief   1394-based Digital Camera control class
+ * @date    Sat Dec 11 07:01:01 1999
+ * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
+ * @version $Id: 1394cam.cc,v 1.21 2003-08-22 01:54:02 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -199,8 +200,8 @@ callback_1394Camera(raw1394_handle* handle, nodeid_t node_id,
     return true;
 }
 
-/** find camera by camera-id .
- * 
+/**
+ *  find camera by camera-id .
  * 
  * @param CameraList 
  * @param id 
@@ -220,7 +221,8 @@ find_camera_by_id(CCameraList& CameraList,uint64_t id)
 }
 
 //typedef int (*ENUM1394_CALLBACK)(T* node,void* id);
-/** 
+
+/* 
  * @fn enumrate 1394 node 
  * 
  * @param handle
@@ -299,7 +301,7 @@ GetCameraList(raw1394handle_t handle, CCameraList* pList)
 // ------------------------------------------------------------
 
 /** 
- * read the register
+ * read the configuratoin register directory.
  * 
  * @param addr 
  * @param value 
@@ -315,7 +317,7 @@ bool C1394CameraNode::ReadReg(nodeaddr_t addr,quadlet_t* value)
     return true;
 }
 /** 
- * write the register
+ * write the configuratoin register directory.
  * 
  * @param addr 
  * @param value 
@@ -389,7 +391,7 @@ GetVenderName(char* lpBuffer,size_t* lpLength)
 /** 
  * re-set camera to initial(factory setting value) state
  * 
- * Sun Dec 12 19:04:14 1999 by hiromasa yoshimoto 
+ * Dec 12 19:04:14 1999 by hiromasa yoshimoto 
  * 
  * @return 
  */
@@ -407,10 +409,11 @@ C1394CameraNode::ResetToInitialState()
 }
 
 /** 
- * power up the camera
+ * power the camera off
  *
- * DFW-V500 seems not to support these functions... 
- * Sun Dec 12 19:08:52 1999 by hiromasa yoshimoto 
+ * @note DFW-V500 seems not to support these functions... 
+ * 
+ * @since Sun Dec 12 19:08:52 1999 by hiromasa yoshimoto 
  *
  * @return 
  */
@@ -426,10 +429,9 @@ C1394CameraNode::PowerDown()
 }
 
 /** 
- * power down the camera
+ * power the camera on
  *
- * DFW-V500 seems not to support these functions... 
- * Sun Dec 12 19:08:52 1999 by hiromasa yoshimoto 
+ * @note DFW-V500 seems not to support these functions... 
  *
  * @return 
  */
@@ -463,6 +465,14 @@ C1394CameraNode::HasFeature(C1394CAMERA_FEATURE feat)
   return (1 == GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp));
 }
 
+/** 
+ * 
+ * 
+ * @param feat 
+ * @param fstate 
+ * 
+ * @return 
+ */
 bool
 C1394CameraNode::HasCapability(C1394CAMERA_FEATURE feat, 
 			       C1394CAMERA_FSTATE fstate)
@@ -490,6 +500,7 @@ C1394CameraNode::HasCapability(C1394CAMERA_FEATURE feat,
 
   return r;
 }
+
 /** 
  * 
  * 
@@ -603,7 +614,10 @@ bool C1394CameraNode::GetFeatureState(C1394CAMERA_FEATURE feat,
 const char*
 C1394CameraNode::GetFeatureName(C1394CAMERA_FEATURE feat)
 {
-  return feature_hi_table[feat];
+    if (0<=feat && feat < END_OF_FEATURE)
+	return feature_hi_table[feat];
+    else
+	return NULL;
 }
 
 /** 
@@ -1145,24 +1159,38 @@ C1394CameraNode:: StopIsoTx()
 }
 
 
+/**
+ * pixel information.  bit weight
+ *
+ */
 struct VideoPixelInfo{
-    char* name;
+    char* name;			/**< pixel format name */
 
-    int weight0;
-    int weight1;
-    int weight2;
+    int weight0;		/**< 1st component weight */
+    int weight1;		/**< 2nd component weight */
+    int weight2;		/**< 3rd component weight */
 };
 
+/**
+ *
+ *
+ */
 struct VideoImageInfo{
-    PIXEL_FORMAT pixel_format;
-    int  w;
-    int  h;
+    PIXEL_FORMAT pixel_format;	/**< pixel format */ 
+    int  w;			/**< width  */
+    int  h;			/**< height */
 };
 
+/**
+ * packet format table.
+ * 
+ * see IIDC 1394-based Digital Camera Sepec (2.1.2 Video mode comparison chart)
+ *
+ */
 struct VideoPacketInfo{
-    int packet_sz;
-    int num_packets;
-    SPD required_speed;
+    int packet_sz;		/**< size of packet per a packet.    */
+    int num_packets;		/**< number of packets per an image. */
+    SPD required_speed;		/**< required bus speed.             */
 };
 
 static struct VideoPixelInfo video_pixel_info[]=
@@ -1172,6 +1200,7 @@ static struct VideoPixelInfo video_pixel_info[]=
     {"YUV(4:1:1)",  4, 1, 1   }, // VFMT_VUV411
     {"RGB(8:8:8)",  8, 8, 8   }, // VFMT_RGB888
     {" Y (Mono) ",  8, 0, 0   }, // VFMT_Y8
+    {" Y(Mono16)", 16, 0, 0   }, // VFMT_Y16
     {" unknown  ", -1,-1,-1   }
 };
 
@@ -1186,11 +1215,31 @@ static struct VideoImageInfo video_image_info[][8]=  // format / mode
 	{    VFMT_YUV422,       640,  480}, // format_0/mode_3
 	{    VFMT_RGB888,       640,  480}, // format_0/mode_4
 	{    VFMT_Y8    ,       640,  480}, // format_0/mode_5
+	{    VFMT_Y16   ,       640,  480}, // format_0/mode_6
+	RESERVED,                           // format_0/mode_7
+    },
+    // format_1
+    {
+	{   VFMT_YUV422,        800, 600}, // format_1/mode_0
+	{   VFMT_RGB888,        800, 600}, // format_1/mode_1
+	{   VFMT_Y8    ,        800, 600}, // format_1/mode_2
+	{   VFMT_YUV422,       1024, 768}, // format_1/mode_3
+	{   VFMT_RGB888,       1024, 768}, // format_1/mode_4
+	{   VFMT_Y8    ,       1024, 768}, // format_1/mode_5	
+	{   VFMT_Y16   ,        800, 600}, // format_1/mode_6
+	{   VFMT_Y16   ,       1024, 768}, // format_1/mode_7
+    },
+    // format_2
+    {
+	RESERVED,
+	RESERVED,
+	RESERVED,
+	RESERVED,
+	RESERVED,
+	RESERVED,
 	RESERVED,
 	RESERVED,
     },
-    // format_1
-    // format_2
 };
 #undef RESERVED
 
@@ -1200,7 +1249,7 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 {
     // format_0
     {
-	{ // mode_0 
+	{ // format_1 mode_0 
 	    RESERVED,                     // 1.875fps
 	    RESERVED,                     // 3.75 fps
 	    {  15*4, 120*8, SPD_100M  },  // 7.5  fps
@@ -1208,7 +1257,7 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    {  60*4, 120*2, SPD_100M  },  // 30   fps
 	    RESERVED,                     // 60   fps
 	},
-	{ // mode_1 
+	{ // format_1 mode_1 
 	    RESERVED,
 	    {  20*4, 240*8 ,SPD_100M},
 	    {  40*4, 240*4 ,SPD_100M},
@@ -1216,7 +1265,7 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    { 160*4, 240   ,SPD_100M},
 	    RESERVED,
 	},
-	{ // mode_2
+	{ // format_1 mode_2
 	    RESERVED,
 	    {  60*4, 480*4 ,SPD_100M},
 	    { 120*4, 480*2 ,SPD_100M},
@@ -1224,7 +1273,7 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    { 480*4, 480/2 ,SPD_200M},
 	    RESERVED,
 	},
-	{  // mode_3
+	{  // format_1 mode_3
 	    RESERVED,
 	    {  80*4, 480*4 ,SPD_100M},
 	    { 160*4, 480*2 ,SPD_100M},
@@ -1232,7 +1281,7 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    { 640*4, 480/2 ,SPD_400M},
 	    RESERVED,
 	},
-	{ // mode_4
+	{ // format_1 mode_4
 	    RESERVED,
 	    { 120*4, 480*4 ,SPD_100M},
 	    { 240*4, 480*2 ,SPD_100M},
@@ -1240,7 +1289,7 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    { 960*4, 480/2 ,SPD_400M},
 	    RESERVED,
 	},
-	{ // mode_5
+	{ // format_1 mode_5
 	    RESERVED,
 	    {  40*4, 480*4 ,SPD_100M},
 	    {  80*4, 480*2 ,SPD_100M},
@@ -1248,9 +1297,159 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    { 320*4, 480/2 ,SPD_200M},
 	    { 320*4, 480/4 ,SPD_400M},
 	},  
+	{  // format_1 mode_6
+	    RESERVED,
+	    {  80*4, 480*4 ,SPD_100M},
+	    { 160*4, 480*2 ,SPD_100M},
+	    { 320*4, 480/1 ,SPD_200M},
+	    { 640*4, 480/2 ,SPD_400M},
+	    RESERVED,
+	},
+	{ // format_1 mode_7
+	    RESERVED,
+	    RESERVED,
+	    RESERVED,
+	    RESERVED,
+	    RESERVED,
+	    RESERVED,
+	},  
     },
+
     // format_1
+    {
+	{ // format_1 mode_0
+	    RESERVED,                      // 1.875fps
+	    { 125*4, 600*16/5, SPD_100M }, // 3.75 fps
+	    { 250*4, 600*8/5,  SPD_100M }, // 7.5  fps
+	    { 500*4, 600*4/5,  SPD_200M }, // 15   fps
+	    {1000*4, 600*2/5,  SPD_400M }, // 30   fps
+	    RESERVED,                      // 60   fps
+	},
+	{ // format_1 mode_1
+	    RESERVED,                      // 1.875fps
+	    RESERVED,                      // 3.75 fps
+	    { 375*4, 600*8/5,  SPD_200M }, // 7.5  fps
+	    { 750*4, 600*4/5,  SPD_400M }, // 15   fps
+	    RESERVED,                      // 30   fps
+	    RESERVED,                      // 60   fps
+	},
+	{ // format_1 mode_2
+	    RESERVED,
+	    RESERVED,
+	    { 125*4, 600* 8/5, SPD_100M }, // 7.5  fps
+	    { 250*4, 600* 4/5, SPD_100M }, // 15   fps
+	    { 500*4, 600* 2/5, SPD_200M }, // 30   fps	    
+	    {1000*4, 600* 1/5, SPD_400M }, // 60   fps	    
+	},
+	{ // format_1 mode_3
+	    {  96*4, 768*16/3, SPD_100M }, // 1.875fps
+	    { 192*4, 768* 8/3, SPD_100M }, // 3.75 fps
+	    { 384*4, 768* 4/3, SPD_200M }, // 7.5  fps
+	    { 768*4, 768* 2/3, SPD_400M }, // 15   fps
+	    RESERVED,                      
+	    RESERVED,                      
+	},
+	{ // format_1 mode_4
+	    { 144*4, 768*16/3, SPD_100M }, // 1.875fps
+	    { 288*4, 768* 8/3, SPD_200M }, // 3.75 fps
+	    { 576*4, 768* 4/3, SPD_400M }, // 7.5  fps
+	    RESERVED,
+	    RESERVED,                      
+	    RESERVED,                      
+	},
+	{ // format_1 mode_5
+	    {  48*4, 768*16/3, SPD_100M }, // 1.875fps
+	    {  96*4, 768* 8/3, SPD_100M }, // 3.75 fps
+	    { 192*4, 768* 4/3, SPD_100M }, // 7.5  fps
+	    { 384*4, 768* 2/3, SPD_200M }, // 15   fps
+	    { 768*4, 768* 1/3, SPD_400M }, // 30   fps
+	    RESERVED,                      
+	},
+	{ // format_1 mode_6
+	    RESERVED,                      // 1.875fps
+	    { 125*4, 600*16/5, SPD_100M }, // 3.75 fps
+	    { 250*4, 600*8/5,  SPD_100M }, // 7.5  fps
+	    { 500*4, 600*4/5,  SPD_200M }, // 15   fps
+	    {1000*4, 600*2/5,  SPD_400M }, // 30   fps
+	    RESERVED,                      // 60   fps
+	},
+	{ // format_1 mode_7
+	    {  96*4, 768*16/3, SPD_100M }, // 1.875fps
+	    { 192*4, 768* 8/3, SPD_100M }, // 3.75 fps
+	    { 384*4, 768* 4/3, SPD_200M }, // 7.5  fps
+	    { 768*4, 768* 2/3, SPD_400M }, // 15   fps
+	    RESERVED,                      
+	    RESERVED,                      
+	},
+    },
+
     // format_2
+    {
+	{ // format_2 mode_0
+	    { 160*4, 960* 4, SPD_100M }, // 1.875fps
+	    { 320*4, 960* 2, SPD_200M }, // 3.75 fps
+	    { 640*4, 960* 1, SPD_400M }, // 7.5  fps
+	    RESERVED,
+	    RESERVED,                      
+	    RESERVED,                      
+	},
+	{ // format_2 mode_1
+	    { 240*4, 960* 4, SPD_100M }, // 1.875fps
+	    { 480*4, 960* 2, SPD_200M }, // 3.75 fps
+	    { 960*4, 960* 1, SPD_400M }, // 7.5  fps
+	    RESERVED,
+	    RESERVED,                      
+	    RESERVED,                      
+	},
+	{ // format_2 mode_2
+	    {  80*4, 960* 4, SPD_100M }, // 1.875fps
+	    { 160*4, 960* 2, SPD_100M }, // 3.75 fps
+	    { 320*4, 960* 1, SPD_200M }, // 7.5  fps
+	    { 640*4,960*1/2, SPD_400M }, // 15   fps
+	    RESERVED,                      
+	    RESERVED,                      
+	},
+	{ // format_2 mode_3
+	    { 250*4,1200*16/5, SPD_100M }, // 1.875fps
+	    { 500*4,1200* 8/5, SPD_200M }, // 3.75 fps
+	    {1000*4,1200* 4/5, SPD_400M }, // 7.5  fps
+	    RESERVED,
+	    RESERVED,                      
+	    RESERVED,                      
+	},
+	{ // format_2 mode_4
+	    { 375*4,1200*16/5, SPD_200M }, // 1.875fps
+	    { 750*4,1200* 8/5, SPD_400M }, // 3.75 fps
+	    RESERVED,
+	    RESERVED,
+	    RESERVED,                      
+	    RESERVED,                      
+	},
+	{ // format_2 mode_5
+	    { 125*4,1200*16/5, SPD_100M }, // 1.875fps
+	    { 250*4,1200* 8/5, SPD_100M }, // 3.75 fps
+	    { 500*4,1200* 4/5, SPD_200M }, // 7.5  fps
+	    {1000*4,1200* 2/5, SPD_400M }, // 15   fps
+	    RESERVED,                      
+	    RESERVED,                      
+	},
+	{ // format_2 mode_6
+	    { 160*4, 960* 4, SPD_100M }, // 1.875fps
+	    { 320*4, 960* 2, SPD_200M }, // 3.75 fps
+	    { 640*4, 960* 1, SPD_400M }, // 7.5  fps
+	    RESERVED,
+	    RESERVED,                      
+	    RESERVED,                      
+	},
+	{ // format_2 mode_7
+	    { 250*4,1200*16/5, SPD_100M }, // 1.875fps
+	    { 500*4,1200* 8/5, SPD_200M }, // 3.75 fps
+	    {1000*4,1200* 4/5, SPD_400M }, // 7.5  fps
+	    RESERVED,
+	    RESERVED,                      
+	    RESERVED,                   
+	},
+    },
 };
 #undef RESERVED
 
@@ -1264,8 +1463,8 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
  */
 const char* GetVideoFormatString(FORMAT fmt,VMODE mode)
 {
-    if (!(0<=fmt&&fmt<1))
-	return NULL;
+    if (!(0<=fmt&&fmt<=2))
+	return "unknown (or not supported) format";
   
     PIXEL_FORMAT pixel=video_image_info[fmt][mode].pixel_format;
     return video_pixel_info[ pixel ].name;

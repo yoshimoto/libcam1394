@@ -1,8 +1,8 @@
-/*!
-  @file  1394cam.h
-  @brief 1394-based Digital Camera control class
-  @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.h,v 1.9 2003-05-27 21:22:50 yosimoto Exp $
+/**
+ * @file    1394cam.h
+ * @brief   1394-based Digital Camera control class
+ * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
+ * @version $Id: 1394cam.h,v 1.10 2003-08-22 01:54:02 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -22,8 +22,8 @@ enum PIXEL_FORMAT {
     VFMT_YUV422  =1,  //!< YUV422  = 16 bit/pixel
     VFMT_YUV411  =2,  //!< YUV411  = 12 bit/pixel
     VFMT_RGB888  =3,  //!< RGB888  = 24 bit/pixel
-    VFMT_Y8      =4,  //!< Y8      =  8 bip/pixel, gray image
-    
+    VFMT_Y8      =4,  //!< Y8      =  8 bit/pixel, gray image
+    VFMT_Y16     =5,  //!< Y16     = 16 bit/pixel, gray image
     VFMT_NOT_SUPPORTED ,
 };
 
@@ -50,6 +50,7 @@ enum VMODE {
     Mode_4= 4, //!<  video mode_4
     Mode_5= 5, //!<  video mode_5
     Mode_6= 6, //!<  video mode_6
+    Mode_7= 7, //!<  video mode_7
 
     Mode_X=-1,
 };
@@ -98,13 +99,17 @@ enum C1394CAMERA_FEATURE {
     END_OF_FEATURE   ,
 };
 
-//! each feature has four states
+//! each camera's feature has four states OFF, AUTO, MANUAL and ONE_PUSH.
 enum C1394CAMERA_FSTATE
 {
-    OFF          = 0,
-    AUTO            ,
-    MANUAL          ,
-    ONE_PUSH        ,
+    OFF          = 0,           //!< will be fixed value.
+    AUTO            ,		//!< control automatically by itself
+				//   continuously.
+    MANUAL          ,		//!< control manually by written value
+				//   by SetParamter().
+    ONE_PUSH        ,		//!< control automatically by itself
+				//   only once and returns MANUAL control
+				//   state with adjusted value.
     END_OF_FSTATE
 };
 

@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.15 2003-03-01 13:34:06 yosimoto Exp $
-  @date    $Date: 2003-03-01 13:34:06 $
+  @version $Id: cam1394.cc,v 1.16 2003-08-22 01:54:02 yosimoto Exp $
+  @date    $Date: 2003-08-22 01:54:02 $
  */
 #include "config.h"
 
@@ -158,7 +158,6 @@ savetofile(C1394CameraNode& camera,char *fname)
      return 0;
 }
 
-
 int display_live_image_on_X(C1394CameraNode &cam)
 {
   int channel;
@@ -204,9 +203,9 @@ int main(int argc, char *argv[]){
     int card_no=0;       /* oh1394 interface number */
     int spd=-1;          /* bus speed 0=100M 1=200M 2=400M */
 
+    const char *opt_filename=NULL;   /* filename to save frame(s). */
     const char *target_cameras=NULL; /* target camera(s) */
     const char *save_filename =NULL;
-    const char *save_pattern  =NULL;
 
     const char *cp[END_OF_FEATURE]; /* camera's parameter. 
 				       "NULL"  means the value isn't set. */
@@ -234,21 +233,19 @@ int main(int argc, char *argv[]){
 
     struct poptOption control_optionsTable[] = {
 	{ "start", 'S',  POPT_ARG_NONE, &do_start, 'S',
-	  " start camera(s) ", NULL } ,    
+	  "start camera(s) ", NULL } ,    
 	{ "stop",  'P',  POPT_ARG_NONE, &do_stop, 'P',
-	  " stop  camera(s) ", NULL } , 
-	{ "oneshot", 'O',  POPT_ARG_NONE, &do_oneshot, 'B',
-	  " take one picture. ",NULL } ,   
+	  "stop  camera(s) ", NULL } , 
 	{ "disp", 'D',  POPT_ARG_NONE, &do_disp, 'D',
-	  " display live image on X", NULL } ,
+	  "display live image on X", NULL } ,
 	{ NULL, 0, 0, NULL, 0 }
     };
 
     struct poptOption query_optionsTable[] = {
 	{ "info", 'I',  POPT_ARG_NONE, &do_info, 'I',
-	  " show infomation camera", NULL } ,   
+	  "show infomation camera", NULL } ,   
 	{ "query", 'Q', POPT_ARG_NONE, &do_query, 'Q',
-	  " query setting", NULL},
+	  "query setting (EXPERIMENTAL)", NULL},
 	{ NULL, 0, 0, NULL, 0 }
     };
 
@@ -267,10 +264,14 @@ int main(int argc, char *argv[]){
     };
 
     struct poptOption save_optionsTable[] = {
-	{ "save",  'X',    POPT_ARG_NONE, &do_save_bin, 'B',
+	{ "oneshot", 'O',  POPT_ARG_NONE, &do_oneshot, 'O',
+	  "take one picture. ",NULL } ,   
+	{ "save",  'X',    POPT_ARG_NONE, &do_save_bin, 'X',
 	  "save stream to a binary file. ",NULL } ,   
-	{ "save_ppm", 'Y', POPT_ARG_NONE, &do_save_ppm, 'P',
-	  "save each image", NULL},
+	{ "save_ppm", 'Y', POPT_ARG_NONE, &do_save_ppm, 'Y',
+	  "save each frame to files.", NULL},
+	{ "filename", 'f', POPT_ARG_STRING, &opt_filename, 'f',
+	  "filename or filename pattern.(EXPERIMENTAL)", NULL},
 	{ NULL, 0, 0, NULL, 0 }
     };
 
@@ -526,9 +527,9 @@ int main(int argc, char *argv[]){
 	}
     }
 
-    if (do_disp!=-1 || do_save_bin!=-1)
+    if (do_disp!=-1 || do_save_bin!=-1 || do_oneshot!=-1 )
 	CreateYUVtoRGBAMap();
-
+    
     // disp infomation camere(s)
     if (do_info!=-1){
 	for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++){
@@ -538,7 +539,7 @@ int main(int argc, char *argv[]){
 
 
     // start camere(s)
-    if (do_start!=-1){
+    if (do_start!=-1 || do_oneshot!=-1 ){
 	for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++){
 	    LOG("start");
 	    cam->StartIsoTx();
@@ -553,14 +554,48 @@ int main(int argc, char *argv[]){
     }
 
     // save camere(s) image
-    if (do_save_bin!=-1){
-	cam=TargetList.begin();
+    if (do_save_bin!=-1){	
+	if ( TargetList.size() != 1){
+	    cerr << "please specify camera id." << endl;
+	    exit(-1);
+	}
 	char fname[1024];
-	snprintf(fname,sizeof(fname),
-		 "%d_%%0d.yuv",MAKE_CAMERA_ID(cam->m_ChipID));
-	LOG("save to " << fname);
-    
+	
+	if (NULL==opt_filename)
+	    snprintf(fname,sizeof(fname),
+		     "%d_%%0d.yuv",MAKE_CAMERA_ID(cam->m_ChipID));
+	else
+	    snprintf(fname,sizeof(fname),
+		     opt_filename, MAKE_CAMERA_ID(cam->m_ChipID));
+
+	cam=TargetList.begin();
 	savetofile(*cam, fname);
+    }
+
+    // save a frame to file.
+    if (do_oneshot!=-1){
+	for (cam=TargetList.begin(); cam!=TargetList.end(); cam++){
+	    if (cam->AllocateFrameBuffer()){
+		cerr<<": failure @ AllocateFrameBuffer() "<<endl;
+		return -2;
+	    }
+	}
+
+	for (cam=TargetList.begin(); cam!=TargetList.end(); cam++){
+	    char fname[1024];
+	    
+	    if (NULL==opt_filename)
+		snprintf(fname,sizeof(fname),
+			 "%0d.ppm",MAKE_CAMERA_ID(cam->m_ChipID));
+	    else
+		snprintf(fname,sizeof(fname),
+			 opt_filename, MAKE_CAMERA_ID(cam->m_ChipID));
+	    
+
+	    cam->UpDateFrameBuffer();
+	    cam->SaveToFile(fname);
+	}
+
     }
 
     return 0;
