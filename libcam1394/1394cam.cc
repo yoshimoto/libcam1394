@@ -1,16 +1,19 @@
 /*!
-  @file  lz.h 
-  @brief 1394-based Digital Camera control class
+  @file    1394cam.cc
+  @brief   1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.5 2002-04-24 10:24:15 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.6 2002-06-09 08:29:16 yosimoto Exp $
  */
-// Copyright (C) 1999-2002 by YOSHIMOTO Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp> 
+
+// Copyright (C) 1999-2002 by YOSHIMOTO Hiromasa
 //
 // class C1394Node
 //  +- class C1394CameraNode
 //
-// 1394-based Digital Camera Specification (Version1.20)
+// 1394-based Digital Camera Specification (Version1.30)
+//
 // Sat Dec 11 07:01:01 1999 by hiromasa yoshimoto 
+// Sun Jun  9 16:43:47 2002 by YOSHIMOTO Hiromasa 
 
 #include "config.h"
 #include <stdio.h>
@@ -66,6 +69,7 @@ using namespace std;
 
 #define WAIT usleep(10000)
 
+//! string-table for feature codes
 static const char *feature_hi_table[]={
     "brightness" ,   // +0
     "auto_exposure" ,   
@@ -101,14 +105,14 @@ static const char *feature_hi_table[]={
 
 
 /** 
- * hoghoe
+ * callback function for enumerating each node.
  * 
  * @param handle 
  * @param node_id 
  * @param pNode 
  * @param arg 
  * 
- * @return 
+ * @return   true if the node is 1394-based camera.
  */
 static int 
 callback_1394Camera(raw1394_handle* handle,nodeid_t node_id,

@@ -134,7 +134,7 @@ int main(int argc,char *argv[]){
 
   FORMAT fmt=Format_0;
   VMODE  mode=Mode_1;
-  FRAMERATE rate=FrameRate_3;
+  FRAMERATE rate=FrameRate_4;
   
   ImgInfo info;
   info.w           = GetImageWidth ( fmt, mode);
@@ -147,7 +147,7 @@ int main(int argc,char *argv[]){
 
 
 
-  info.skip = 10;
+  info.skip = 4;
   info.packet_sz  += 8;
 
   

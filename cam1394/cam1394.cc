@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.4 2002-03-15 21:08:30 yosimoto Exp $
-  @date    $Date: 2002-03-15 21:08:30 $
+  @version $Id: cam1394.cc,v 1.5 2002-06-09 08:29:15 yosimoto Exp $
+  @date    $Date: 2002-06-09 08:29:15 $
  */
 #include <stdio.h>
 #include <unistd.h>
@@ -29,6 +29,10 @@
 #include <libcam1394/yuv.h>                /* 色変換 */
 #include "common.h"
 #include "xview.h"              /* Xの表示オブジェクト*/
+
+#define DWFV500_MAGICNUMBER 8589965664ULL
+#define MAKE_CAMERA_ID(x) ((int64_t)(x)-DWFV500_MAGICNUMBER)
+#define MAKE_CHIP_ID(x)   ((int64_t)(x)+DWFV500_MAGICNUMBER)
 
 
 // const 

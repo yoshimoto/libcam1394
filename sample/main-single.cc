@@ -28,6 +28,12 @@
 
 #include "xview.h"              /* Xの表示オブジェクト*/
 
+
+#define DWFV500_MAGICNUMBER 8589965664ULL
+#define MAKE_CAMERA_ID(x) ((int64_t)(x)-DWFV500_MAGICNUMBER)
+#define MAKE_CHIP_ID(x)   ((int64_t)(x)+DWFV500_MAGICNUMBER)
+
+
 /* カメラの各種定数
    これらの値を変更することで様々な形式で画像を獲得できるはずです。
    具体的な数値については1394-based Digital Camera Specや

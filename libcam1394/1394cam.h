@@ -2,7 +2,7 @@
   @file  1394cam.h
   @brief 1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.h,v 1.1 2002-03-15 20:45:13 yosimoto Exp $
+  @version $Id: 1394cam.h,v 1.2 2002-06-09 08:29:16 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -17,7 +17,7 @@ struct IplImage;
 #endif // #if defined IPLAPI
 
 
-//!
+//! pixel format codes
 enum PIXEL_FORMAT {
     VFMT_YUV444  =0, 
     VFMT_YUV422  =1,
@@ -29,7 +29,6 @@ enum PIXEL_FORMAT {
 };
 
 //! video format codes. This library supports only Format_0 now.
-//
 enum FORMAT {
     Format_0 = 0, //!< VGA non-compressed format 
     Format_1 = 1, //!< Super VGA non-compressed format(1)
@@ -69,6 +68,7 @@ enum FRAMERATE {
     FrameRate_X=-1, 
 };
 
+//! camera feature codes.
 enum C1394CAMERA_FEATURE {
     BRIGHTNESS      = 0,      //!< brightness control
     AUTO_EXPOSURE      ,      //!< auto exposure control
@@ -99,22 +99,20 @@ enum C1394CAMERA_FEATURE {
 
 //-------------------------------------------------------
 
+//! information of the node
 class C1394Node {
 public:
-    unsigned int m_VenderID;
-    uint64_t  m_ChipID;
+    unsigned int m_VenderID;  //!< vender id
+    uint64_t     m_ChipID;    //!< chip id
 };
 
+//! frame buffer parameters
 struct BufferInfo {
     //! @todo  !!FIXME!! -- not implemented yet
 };
 
-/** class C1394CameraNode 
- * 
- * 
- */
+//! class C1394CameraNode 
 class C1394CameraNode : public C1394Node {
-
 private:
     enum {
 	MAX_COUNT_NUMBER=0xffffffff,
@@ -200,7 +198,6 @@ private:
   
     bool  m_bIsInitalized; //!< true means this instance has been initalized
 
-
 public:
     int m_last_read_frame;    //!< the counter of the last read frame number.
 
@@ -275,13 +272,7 @@ typedef list<C1394CameraNode> CCameraList; //!< camera list
 bool GetCameraList(raw1394handle_t,CCameraList *);
 CCameraList::iterator find_camera_by_id(CCameraList& CameraList,uint64_t id);
 
-
-#define DWFV500_MAGICNUMBER 8589965664ULL
-#define MAKE_CAMERA_ID(x) ((int64_t)(x)-DWFV500_MAGICNUMBER)
-#define MAKE_CHIP_ID(x)   ((int64_t)(x)+DWFV500_MAGICNUMBER)
-
 #endif // #if !defined(_1394cam_h_included_)
-// end of [1394cam.h]
 /*
  * Local Variables:
  * mode:c++

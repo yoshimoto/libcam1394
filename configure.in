@@ -1,16 +1,20 @@
-# $Id: configure.in,v 1.8 2002-03-16 13:00:53 yosimoto Exp $
+# $Id: configure.in,v 1.9 2002-06-09 08:29:14 yosimoto Exp $
 
 AC_INIT(Makefile.am)
-AM_INIT_AUTOMAKE(libcam1394, 0.1.1)
+AM_INIT_AUTOMAKE(libcam1394, 0.1.2)
 AM_CONFIG_HEADER(config.h)
 
-AM_PROG_AS
+##AM_PROG_AS
 AC_PROG_CC
 AC_PROG_CXX
-AC_PROG_LIBTOOL
-AC_PATH_XTRA 
+AC_PROG_CPP
+AM_PROG_LIBTOOL
+AC_ARG_PROGRAM
+AC_PROG_INSTALL
 
-# set the libtool so version numbers
+AC_PATH_XTRA 
+AC_CHECK_LIB(popt,poptGetContext)
+
 lt_major=0
 lt_revision=1
 lt_age=0
@@ -19,10 +23,7 @@ AC_SUBST(lt_major)
 AC_SUBST(lt_revision)
 AC_SUBST(lt_age)
 
-AC_HAVE_LIBRARY(popt)
 AC_LIB_RAW1394(0.9)
-
-
 if test "$ac_libraw1394_found" != "yes"; then
 	AC_MSG_ERROR( not found libraw1394(>=0.9) )
 fi
