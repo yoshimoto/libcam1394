@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.33 2004-07-13 18:11:03 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.34 2004-08-29 08:54:34 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -31,7 +31,7 @@
 #include <popt.h>
 #include <libraw1394/raw1394.h>
 #include <libraw1394/csr.h>
-#if defined(HAVE_ISOFB)
+#if defined HAVE_ISOFB
 #include <linux/ohci1394_iso.h>
 #else
 #include "video1394.h"
@@ -39,15 +39,17 @@
 
 #if defined HAVE_CV_H
 #include <cv.h>
-#endif
-#if defined HAVE_OPENCV_CV_H
+#define IPL_IMG_SUPPORTED
+#elif defined HAVE_OPENCV_CV_H
 #include <opencv/cv.h>
+#define IPL_IMG_SUPPORTED
 #endif
 
 #include "common.h"
 #include "1394cam_registers.h"
 #include "1394cam.h"
 #include "yuv.h"
+
 
 using namespace std;
 
@@ -2326,7 +2328,7 @@ int C1394CameraNode::GetImageHeight()
  */
 int C1394CameraNode::CopyIplImage(IplImage *dest)
 {
-#if !defined HAVE_CV_H && !defined HAVE_OPENCV_CV_H
+#ifndef IPL_IMG_SUPPORTED
     LOG("This system don't have ipl or OpenCV library.");
     return -1;
 #else
@@ -2367,7 +2369,7 @@ int C1394CameraNode::CopyIplImage(IplImage *dest)
     }
   
     return 0;
-#endif //#if !defined HAVE_CV_H && !defined HAVE_OPENCV_CV_H
+#endif //#ifndef IPL_IMG_SUPPORTED
 }
 
 /** 
@@ -2386,7 +2388,7 @@ int C1394CameraNode::CopyIplImage(IplImage *dest)
  */
 int C1394CameraNode::CopyIplImageGray(IplImage *dest)
 {
-#if !defined HAVE_CV_H && !defined HAVE_OPENCV_CV_H
+#ifndef IPL_IMG_SUPPORTED
     LOG("This system don't have ipl or OpenCV library.");
     return -1;
 #else
@@ -2427,7 +2429,7 @@ int C1394CameraNode::CopyIplImageGray(IplImage *dest)
     }
   
     return 0;
-#endif //#if !defined HAVE_CV_H && !defined HAVE_OPENCV_CV_H
+#endif //#ifndef IPL_IMG_SUPPORTED
 }
 
 

@@ -1,4 +1,4 @@
-# $Id: configure.in,v 1.33 2004-07-14 09:26:22 yosimoto Exp $
+# $Id: configure.in,v 1.34 2004-08-29 08:54:32 yosimoto Exp $
 
 AC_PREREQ([2.54])
 
@@ -24,14 +24,22 @@ AC_PROG_LIBTOOL
 
 AC_PATH_XTRA 
 AC_HEADER_STDC
+
 AC_CHECK_HEADERS([errno.h fcntl.h netinet/in.h string.h sys/ioctl.h unistd.h])
-AC_CHECK_HEADERS(cv.h)
-AC_CHECK_HEADERS(opencv/cv.h)
+
+PKG_CHECK_MODULES(OPENCV, "opencv",[have_opencv=yes, 
+			  AC_DEFINE(HAVE_OPENCV,,[OpenCV library])],
+			  have_opencv=no)
+if test "$have_opencv" != "yes"; then
+   AC_CHECK_HEADERS(cv.h, have_opencv=yes)
+   AC_CHECK_HEADERS(opencv/cv.h, have_opencv=yes)
+fi
 
 AC_CHECK_LIB(popt,poptGetContext)
+
 AC_LIB_RAW1394(0.9)
 if test "$ac_libraw1394_found" != "yes"; then
-	AC_MSG_ERROR( not found libraw1394(>=0.9) )
+   AC_MSG_ERROR( not found libraw1394(>=0.9) )
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -90,17 +98,10 @@ sample/Makefile
 ##################################################
 # Print configuration
 ##################################################
-if test "x$ac_cv_header_opencv_cv_h" = "xyes"; then
-  is_opencv_supported="yes"
-elif test "x$ac_cv_header_cv_h" = "xyes"; then
-  is_opencv_supported="yes"
-else
-  is_opencv_supported="no"
-fi
 
 echo "
 configuration:	
         debug:   $enable_debug
        driver:   $driver
-opecv support:   $is_opencv_supported
+opecv support:   $have_opencv
 "

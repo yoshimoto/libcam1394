@@ -1,7 +1,8 @@
-# $Id: Makefile.am,v 1.4 2004-06-20 02:45:08 yosimoto Exp $
+# $Id: Makefile.am,v 1.5 2004-08-29 08:54:34 yosimoto Exp $
 
 lib_LTLIBRARIES = libcam1394.la
 libcam1394_la_LDFLAGS = -version-info @lt_major@:@lt_revision@:@lt_age@
+libcam1394_la_CXXFLAGS = @LIBRAW1394_CFLAGS@
 libcam1394_la_LIBADD   = @LIBRAW1394_LIBS@
 libcam1394_la_SOURCES = \
 	1394cam.cc \
@@ -14,5 +15,4 @@ libcam1394_la_SOURCES = \
 	ieee1394-ioctl.h
 
 LIBS =
-CPPFLAGS = @LIBRAW1394_CPPFLAGS@
 pkginclude_HEADERS = 1394cam.h 1394cam_registers.h yuv.h

@@ -2,7 +2,7 @@
  * @file    1394cam.h
  * @brief   1394-based Digital Camera control class
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.h,v 1.16 2004-06-12 10:39:41 yosimoto Exp $
+ * @version $Id: 1394cam.h,v 1.17 2004-08-29 08:54:34 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -21,7 +21,7 @@ enum SPD {
 };
 #endif
 
-#if !defined OPENCVAPI
+#if !defined OPENCVAPI && !defined IPL_DEPTH_8U
 struct IplImage;
 #endif // #if defined OPENCVAPI
 
