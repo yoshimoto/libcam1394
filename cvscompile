@@ -1,15 +1,11 @@
 #!/bin/bash
 
 libtoolize --force --copy --automake
-aclocal $ACLOCAL_FLAGS
+aclocal-1.7 $ACLOCAL_FLAGS
 autoheader
-automake --foreign --copy --add-missing
+automake-1.7 --foreign --copy --add-missing
 autoconf
-export CFLAGS='-O2 -Wall -W -pipe -g'
-echo "CFLAGS=$CFLAGS"
-echo "./configure $@"
-./configure $@ || exit 1
-unset CFLAGS
+./configure --enable-maintainer-mode $@ || exit 1
 if [ -z "$CVSCOMPILE_NO_MAKE" ]; then
   make
 fi

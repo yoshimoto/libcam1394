@@ -1,14 +1,17 @@
-# $Id: configure.in,v 1.29 2004-06-12 04:37:06 yosimoto Exp $
+# $Id: configure.in,v 1.30 2004-06-20 02:45:07 yosimoto Exp $
 
-m4_define([debug_default],[no])
+AC_PREREQ([2.54])
 
+m4_define([debug_default], [no])
+m4_define([libcam1394_version], [0.1.9rc3])
 
-AC_INIT(Makefile.am)
-AM_INIT_AUTOMAKE(libcam1394, 0.1.9rc3)
+AC_INIT([libcam1394], [libcam1394_version], [yosimoto@limu.is.kyushu-u.ac.jp])
+AM_INIT_AUTOMAKE([1.7 no-define])
 AM_CONFIG_HEADER(config.h)
 
 # Save this value here, since automake will set cflags later
 cflags_set=${CFLAGS+set}
+cxxflags_set=${CXXFLAGS+set}
 
 dnl Initialize maintainer mode
 AM_MAINTAINER_MODE
@@ -38,8 +41,8 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 
 # Checks for library functions.
-AC_PROG_GCC_TRADITIONAL
-AC_FUNC_MMAP
+#AC_PROG_GCC_TRADITIONAL
+#AC_FUNC_MMAP
 AC_CHECK_FUNCS([memset strcasecmp strerror strtol])
 
 AC_ARG_WITH([isofb],
@@ -52,9 +55,10 @@ AC_ARG_WITH([isofb],
 
 
 AC_ARG_ENABLE([debug],
-	AC_HELP_STRING([--enable-debug],
-		[turn on debugging @<:@default=debug_default@:>@]), ,
-	[enable_debug=debug_default])
+        AC_HELP_STRING([--enable-debug],
+                [turn on debugging @<:@default=debug_default@:>@]), ,
+        [enable_debug=debug_default])
+
 
 if test "x$enable_debug" = "xyes"; then
   if test x$cflags_set != xset ; then
@@ -67,12 +71,19 @@ fi
 lt_major=1
 lt_revision=0
 lt_age=0
-AC_SUBST(lt_major)
-AC_SUBST(lt_revision)
-AC_SUBST(lt_age)
+AC_SUBST([lt_major])
+AC_SUBST([lt_revision])
+AC_SUBST([lt_age])
 CFLAGS="$CFLAGS -Wall -Wunused"
 
-AC_OUTPUT([Makefile libcam1394/Makefile libcam1394/Doxyfile cam1394/Makefile])
+AC_OUTPUT([
+Makefile
+libcam1394/Makefile
+libcam1394/Doxyfile
+cam1394/Makefile
+sample/Makefile.opencv
+sample/Makefile
+])
 
 ##################################################
 # Print configuration
