@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.30 2004-06-12 04:37:06 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.31 2004-06-12 10:39:41 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -2290,7 +2290,8 @@ void* C1394CameraNode::UpDateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
  */
 int C1394CameraNode::GetFrameBufferSize()
 {
-    return m_BufferSize;
+    /* sometimes  m_BufferSize is greater than m_packet_sz * m_num_packet; */
+    return m_packet_sz*m_num_packet;
 }
 
 /** 

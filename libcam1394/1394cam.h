@@ -2,7 +2,7 @@
  * @file    1394cam.h
  * @brief   1394-based Digital Camera control class
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.h,v 1.15 2004-06-12 04:37:06 yosimoto Exp $
+ * @version $Id: 1394cam.h,v 1.16 2004-06-12 10:39:41 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -267,7 +267,7 @@ protected:
     int    AllocateBuffer(); 
     int    ReleaseBuffer();
 
-    int  m_num_frame; // number of frame in frame buffer.
+    int  m_num_frame; // number of frames in frame buffer.
 };
 
 #define ISORX_ISOHEADER 0x000001
