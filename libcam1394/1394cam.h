@@ -2,7 +2,7 @@
   @file  1394cam.h
   @brief 1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.h,v 1.8 2003-03-01 13:34:06 yosimoto Exp $
+  @version $Id: 1394cam.h,v 1.9 2003-05-27 21:22:50 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -143,7 +143,7 @@ protected:
     nodeaddr_t CMD(nodeaddr_t reg) ;
 
 public:
-
+    int    m_port_no;		     //!< port no of 1394 I/F
     raw1394handle_t m_handle;        //!< handle of 1394 I/F
     nodeid_t m_node_id;              //!< node_id of this node
     nodeaddr_t m_command_regs_base;  //!< base address of camera's cmd reg

@@ -2,7 +2,7 @@
   @file    1394cam.cc
   @brief   1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.19 2003-04-28 09:37:10 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.20 2003-05-27 21:22:50 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -39,10 +39,10 @@
 #include <opencv/cv.h>
 #endif
 
-#include "./common.h"
-#include "./1394cam_registers.h"
-#include "./1394cam.h"
-#include "./yuv.h"
+#include "common.h"
+#include "1394cam_registers.h"
+#include "1394cam.h"
+#include "yuv.h"
 
 using namespace std;
 
@@ -119,9 +119,11 @@ static const char *featurestate_table[]=
  * @return   true if the node is 1394-based camera.
  */
 static int 
-callback_1394Camera(raw1394_handle* handle,nodeid_t node_id,
-		    C1394CameraNode* pNode,void* arg)
+callback_1394Camera(raw1394_handle* handle, nodeid_t node_id,
+		    C1394CameraNode* pNode, void* arg)
 {
+    int port_no = (int)arg;
+
     nodeaddr_t addr;
     quadlet_t tmp;
     addr=ADDR_INDIRECT_OFFSET;
@@ -190,9 +192,10 @@ callback_1394Camera(raw1394_handle* handle,nodeid_t node_id,
     }
     /* command_regs_base ¤Î¼èÆÀ */
     // save infomation of this device
-    pNode->m_handle=handle;
-    pNode->m_node_id=node_id;
-    pNode->m_command_regs_base=CSR_REGISTER_BASE+(tmp&~0xff000000)*4;
+    pNode->m_handle  = handle;
+    pNode->m_node_id = node_id;
+    pNode->m_command_regs_base = CSR_REGISTER_BASE+(tmp&~0xff000000)*4;
+    pNode->m_port_no = port_no;
     return true;
 }
 
@@ -255,13 +258,12 @@ Enum1394Node(raw1394_handle* handle,
  * @return 
  */
 bool
-GetCameraList(raw1394handle_t handle,CCameraList* pList)
+GetCameraList(raw1394handle_t handle, CCameraList* pList)
 {
     int  numcards;
     const int NUM_PORT = 16;  /*  port   */
     struct raw1394_portinfo portinfo[NUM_PORT];
   
-//    cerr<<setfill('0');
 
     numcards = raw1394_get_port_info(handle, portinfo, NUM_PORT);
     if (numcards < 0) {
@@ -275,23 +277,21 @@ GetCameraList(raw1394handle_t handle,CCameraList* pList)
 	return false;
     }
 
-/*
-  for (i = 0; i < numcards; i++) {
-  printf("  nodes on bus: %2d, card name: %s\n", portinfo[i].nodes,
-  portinfo[i].name);
-  }
-  printf("using first card found: %d nodes on bus, local ID is %d\n",
-  raw1394_get_nodecount(handle),
-  raw1394_get_local_id(handle) & 0x3f);
-*/      
+    pList->clear();
+
     int i;
     for (i = 0; i< numcards; i++) {
-	if (raw1394_set_port(handle, i) < 0) {
+	raw1394handle_t new_handle = raw1394_new_handle();
+
+	if (raw1394_set_port(new_handle, i) < 0) {
 	    perror("couldn't set port");
 	    return false;
-	}
-	Enum1394Node(handle,&portinfo[i],
-		     pList,callback_1394Camera,NULL);
+	}	
+	int pre = pList->size();
+	Enum1394Node(new_handle, &portinfo[i],
+		     pList, callback_1394Camera, (void*)i);
+	if ( pList->size() == pre )
+	    raw1394_destroy_handle(new_handle);
     }
     return true;
 }
@@ -1541,9 +1541,11 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
 	return -2;
     }
 
-    fd=open("/dev/isofb0", O_RDWR);
+    char devname[1024];
+    snprintf(devname, sizeof(devname), "/dev/isofb%d", this->m_port_no);
+    fd=open(devname,O_RDWR);
     if (-1==fd){
-	cerr << "can't open "<<"/dev/isofb0"<<" "<<strerror(errno)<<endl;
+	cerr << "can't open "<<devname<<" "<<strerror(errno)<<endl;
 	return -1;
     }
   

@@ -1,17 +1,15 @@
-# $Id: Makefile,v 1.11 2003-03-13 11:27:10 yosimoto Exp $
-# $Author: yosimoto $
+CPPFLAGS=-I/usr/local/include
+LDFLAGS+=-L/usr/local/lib -lraw1394 -lcam1394 -L/usr/X11R6/lib -lX11
 
-CXXFLAGS+=-I/usr/local/include
-LDFLAGS+=-lstdc++ -L/usr/X11R6/lib -lX11  -lpopt 
-LDFLAGS+=-L/usr/local/lib -lraw1394 -lcam1394
+CPPFLAGS+=-g
 
-CXXFLAGS+=-g
+TARGET= main-single main-dual
 
-all: main-single main-dual 
+all: $(TARGET)
 
-main-single: main-single.o xview.o
+main-single: xview.o 
 
-main-dual: main-dual.o xview.o
+main-dual: xview.o 
 
 clean: 
-	rm -f main-single main-dual *.o
+	rm -f $(TARGET) *.o
