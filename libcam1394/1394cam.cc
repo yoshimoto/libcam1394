@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.38 2004-09-08 15:00:57 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.39 2004-09-15 07:29:45 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -2080,7 +2080,7 @@ static void* mmap_isofb(int port_no, int channel,
     snprintf(devname, sizeof(devname), "/dev/isofb%d", port_no);
     LOG("open("<<devname<<")");
     *fd=open(devname,O_RDWR);
-    if (-1==*fd){
+    if (*fd < 0){
 	ERR("Failed to open isofb device (" 
 	    << devname << ") : " << strerror(errno));
 	ERR("The ohci1394_fb module must be loaded, "
