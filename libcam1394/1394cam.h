@@ -2,7 +2,7 @@
  * @file    1394cam.h
  * @brief   1394-based Digital Camera control class
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.h,v 1.13 2003-12-02 16:33:09 yosimoto Exp $
+ * @version $Id: 1394cam.h,v 1.14 2003-12-19 12:40:25 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -134,15 +134,13 @@ private:
 protected:
 
     unsigned is_format6:1;           // '1':format_6 /  '0':other format
+
     int   m_channel;                 // -1 or "isochronus channel"
     int   m_iso_speed;               // isochronus speed
-
+public:
     char* m_lpModelName;             // camera name
     char* m_lpVecderName;            // camera vender name
 
-    nodeaddr_t CMD(nodeaddr_t reg) ;
-
-public:
     int    m_port_no;		     // port no of 1394 I/F
     raw1394handle_t m_handle;        // handle of 1394 I/F
     nodeid_t m_node_id;              // node_id of this node

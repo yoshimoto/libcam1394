@@ -2,8 +2,8 @@
   @file    yuv.h
   @brief   convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv.h,v 1.4 2003-11-30 08:46:55 yosimoto Exp $
-  @date    $Date: 2003-11-30 08:46:55 $
+  @version $Id: yuv.h,v 1.5 2003-12-19 12:40:25 yosimoto Exp $
+  @date    $Date: 2003-12-19 12:40:25 $
  */
 
 #if !defined(_YUV_H_INCLUDED_)
@@ -39,6 +39,13 @@ bool copy_YUV422toRGBA(RGBA* lpRGBA, const void* lpYUV422,
 		       int sz_packet, int num_packet, int flag);
 bool copy_YUV444toRGBA(RGBA* lpRGBA, const void* lpYUV444,
 		       int sz_packet, int num_packet, int flag);
+bool copy_RGB888toRGBA(RGBA* lpRGBA, const void* lpRGB888,
+		       int sz_packet, int num_packet, int flag);
+bool copy_Y8toRGBA(RGBA* lpRGBA, const void* lpYUV8,
+		   int sz_packet, int num_packet, int flag);
+bool copy_Y16toRGBA(RGBA* lpRGBA, const void* lpYUV16,
+		    int sz_packet, int num_packet, int flag);
+
 int  SaveRGBAtoFile(char *pFile, const RGBA* img, int w, int h, int fmt=0);
 int  CreateYUVtoRGBAMap();
 
@@ -49,6 +56,12 @@ bool copy_YUV422toIplImage(IplImage* dst, const void* lpYUV422,
 			   int sz_packet, int num_packet, int flag);
 bool copy_YUV444toIplImage(IplImage* dst, const void* lpYUV444,
 			   int sz_packet, int num_packet, int flag);
+bool copy_RGB888toIplImage(IplImage* dst, const void* lpRGB888,
+			   int sz_packet, int num_packet, int flag);
+bool copy_Y8toIplImage(IplImage* dst, const void* lpY8,
+		       int sz_packet, int num_packet, int flag);
+bool copy_Y16toIplImage(IplImage* dst, const void* lpY16,
+		       int sz_packet, int num_packet, int flag);
 
 bool copy_YUV411toIplImageGray(IplImage* dst, const void* lpYUV411,
 			       int sz_packet, int num_packet, int flag);
@@ -56,6 +69,12 @@ bool copy_YUV422toIplImageGray(IplImage* dst, const void* lpYUV422,
 			       int sz_packet, int num_packet, int flag);
 bool copy_YUV444toIplImageGray(IplImage* dst, const void* lpYUV444,
 			       int sz_packet, int num_packet, int flag);
+bool copy_RGB888toIplImageGray(IplImage* dst, const void* lpRGB888,
+			       int sz_packet, int num_packet, int flag);
+bool copy_Y8toIplImageGray(IplImage* dst, const void* lpY8,
+			   int sz_packet, int num_packet, int flag);
+bool copy_Y16toIplImageGray(IplImage* dst, const void* lpY16,
+			    int sz_packet, int num_packet, int flag);
 #endif // #if !defined IPL_IMAGE_MAGIC_VAL
 
 

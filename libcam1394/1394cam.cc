@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.26 2003-12-02 16:33:09 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.27 2003-12-19 12:40:25 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -54,16 +54,8 @@ using namespace std;
 #define EQU(val,mask,pattern)  (0==(((val)&(mask))^(pattern)))
 
 #define ADDR_CONFIGURATION_ROM        (CSR_REGISTER_BASE + CSR_CONFIG_ROM)
-// for root directory
-#define ADDR_ROOT_DIR                 (ADDR_CONFIGURATION_ROM + 0x14)
-#define ADDR_INDIRECT_OFFSET          (ADDR_CONFIGURATION_ROM + 0x20)
-#define ADDR_UNIT_DIRECTORY_OFFSET    (ADDR_CONFIGURATION_ROM + 0x24)
-// for unit directory
-#define OFFSET_UNIT_DEPENDENT_DIRECTORY_OFFSET   0x000c
-// for unit dependent directory
-#define OFFSET_COMMAND_REGS_BASE                 0x0004       
 
-#define WAIT usleep(10000)
+#define WAIT usleep(500)
 
 // string-table for feature codes
 static const char *feature_hi_table[]={
@@ -109,6 +101,225 @@ static const char *featurestate_table[]=
   NULL
 };
 
+
+static int 
+try_raw1394_read(raw1394handle_t handle, nodeid_t nodeid,
+			    nodeaddr_t addr, int len, quadlet_t *buf)
+{
+    int retry = 3;
+    while (retry-->0){
+	int retval = raw1394_read(handle, nodeid, addr, len, buf);
+	if (retval >= 0){
+	    return 0;
+	}
+	usleep(500);
+    }
+    ERR("raw1394_read() failed.");
+    return -1;
+}
+
+/** 
+ * 
+ * 
+ * @param handle 
+ * @param nodeid 
+ * @param addr 
+ * @param root 
+ * 
+ * @return 
+ */
+static int 
+get_root_directory_address(nodeaddr_t *root,
+			   raw1394handle_t handle, nodeid_t nodeid)
+{
+    if (root)
+	*root = ADDR_CONFIGURATION_ROM + 0x14;
+    return 0;
+}
+
+/** 
+ * get directory length.
+ * 
+ * @param handle 
+ * @param nodeid 
+ * @param addr 
+ * @param length 
+ * 
+ * @return 
+ */
+static int 
+get_directory_length(int *length,
+		     raw1394handle_t handle, nodeid_t nodeid, nodeaddr_t addr) 
+{
+    quadlet_t tmp;    
+    if (try_raw1394_read(handle, nodeid, addr, sizeof(tmp), &tmp))
+	return -1;
+    tmp = htonl( tmp );
+    *length = tmp >> 16;
+    return 0;
+}
+
+/** 
+ * 
+ * 
+ * @param key      
+ * @param value    result 
+ * @param handle 
+ * @param node_id  
+ * @param addr      begining of the directory.
+ * @param length    length  of the directory.
+ * 
+ * @return 
+ */
+static int 
+get_value(quadlet_t  *value,
+	  unsigned char key,
+	  raw1394handle_t handle, 
+	  nodeid_t node_id, nodeaddr_t addr, int  length)
+{
+    quadlet_t tmp;
+    while (length-->0){
+	addr+=4;
+	try_raw1394_read(handle, node_id, addr, sizeof(tmp), &tmp);	
+	tmp = htonl( tmp );	 
+	if (key == (tmp >> 24)){
+	    if (value)
+		*value = tmp & 0xffffff;
+	    return 0;
+	}
+    }
+    return -1;
+}
+
+
+/** 
+ * 
+ * 
+ * @param key 
+ * @param directory 
+ * @param handle 
+ * @param node_id 
+ * @param addr 
+ * @param length 
+ * 
+ * @return 
+ */
+static int 
+get_sub_directory_address(nodeaddr_t *directory, 
+			  unsigned char key,
+			  raw1394handle_t handle,
+			  nodeid_t node_id, nodeaddr_t addr, int  length)
+{
+    quadlet_t tmp;
+    while (length-->0){
+	addr+=4;
+	try_raw1394_read(handle, node_id, addr, sizeof(tmp), &tmp);	
+	tmp = htonl( tmp );	 
+	if (key == (tmp >> 24)){
+	    if (directory)
+		*directory = addr + 4*(tmp & 0xffffff);
+	    return 0;
+	}
+    }
+    return -1;
+}
+				
+
+/** 
+ * 
+ * 
+ * @param buf 
+ * @param size 
+ * @param ket 
+ * @param handle 
+ * @param node_id 
+ * @param addr 
+ * @param length 
+ * 
+ * @return 
+ */
+static int get_name_leaf(char *buf, int size, 
+			 unsigned char key,
+			 raw1394handle_t handle, 
+			 nodeid_t node_id, nodeaddr_t addr, int length)
+{
+    nodeaddr_t leaf_address;
+    if (get_sub_directory_address(&leaf_address,
+				  key, handle, node_id, addr, length))
+	return -1;
+
+
+    int result = 0;
+    if (get_directory_length(&length, handle, node_id, leaf_address))
+	return -1;
+    length *= 4;
+    length -= 8;
+    leaf_address += 0x0c;
+    
+    char *p=buf;
+    while (length > 0 && size>0){
+	quadlet_t tmp;
+	try_raw1394_read(handle, node_id, leaf_address, sizeof(tmp), &tmp);
+	tmp = htonl( tmp );	  
+	
+	int c=32;
+	while (c>=0 && size-->0){
+	    c-=8;
+	    *p++ = tmp >> c;
+	}
+
+	length -= 4;
+	leaf_address += 4;
+    }
+
+    // fill with zero
+    while (size-->0){
+	*p++ = 0;
+    }
+
+    return 0;
+}
+
+/** 
+ * get  vendor and chip id.
+ * 
+ * @param pNode 
+ * @param handle 
+ * @param node_id 
+ * @param addr_root 
+ * @param len_root 
+ * 
+ * @return 
+ */
+static int
+get_vendor_and_chip_id(C1394CameraNode *pNode,
+		       raw1394handle_t handle, 
+		       nodeid_t node_id, nodeaddr_t addr_root, int len)
+{
+    nodeaddr_t addr_node_uniq_id_leaf;
+    if (get_sub_directory_address(&addr_node_uniq_id_leaf, 0x8d, 
+				  handle, node_id, addr_root, len))
+	return -1;
+    
+    int len_node_uniq_id_leaf;    
+    if (get_directory_length(&len_node_uniq_id_leaf,
+			     handle, node_id, addr_node_uniq_id_leaf))
+	return -1;
+    
+    quadlet_t tmp;
+    try_raw1394_read(handle,node_id, 
+		     addr_node_uniq_id_leaf + 4, sizeof(tmp), &tmp);
+    tmp = ntohl( tmp );
+    pNode->m_VenderID = tmp>>8;
+    quadlet_t chip_id_hi = tmp&0xff;
+    try_raw1394_read(handle,node_id, addr_node_uniq_id_leaf + 8, 
+		     sizeof(tmp), &tmp);     
+    tmp = ntohl( tmp );
+    pNode->m_ChipID   = (((uint64_t)chip_id_hi)<<32)+(uint64_t)tmp;
+
+    return 0;
+}
+
 /*
  * callback function for enumerating each node.
  * 
@@ -120,84 +331,84 @@ static const char *featurestate_table[]=
  * @return   true if the node is 1394-based camera.
  */
 static int 
-callback_1394Camera(raw1394_handle* handle, nodeid_t node_id,
+callback_1394Camera(raw1394handle_t handle, nodeid_t node_id,
 		    C1394CameraNode* pNode, void* arg)
 {
     int port_no = (int)arg;
 
-    nodeaddr_t addr;
+    // search  "root_directory"
+    nodeaddr_t addr_root;
+    int len_root;
+    if (get_root_directory_address(&addr_root, handle, node_id))
+	return false;
+    if (get_directory_length(&len_root, handle, node_id, addr_root))
+	return false;
+
+    // search  "unit_directory"
+    nodeaddr_t addr_unit_dir;
+    int len_unit_dir;
+    if (get_sub_directory_address(&addr_unit_dir, 0xd1, 
+				  handle, node_id, addr_root, len_root))
+	return false;
+    if (get_directory_length(&len_unit_dir, handle, node_id, addr_unit_dir))
+	return false;
+    
+    // check the  "unit_directory.unit_spec_ID"
+    quadlet_t unit_spec_ID;
+    if (get_value(&unit_spec_ID, 0x12, 
+		  handle, node_id, addr_unit_dir, len_unit_dir))
+	return false;
+    if (unit_spec_ID != 0x00A02D)
+	return false;
+    
+    // search "unit_dependent_directory"
+    nodeaddr_t addr_unit_dep_dir;
+    int len_unit_dep_dir;    
+    if (get_sub_directory_address(&addr_unit_dep_dir, 0xd4, 
+				  handle, 
+				  node_id, addr_unit_dir, len_unit_dir))
+	return false;
+    if (get_directory_length(&len_unit_dep_dir,
+			     handle, node_id, addr_unit_dep_dir))
+	return false;
+    
+    
+    // get "unit_dependent_directory.command_regs_base"
     quadlet_t tmp;
-    addr=ADDR_INDIRECT_OFFSET;
-    
-    WAIT;    
-    TRY( raw1394_read(handle, node_id,
-		      addr, 4, &tmp) );
-    tmp=ntohl(tmp);
-    // LOG(VAR32(indirect_offset));
-    if (!EQU(tmp,0xff000000,0x8d000000)){
+    if (get_value(&tmp, 0x40, handle, node_id, 
+		  addr_unit_dep_dir, len_unit_dep_dir))
 	return false;
-    }
-    tmp &= ~0x8d000000;
-    tmp *= 4;
-    addr = ADDR_INDIRECT_OFFSET+tmp+4;
-    //  LOG(VAR32(addr));
-    quadlet_t chip_id_hi, chip_id_lo;
-
-    WAIT;    
-    TRY( raw1394_read(handle, node_id,
-		      addr, 4, 
-		      &chip_id_hi));
-    chip_id_hi=ntohl(chip_id_hi);
+    pNode->m_command_regs_base = CSR_REGISTER_BASE + tmp * 4;
     
-    WAIT;    
-    addr+=4;
-    TRY( raw1394_read(handle, node_id,
-		      addr, 4, 
-		      &chip_id_lo));
-    chip_id_lo=ntohl(chip_id_lo);
 
-    pNode->m_VenderID = chip_id_hi>>8;
-    pNode->m_ChipID   = (((uint64_t)chip_id_hi&0xff)<<32)+(uint64_t)chip_id_lo;
+    // get "unit_dependent_directory.vendor_name_leaf"
+    // get "unit_dependent_directory.model_name_leaf"
 
-  
-    addr=ADDR_UNIT_DIRECTORY_OFFSET;   /* addr <= the addr of RootDirectory */
-    
-    WAIT;    
-    /* getting RootDirectory.unit_directory_offset  */
-    TRY( raw1394_read(handle, node_id,
-		      addr,sizeof(tmp),&tmp));
-    tmp=ntohl(tmp);
-    if (0xd1000000!=(tmp&0xff000000)){
-	return false;
+    char buf[32];
+    if (!get_name_leaf(buf, sizeof(buf), 0x81, handle, node_id,
+		       addr_unit_dep_dir, len_unit_dep_dir)) {
+	pNode->m_lpVecderName = new char[ strlen(buf)+1 ];
+	strcpy(pNode->m_lpVecderName, buf);
+    } else {
+	pNode->m_lpVecderName = NULL;
     }
-    addr+=(tmp&~0xff000000)*4;        /* addr <= the addr of Unit directory  */
-    
-    WAIT;    
-    /* getting Unit Directory.unit_dependent_directory_offset  */
-    addr+=OFFSET_UNIT_DEPENDENT_DIRECTORY_OFFSET;
-    TRY( raw1394_read(handle, node_id,
-		      addr,sizeof(tmp),&tmp));
-    tmp=ntohl(tmp);
-    if (0xD4000000!=(tmp&0xff000000)){
-	return false;
+    if (!get_name_leaf(buf, sizeof(buf), 0x82, handle, node_id,
+		       addr_unit_dep_dir, len_unit_dep_dir)) {
+	pNode->m_lpModelName = new char[ strlen(buf)+1 ];
+	strcpy(pNode->m_lpModelName, buf);
+    } else {
+	pNode->m_lpModelName = NULL;
     }
-    addr+=(tmp&~0xff000000)*4;        /* addr <= the top of Unit directory  */
-    
-    WAIT;    
-    /* getting Unit Dependent Directory.command_regs_base  */
-    addr+=OFFSET_COMMAND_REGS_BASE;
-    TRY( raw1394_read(handle, node_id,
-		      addr,sizeof(tmp),&tmp));
-    tmp=ntohl(tmp);
-    if (0x40000000!=(tmp&0xff000000)){
-	return false;
-    }
-    /* getting command_regs_base  */
 
+    // get   node_unique_id_leaf.node_vendor_id and so on.
+    // search "unit_dependent_directory"
+    pNode->m_VenderID = 0;
+    pNode->m_ChipID = 0;
+    get_vendor_and_chip_id(pNode, handle, node_id, addr_root, len_root);
+    
     // store the infomation of this camera-device.
     pNode->m_handle  = handle;
     pNode->m_node_id = node_id;
-    pNode->m_command_regs_base = CSR_REGISTER_BASE+(tmp&~0xff000000)*4;
     pNode->m_port_no = port_no;
     return true;
 }
@@ -234,11 +445,11 @@ find_camera_by_id(CCameraList& CameraList, uint64_t id)
  * @return returns zero on success, or -1 if an error occurred.
  */
 template <typename T> int
-Enum1394Node(raw1394_handle* handle,
+Enum1394Node(raw1394handle_t handle,
 	     raw1394_portinfo* pPort,
 	     list<T>* pList,
 	     int 
-	     (*func)(raw1394_handle* handle,nodeid_t node_id,
+	     (*func)(raw1394handle_t handle,nodeid_t node_id,
 		     T* pNode,void* arg),
 	     void* arg)
 {
@@ -329,11 +540,17 @@ GetCameraList(raw1394handle_t handle, CCameraList* pList)
  */
 bool C1394CameraNode::ReadReg(nodeaddr_t addr,quadlet_t* value)
 {
-    WAIT;
-    *value=0x12345678;
-    TRY(raw1394_read(m_handle, m_node_id, addr, 4, value));
-    *value=(quadlet_t)ntohl((unsigned long int)*value);    
-    return true;
+    int retry=4;
+    //*value=0x12345678;    
+    while (retry-- > 0){
+	int retval = raw1394_read(m_handle, m_node_id, addr, 4, value);
+	if (retval >= 0){
+	    *value = (quadlet_t)ntohl((unsigned long int)*value);    
+	    return true;
+	}
+	WAIT;
+    } 
+    return false;
 }
 /** 
  * Write the configuratoin register directory.
@@ -345,10 +562,16 @@ bool C1394CameraNode::ReadReg(nodeaddr_t addr,quadlet_t* value)
  */
 bool C1394CameraNode::WriteReg(nodeaddr_t addr,quadlet_t* value)
 {
+    int retry=4;
     quadlet_t tmp=htonl(*value);
-    WAIT;
-    TRY(raw1394_write(m_handle, m_node_id, addr, 4, &tmp));
-    return true;
+    while (retry-- > 0){
+	int retval = raw1394_write(m_handle, m_node_id, addr, 4, &tmp);
+	if (retval >= 0){
+	    return true;
+	}
+	WAIT;
+    }
+    return false;
 }
 
 
@@ -374,40 +597,6 @@ C1394CameraNode::~C1394CameraNode()
 #endif //#if defined(_WITH_ISO_FRAME_BUFFER_)
 }
 
-
-
-/** 
- * Get model name.
- * 
- * @todo  FIXME, not implemented yet
- *
- * @param lpBuffer 
- * @param lpLength 
- * 
- * @return returns a pointer to the destination string lpBuffer.
- */
-const char* 
-GetModelName(char* lpBuffer,size_t* lpLength)
-{
-    return NULL;
-}
-
-
-/** 
- * Get vender name.
- * 
- * @todo  FIXME, not implemented yet
- *
- * @param lpBuffer 
- * @param lpLength 
- * 
- * @return returns a pointer to the destination string lpBuffer.
- */
-const char* 
-GetVenderName(char* lpBuffer,size_t* lpLength)
-{
-    return 0;
-}
 
 
 /** 
@@ -455,11 +644,7 @@ bool
 C1394CameraNode::PowerDown()
 {
     quadlet_t tmp=SetParam(Camera_Power,,0);
-    TRY( raw1394_write(m_handle, m_node_id, 
-		       Addr(Camera_Power),4,
-		       &tmp) );  
-  
-    return true;
+    return WriteReg(Addr(Camera_Power),&tmp);
 }
 
 /** 
@@ -473,11 +658,7 @@ bool
 C1394CameraNode::PowerUp()
 {
     quadlet_t tmp=SetParam(Camera_Power,,1);
-    TRY( raw1394_write(m_handle, m_node_id, 
-		       Addr(Camera_Power),4,
-		       &tmp) );  
-  
-    return true;
+    return WriteReg(Addr(Camera_Power),&tmp);
 }
 
 
@@ -1054,7 +1235,6 @@ C1394CameraNode::QueryIsoChannel(int* channel)
   quadlet_t tmp;
    
   ReadReg(Addr(ISO_Speed), &tmp);    
-  WAIT;
   m_channel= GetParam(ISO_Channel,,tmp);
   *channel = m_channel;
   return true;
@@ -1768,11 +1948,14 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
     }
 
     m_packet_sz  = ::GetPacketSize(fmt,mode,rate);
+    if (m_packet_sz < 0){
+	LOG("this fmt/mode/rate is not supported.");
+	return -1;
+    }
     m_packet_sz += 8;
     m_num_packet = ::GetNumPackets(fmt,mode,rate);
-    
     if ( m_num_packet < 0 ){
-	cerr << "packet size is too big"<<endl;
+	ERR("packet size is too big");
 	return -2;
     }
 
@@ -1780,12 +1963,15 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
     snprintf(devname, sizeof(devname), "/dev/isofb%d", this->m_port_no);
     fd=open(devname,O_RDWR);
     if (-1==fd){
-	cerr << "can't open " << devname << " " << strerror(errno) << endl;
+	ERR("can't open " << devname << " " << strerror(errno));
 	return -1;
     }
   
     ISO1394_RxParam rxparam;
-    TRY( ioctl(fd, IOCTL_INIT_RXPARAM, &rxparam) );
+    if (0>ioctl(fd, IOCTL_INIT_RXPARAM, &rxparam)){
+	ERR("");
+	return -1;
+    }
   
     rxparam.sz_packet      = m_packet_sz ;
     rxparam.num_packet     = m_num_packet ;
@@ -1795,16 +1981,27 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
     rxparam.sync           = 1;
     rxparam.channelNum     = channel ;
 
-    TRY( ioctl(fd, IOCTL_CREATE_RXBUF, &rxparam) );
+    if (0 > ioctl(fd, IOCTL_CREATE_RXBUF, &rxparam) ){
+	ERR("");
+	return -1;
+    }
 
     pMaped=(char*)mmap(NULL,
 		       rxparam.sz_allocated,
 		       PROT_READ|PROT_WRITE,
 		       MAP_SHARED, 
 		       fd,0);
+    if (!pMaped){
+	ERR("");
+	return -1;
+    }
+
     m_lpFrameBuffer=pMaped;
 
-    TRY( ioctl(fd, IOCTL_START_RX) );
+    if (0 >  ioctl(fd, IOCTL_START_RX) ){
+	ERR("");
+	return -1;
+    }
     
     m_Image_W=::GetImageWidth(fmt,mode);
     m_Image_H=::GetImageHeight(fmt,mode);
@@ -1857,7 +2054,10 @@ int C1394CameraNode::SetFrameCount(int tmp)
 void* C1394CameraNode::UpDateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
 {
     ISO1394_Chunk chunk;
-    TRY( ioctl(fd, IOCTL_GET_RXBUF, &chunk) );
+    if (0 > ioctl(fd, IOCTL_GET_RXBUF, &chunk) ){
+	ERR("");
+	return NULL;
+    }
     return m_lpFrameBuffer=(pMaped+chunk.offset);
 }
 
@@ -1927,6 +2127,21 @@ int C1394CameraNode::CopyIplImage(IplImage *dest)
 				m_packet_sz,m_num_packet,
 				REMOVE_HEADER);
     break;
+    case VFMT_RGB888:
+	::copy_RGB888toIplImage(dest,m_lpFrameBuffer,
+				m_packet_sz,m_num_packet,
+				REMOVE_HEADER);
+    break;
+    case VFMT_Y8:
+	::copy_Y8toIplImage(dest,m_lpFrameBuffer,
+				m_packet_sz,m_num_packet,
+				REMOVE_HEADER);
+    break;
+    case VFMT_Y16:
+	::copy_Y16toIplImage(dest,m_lpFrameBuffer,
+			     m_packet_sz,m_num_packet,
+			     REMOVE_HEADER);
+    break;
     default:
 	LOG("not support this pixel format yet.");
 	break;
@@ -1958,20 +2173,35 @@ int C1394CameraNode::CopyIplImageGray(IplImage *dest)
 #else
     switch  ( m_pixel_format ){
     case VFMT_YUV422:
-	::copy_YUV422toIplImageGray(dest,m_lpFrameBuffer,
-				    m_packet_sz,m_num_packet,
-				    REMOVE_HEADER);
-    break;
+	copy_YUV422toIplImageGray(dest,m_lpFrameBuffer,
+				  m_packet_sz,m_num_packet,
+				  REMOVE_HEADER);
+	break;
     case VFMT_YUV411:
-	::copy_YUV411toIplImageGray(dest,m_lpFrameBuffer,
-				    m_packet_sz,m_num_packet,
-				    REMOVE_HEADER);
-    break;
+	copy_YUV411toIplImageGray(dest,m_lpFrameBuffer,
+				  m_packet_sz,m_num_packet,
+				  REMOVE_HEADER);
+	break;
     case VFMT_YUV444:
-	::copy_YUV444toIplImageGray(dest,m_lpFrameBuffer,
-				    m_packet_sz,m_num_packet,
-				    REMOVE_HEADER);
-    break;
+	copy_YUV444toIplImageGray(dest,m_lpFrameBuffer,
+				  m_packet_sz,m_num_packet,
+				  REMOVE_HEADER);
+	break;
+    case VFMT_RGB888:
+	copy_RGB888toIplImageGray(dest,m_lpFrameBuffer,
+				  m_packet_sz,m_num_packet,
+				  REMOVE_HEADER);
+	break;
+    case VFMT_Y8:
+	copy_Y8toIplImageGray(dest,m_lpFrameBuffer,
+			      m_packet_sz,m_num_packet,
+			      REMOVE_HEADER);
+	break;
+    case VFMT_Y16:
+	copy_Y16toIplImageGray(dest,m_lpFrameBuffer,
+			       m_packet_sz,m_num_packet,
+			       REMOVE_HEADER);
+	break;
     default:
 	LOG("not support this pixel format yet.");
 	break;
@@ -1999,20 +2229,35 @@ C1394CameraNode::CopyRGBAImage(void* dest)
 
     switch  ( m_pixel_format ){
     case VFMT_YUV422:
-	::copy_YUV422toRGBA((RGBA*)dest,m_lpFrameBuffer,
-			    m_packet_sz,m_num_packet,
-			    REMOVE_HEADER);
-    break;
+	copy_YUV422toRGBA((RGBA*)dest,m_lpFrameBuffer,
+			  m_packet_sz,m_num_packet,
+			  REMOVE_HEADER);
+	break;
     case VFMT_YUV411:
-	::copy_YUV411toRGBA((RGBA*)dest,m_lpFrameBuffer,
-			    m_packet_sz,m_num_packet,
-			    REMOVE_HEADER);
-    break;
+	copy_YUV411toRGBA((RGBA*)dest,m_lpFrameBuffer,
+			  m_packet_sz,m_num_packet,
+			  REMOVE_HEADER);
+	break;
     case VFMT_YUV444:
-	::copy_YUV444toRGBA((RGBA*)dest,m_lpFrameBuffer,
-			    m_packet_sz,m_num_packet,
-			    REMOVE_HEADER);
-    break;
+	copy_YUV444toRGBA((RGBA*)dest,m_lpFrameBuffer,
+			  m_packet_sz,m_num_packet,
+			  REMOVE_HEADER);
+	break;
+    case VFMT_RGB888:
+	copy_RGB888toRGBA((RGBA*)dest,m_lpFrameBuffer,
+			  m_packet_sz,m_num_packet,
+			  REMOVE_HEADER);
+	break;
+    case VFMT_Y8:
+	copy_Y8toRGBA((RGBA*)dest,m_lpFrameBuffer,
+		      m_packet_sz,m_num_packet,
+		      REMOVE_HEADER);
+	break;
+    case VFMT_Y16:
+	copy_Y16toRGBA((RGBA*)dest,m_lpFrameBuffer,
+		       m_packet_sz,m_num_packet,
+		       REMOVE_HEADER);
+	break;
     default:
 	LOG("not support this pixel format yet.");
 	break;

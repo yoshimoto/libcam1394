@@ -1,9 +1,17 @@
-# $Id: configure.in,v 1.25 2003-12-02 15:34:31 yosimoto Exp $
+# $Id: configure.in,v 1.26 2003-12-19 12:40:25 yosimoto Exp $
+
+m4_define([debug_default],[yes])
 
 
 AC_INIT(Makefile.am)
-AM_INIT_AUTOMAKE(libcam1394, 0.1.8rc4)
+AM_INIT_AUTOMAKE(libcam1394, 0.1.8rc5)
 AM_CONFIG_HEADER(config.h)
+
+# Save this value here, since automake will set cflags later
+cflags_set=${CFLAGS+set}
+
+dnl Initialize maintainer mode
+AM_MAINTAINER_MODE
 
 AC_PROG_CXX
 AC_PROG_CC
@@ -34,11 +42,18 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MMAP
 AC_CHECK_FUNCS([memset strcasecmp strerror strtol])
 
-AC_ARG_ENABLE(debug,
-[  --enable-debug            turn on debugging [default no]])
-if test "$enable_debug" = "yes"; then
-  CFLAGS="-DDEBUG $CFLAGS"
+AC_ARG_ENABLE([debug],
+	AC_HELP_STRING([--enable-debug],
+		[turn on debugging @<:@default=debug_default@:>@]), ,
+	[enable_debug=debug_default])
+
+if test "x$enable_debug" = "xyes"; then
+  if test x$cflags_set != xset ; then
+      CFLAGS="-DDEBUG -g $CFLAGS"
+      CPPFLAGS="-DDEBUG -g $CPPFLAGS"
+  fi
 fi
+
 
 lt_major=1
 lt_revision=0
@@ -49,3 +64,14 @@ AC_SUBST(lt_age)
 CFLAGS="$CFLAGS -Wall -Wunused"
 
 AC_OUTPUT([Makefile libcam1394/Makefile libcam1394/Doxyfile cam1394/Makefile])
+
+##################################################
+# Print configuration
+##################################################
+
+echo "
+configuration:
+              debug:             $enable_debug
+opencv/cv.h support:             $ac_cv_header_opencv_cv_h
+cv.h        support:             $ac_cv_header_cv_h
+"

@@ -2,7 +2,7 @@
   @file  yuv2rgb.cc
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv2rgb.cc,v 1.7 2003-11-30 08:46:55 yosimoto Exp $
+  @version $Id: yuv2rgb.cc,v 1.8 2003-12-19 12:40:25 yosimoto Exp $
  */
 
 #include "config.h"
@@ -97,6 +97,38 @@ conv_YUVtoRGB(UCHAR* r, UCHAR* g, UCHAR* b,
     *b=b_;
 }
 
+/* convert YUV444 to RGBA
+ * 
+ * @param lpRGBA      pointer to destnation image data.
+ * @param lpYUV444    pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
+ */
+bool
+copy_YUV444toRGBA(RGBA* lpRGBA,const void *lpYUV444,
+		  int packet_sz,int num_packet,int flag)
+{
+    UCHAR *p=(UCHAR*)lpYUV444;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
+    }
+    while (num_packet-->0){
+	for (int i=0;i<packet_sz/3;i++){      
+	    UCHAR Y,u,v; 
+	    u=*p++;
+	    Y=*p++;
+	    v=*p++; // read v(K+0)      
+	    conv_YUVtoRGB(&lpRGBA->r, &lpRGBA->g, &lpRGBA->b, Y, u, v);// Y(K+0)
+	    lpRGBA++;
+	}
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    }
+    return true;
+}
+
 /*
  * convert and copy YUV422 to RGBA 
  * 
@@ -134,37 +166,6 @@ copy_YUV422toRGBA(RGBA* lpRGBA, const void *lpYUV422, int packet_sz,
     return true;
 }
 
-/* convert YUV444 to RGBA
- * 
- * @param lpRGBA      pointer to destnation image data.
- * @param lpYUV444    pointer to source image data.
- * @param packet_sz   the size of each packet.
- * @param num_packet  the number of packets per one image.
- * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
- */
-bool
-copy_YUV444toRGBA(RGBA* lpRGBA,const void *lpYUV444,
-		  int packet_sz,int num_packet,int flag)
-{
-    UCHAR *p=(UCHAR*)lpYUV444;
-    if (flag&REMOVE_HEADER){
-	packet_sz-=8;
-	p+=4;
-    }
-    while (num_packet-->0){
-	for (int i=0;i<packet_sz/3;i++){      
-	    UCHAR Y,u,v; 
-	    u=*p++;
-	    Y=*p++;
-	    v=*p++; // read v(K+0)      
-	    conv_YUVtoRGB(&lpRGBA->r, &lpRGBA->g, &lpRGBA->b, Y, u, v);// Y(K+0)
-	    lpRGBA++;
-	}
-	if (flag&REMOVE_HEADER)
-	    p+=4*2;
-    }
-    return true;
-}
 
 
 /* convert YUV411 to RGBA 
@@ -212,42 +213,189 @@ copy_YUV411toRGBA(RGBA* lpRGBA,const void *lpYUV411,
     }
     return true;
 }
-
-
-/*
- * export RGBA image to the file.
+/* convert RGB888 to RGBA
  * 
- * @param pFile   filename
- * @param img     pointer to the image.
- * @param w 
- * @param h 
- * @param fmt     file format.  currently only supports PPM.
- * 
- * @return        true or false
+ * @param lpRGBA      pointer to destnation image data.
+ * @param lpRGB888    pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
  */
-int 
-SaveRGBAtoFile(char *pFile,const RGBA* img,int w,int h,int fmt)
+bool
+copy_RGB888toRGBA(RGBA* lpRGBA,const void *lpRGB888,
+		  int packet_sz,int num_packet,int flag)
 {
-    bool result=false;
-    FILE* fp=fopen(pFile,"w");
-    if (fp){
-	int i;
-	fprintf(fp,"P6\n %d %d\n 255\n",w ,h);
-	for (i=0;i<w*h;i++){
-	    fwrite(&img->r,1,1,fp);
-	    fwrite(&img->g,1,1,fp);
-	    fwrite(&img->b,1,1,fp);
-	    img++;
-	}
-	fclose(fp);
-    }else{
-	fprintf(stderr,"can't create file %s \n",pFile);
+    UCHAR *p=(UCHAR*)lpRGB888;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
     }
-    return result;
+    while (num_packet-->0){
+	for (int i=0;i<packet_sz;i++){      
+	    lpRGBA->r=*p++;
+	    lpRGBA->g=*p++;
+	    lpRGBA->b=*p++;
+	    lpRGBA++;
+	}
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    }
+    return true;
+}
+
+
+/* convert Y8 to RGBA 
+ * 
+ * @param lpRGBA      pointer to destnation image data.
+ * @param lpY8        pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
+ */
+bool
+copy_Y8toRGBA(RGBA* lpRGBA,const void *lpY8,
+		  int packet_sz,int num_packet,int flag)
+{
+    UCHAR *p=(UCHAR*)lpY8;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
+    }
+    while (num_packet-->0){
+	for (int i=0;i<packet_sz;i++){      
+	    lpRGBA->r = *p;
+	    lpRGBA->g = *p;
+	    lpRGBA->b = *p;
+	    lpRGBA++;
+	    p++;
+	}
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    }
+    return true;
+}
+
+
+/* convert Y16 to RGBA 
+ * 
+ * @param lpRGBA      pointer to destnation image data.
+ * @param lpY16        pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
+ */
+bool
+copy_Y16toRGBA(RGBA* lpRGBA,const void *lpY16,
+		  int packet_sz,int num_packet,int flag)
+{
+    UCHAR *p=(UCHAR*)lpY16;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
+    }
+    while (num_packet-->0){
+	for (int i=0;i<packet_sz;i++){      
+	    /*
+	      int  Y = *p << 8;
+	      p++;
+	      Y |= *p ;
+	    */
+	    lpRGBA->r = *p;
+	    lpRGBA->g = *p;
+	    lpRGBA->b = *p;
+	    lpRGBA++;
+	    p++;
+	    // ignore lower 8 bit data.
+	    p++;
+	}
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    }
+    return true;
 }
 
 
 #if defined OPENCVAPI
+
+/*
+ * convert YUV444 to IplImage
+ * (This function will work, only when there is IPL.) 
+ *
+ * @param img         pointer to IplImage object.
+ * @param lpYUV444    pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
+ *
+ * @return
+ */
+bool
+copy_YUV444toIplImage(IplImage* img, const void *lpYUV444, 
+		      int packet_sz,
+		      int num_packet, int flag)
+{
+    uchar *dst = (uchar*)img->imageData;
+    UCHAR *p=(UCHAR*)lpYUV444;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
+    }
+    while (num_packet-->0){
+	for (int i=0;i<packet_sz/3;i++){      
+	    UCHAR r,g,b;
+	    UCHAR Y,u,v; 
+	    u=*p++;
+	    Y=*p++;
+	    v=*p++; // read v(K+0)      
+	    conv_YUVtoRGB(&r, &g, &b, Y, u, v); // Y(K+3)
+	    *dst++=b;
+	    *dst++=g;
+	    *dst++=r;
+	}
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    }
+    return true;
+}
+
+/*
+ * convert YUV444 to IplImage
+ * (This function will work, only when there is IPL.) 
+ *
+ * @param img         pointer to IplImage object.
+ * @param lpYUV444    pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
+ *
+ * @return
+ */
+bool
+copy_YUV444toIplImageGray(IplImage* img, const void *lpYUV444, 
+			  int packet_sz,
+			  int num_packet, int flag)
+{
+    uchar *dst = (uchar*)img->imageData;
+    UCHAR *p=(UCHAR*)lpYUV444;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
+    }
+    while (num_packet-->0){
+	for (int i=0;i<packet_sz/3;i++){      
+	    UCHAR Y;
+	    p++;
+	    Y=*p++;
+	    p++; // read v(K+0)      
+	    //conv_YUVtoRGB(&r, &g, &b, Y, u, v); // Y(K+3)
+	    *dst++=Y;
+	}
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    }
+    return true;
+}
+
 /*
  * convert YUV422 to IplImage. 
  * (This function will work, only when there is IPL.)
@@ -435,85 +583,258 @@ copy_YUV411toIplImageGray(IplImage* img, const void *lpYUV411,
 }
 
 /*
- * convert YUV444 to IplImage
- * (This function will work, only when there is IPL.) 
+ * convert RGB888 to IplImage. 
+ * (This function will work, only when there is IPL.)
  *
  * @param img         pointer to IplImage object.
- * @param lpYUV444    pointer to source image data.
+ * @param lpRGB888    pointer to source image data.
  * @param packet_sz   the size of each packet.
  * @param num_packet  the number of packets per one image.
  * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
- *
- * @return
  */
 bool
-copy_YUV444toIplImage(IplImage* img, const void *lpYUV444, 
+copy_RGB888toIplImage(IplImage* img, const void *lpRGB888, 
 		      int packet_sz,
 		      int num_packet, int flag)
 {
-    uchar *dst = (uchar*)img->imageData;
-    UCHAR *p=(UCHAR*)lpYUV444;
+    uchar *dst = (uchar*)(img->imageData);
+    
+    UCHAR *p=(UCHAR*)lpRGB888;
+    int i;
     if (flag&REMOVE_HEADER){
 	packet_sz-=8;
 	p+=4;
     }
     while (num_packet-->0){
-	for (int i=0;i<packet_sz/3;i++){      
-	    UCHAR r,g,b;
-	    UCHAR Y,u,v; 
-	    u=*p++;
-	    Y=*p++;
-	    v=*p++; // read v(K+0)      
-	    conv_YUVtoRGB(&r, &g, &b, Y, u, v); // Y(K+3)
+	for (i=0;i<packet_sz;i++){
+	    unsigned char r=*p++;
+	    unsigned char g=*p++;
+	    unsigned char b=*p++;
 	    *dst++=b;
 	    *dst++=g;
 	    *dst++=r;
-	}
+	} //     for (i=0;i<packet_sz/4;i++){
 	if (flag&REMOVE_HEADER)
 	    p+=4*2;
-    }
+    } //   while (num_packet-->0) {
     return true;
 }
 
 /*
- * convert YUV444 to IplImage
- * (This function will work, only when there is IPL.) 
+ * convert RGB888 to IplImage. 
+ * (This function will work, only when there is IPL.)
  *
  * @param img         pointer to IplImage object.
- * @param lpYUV444    pointer to source image data.
+ * @param lpRGB888    pointer to source image data.
  * @param packet_sz   the size of each packet.
  * @param num_packet  the number of packets per one image.
  * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
- *
- * @return
  */
 bool
-copy_YUV444toIplImageGray(IplImage* img, const void *lpYUV444, 
+copy_RGB888toIplImageGray(IplImage* img, const void *lpRGB888, 
 			  int packet_sz,
 			  int num_packet, int flag)
 {
-    uchar *dst = (uchar*)img->imageData;
-    UCHAR *p=(UCHAR*)lpYUV444;
+    uchar *dst = (uchar*)(img->imageData);
+    
+    UCHAR *p=(UCHAR*)lpRGB888;
+    int i;
     if (flag&REMOVE_HEADER){
 	packet_sz-=8;
 	p+=4;
     }
     while (num_packet-->0){
-	for (int i=0;i<packet_sz/3;i++){      
-	    UCHAR Y;
-	    p++;
-	    Y=*p++;
-	    p++; // read v(K+0)      
-	    //conv_YUVtoRGB(&r, &g, &b, Y, u, v); // Y(K+3)
-	    *dst++=Y;
-	}
+	for (i=0;i<packet_sz;i++){
+	    unsigned char r=*p++;
+	    unsigned char g=*p++;
+	    unsigned char b=*p++;
+	    int gray = (r+g+b)/3;
+	    *dst++ = gray;
+	    *dst++ = gray;
+	    *dst++ = gray;
+	} //     for (i=0;i<packet_sz/4;i++){
 	if (flag&REMOVE_HEADER)
 	    p+=4*2;
+    } //   while (num_packet-->0) {
+    return true;
+}
+
+/*
+ * convert Y8 to IplImage. 
+ * (This function will work, only when there is IPL.)
+ *
+ * @param img         pointer to IplImage object.
+ * @param lpY8    pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
+ */
+bool
+copy_Y8toIplImage(IplImage* img, const void *lpY8, 
+		      int packet_sz,
+		      int num_packet, int flag)
+{
+    uchar *dst = (uchar*)(img->imageData);
+    
+    UCHAR *p=(UCHAR*)lpY8;
+    int i;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
     }
+    while (num_packet-->0){
+	for (i=0;i<packet_sz;i++){	    
+	    *dst++=*p;
+	    *dst++=*p;
+	    *dst++=*p;
+	    p++;
+	} //     for (i=0;i<packet_sz/4;i++){
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    } //   while (num_packet-->0) {
+    return true;
+}
+
+/*
+ * convert Y8 to IplImage (Gray)
+ * (This function will work, only when there is IPL.)
+ *
+ * @param img         pointer to IplImage object.
+ * @param lpY8   pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
+ */
+bool
+copy_Y8toIplImageGray(IplImage* img, const void *lpY8, 
+			  int packet_sz,
+			  int num_packet, int flag)
+{
+    uchar *dst = (uchar*)(img->imageData);
+    
+    UCHAR *p=(UCHAR*)lpY8;
+    int i;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
+    }
+    while (num_packet-->0){
+	for (i=0;i<packet_sz;i++){
+	    *dst++ = *p++;
+	} //     for (i=0;i<packet_sz/4;i++){
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    } //   while (num_packet-->0) {
+    return true;
+}
+
+
+/*
+ * convert Y16 to IplImage. 
+ * (This function will work, only when there is IPL.)
+ *
+ * @param img         pointer to IplImage object.
+ * @param lpY16    pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
+ */
+bool
+copy_Y16toIplImage(IplImage* img, const void *lpY16, 
+		      int packet_sz,
+		      int num_packet, int flag)
+{
+    uchar *dst = (uchar*)(img->imageData);
+    
+    UCHAR *p=(UCHAR*)lpY16;
+    int i;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
+    }
+    while (num_packet-->0){
+	for (i=0;i<packet_sz;i++){	    
+	    *dst++=*p;
+	    *dst++=*p;
+	    *dst++=*p;
+	    // ignore lower byte:
+	    p++;
+	} //     for (i=0;i<packet_sz/4;i++){
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    } //   while (num_packet-->0) {
+    return true;
+}
+
+/*
+ * convert Y16 to IplImage (Gray)
+ * (This function will work, only when there is IPL.)
+ *
+ * @param img         pointer to IplImage object.
+ * @param lpY16   pointer to source image data.
+ * @param packet_sz   the size of each packet.
+ * @param num_packet  the number of packets per one image.
+ * @param flag        REMOVE_HEADER : remove packet's  header/trailer.
+ */
+bool
+copy_Y16toIplImageGray(IplImage* img, const void *lpY16, 
+			  int packet_sz,
+			  int num_packet, int flag)
+{
+    uchar *dst = (uchar*)(img->imageData);
+    
+    UCHAR *p=(UCHAR*)lpY16;
+    int i;
+    if (flag&REMOVE_HEADER){
+	packet_sz-=8;
+	p+=4;
+    }
+    while (num_packet-->0){
+	for (i=0;i<packet_sz;i++){
+	    *dst++ = *p++;
+	    // ignore lower byte:
+	    p++;
+	} //     for (i=0;i<packet_sz/4;i++){
+	if (flag&REMOVE_HEADER)
+	    p+=4*2;
+    } //   while (num_packet-->0) {
     return true;
 }
 
 #endif // #if defined OPENCVAPI
+
+
+/*
+ * export RGBA image to the file.
+ * 
+ * @param pFile   filename
+ * @param img     pointer to the image.
+ * @param w 
+ * @param h 
+ * @param fmt     file format.  currently only supports PPM.
+ * 
+ * @return        true or false
+ */
+int 
+SaveRGBAtoFile(char *pFile,const RGBA* img,int w,int h,int fmt)
+{
+    bool result=false;
+    FILE* fp=fopen(pFile,"w");
+    if (fp){
+	int i;
+	fprintf(fp,"P6\n %d %d\n 255\n",w ,h);
+	for (i=0;i<w*h;i++){
+	    fwrite(&img->r,1,1,fp);
+	    fwrite(&img->g,1,1,fp);
+	    fwrite(&img->b,1,1,fp);
+	    img++;
+	}
+	fclose(fp);
+    }else{
+	fprintf(stderr,"can't create file %s \n",pFile);
+    }
+    return result;
+}
 
 /*
  * Local Variables:
