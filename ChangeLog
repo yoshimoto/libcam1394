@@ -2,7 +2,7 @@
   libcam1394-0.1.2
 ----------------
 add
- - support IplImage strucutre which is one of IPL's image 
+ - support IplImage strucutre, which is one of IPL's image 
  structure. CopyIplImage(IplImage*) can copy image to IplImage
  structure directly
  - add document in doc directory.  These documents are generated

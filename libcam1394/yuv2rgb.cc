@@ -2,7 +2,7 @@
   @file  yuv2rgb.cc
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv2rgb.cc,v 1.1 2002-03-15 20:45:13 yosimoto Exp $
+  @version $Id: yuv2rgb.cc,v 1.2 2002-06-10 07:08:56 yosimoto Exp $
  */
 
 #include "config.h"
@@ -233,6 +233,7 @@ SaveRGBAtoFile(char *pFile,const RGBA* img,int w,int h,int fmt)
     return result;
 }
 
+#if defined HAVE_IPL_H
 /** 
  * convert YUV422 to IplImage. 
  * (This function will work, only when there is IPL.)
@@ -248,9 +249,6 @@ copy_YUV422toIplImage(IplImage* img, const void *lpYUV422,
 		      int packet_sz,
 		      int num_packet, int flag)
 {
-#if !defined HAVE_IPL_H
-    return false;
-#else //#if defined HAVE_IPL_H
     uchar *dst = (uchar*)img->imageData;
     
     UCHAR *p=(UCHAR*)lpYUV422;
@@ -279,7 +277,6 @@ copy_YUV422toIplImage(IplImage* img, const void *lpYUV422,
 	if (flag&REMOVE_HEADER)
 	    p+=4*2;
     } //   while (num_packet-->0) {
-#endif //#if !defined HAVE_IPL_H
     return true;
 }
 
@@ -298,9 +295,6 @@ copy_YUV411toIplImage(IplImage* img, const void *lpYUV411,
 		      int packet_sz,
 		      int num_packet, int flag)
 {
-#if !defined HAVE_IPL_H
-    return false;
-#else //#if defined HAVE_IPL_H
     uchar *dst = (uchar*)img->imageData;
     UCHAR *p=(UCHAR*)lpYUV411;
     if (flag&REMOVE_HEADER){
@@ -338,7 +332,6 @@ copy_YUV411toIplImage(IplImage* img, const void *lpYUV411,
 	if (flag&REMOVE_HEADER)
 	    p+=4*2;
     } 
-#endif //#if !defined HAVE_IPL_H
     return true;
 }
 
@@ -359,9 +352,6 @@ copy_YUV444toIplImage(IplImage* img, const void *lpYUV444,
 		      int packet_sz,
 		      int num_packet, int flag)
 {
-#if !defined HAVE_IPL_H
-    return false;
-#else //#if defined HAVE_IPL_H
     uchar *dst = (uchar*)img->imageData;
     UCHAR *p=(UCHAR*)lpYUV444;
     if (flag&REMOVE_HEADER){
@@ -383,9 +373,9 @@ copy_YUV444toIplImage(IplImage* img, const void *lpYUV444,
 	if (flag&REMOVE_HEADER)
 	    p+=4*2;
     }
-#endif //#if !defined HAVE_IPL_H
     return true;
 }
+#endif //#if !defined HAVE_IPL_H
 
 /*
  * Local Variables:
