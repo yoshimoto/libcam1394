@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.23 2004-08-31 08:42:43 yosimoto Exp $
-  @date    $Date: 2004-08-31 08:42:43 $
+  @version $Id: cam1394.cc,v 1.24 2004-10-07 16:07:29 yosimoto Exp $
+  @date    $Date: 2004-10-07 16:07:29 $
  */
 #include "config.h"
 
@@ -167,77 +167,77 @@ show_camera_feature(C1394CameraNode *cam)
 int
 savetofile(C1394CameraNode& camera,char *fname)
 {
-     int channel;
+    int channel;
 
-     camera.QueryIsoChannel(&channel);
-     /* force release !! */
+    camera.QueryIsoChannel(&channel);
+    /* force release !! */
 
-     /* allocate receive buffer */
-     if (camera.AllocateFrameBuffer()){
-	  cerr<<": failure @ AllocateFrameBuffer() "<<endl;
-	  return -2;
-     }
+    /* allocate receive buffer */
+    if (camera.AllocateFrameBuffer()){
+	cerr << "Failed AllocateFrameBuffer() "<<strerror(errno) << endl;
+	return -2;
+    }
 
-     const int w =camera.GetImageWidth();
-     const int h =camera.GetImageHeight();
+    const int w =camera.GetImageWidth();
+    const int h =camera.GetImageHeight();
 
-     const int frame_size= camera.GetFrameBufferSize();
+    const int frame_size= camera.GetFrameBufferSize();
 
   
-     int last_frame;
-     camera.GetFrameCount(&last_frame);
-     int total_drop=0;
+    int last_frame;
+    camera.GetFrameCount(&last_frame);
+    int total_drop=0;
   
-     int f_count=0;
-     while (true)
-     {
-	  char str[1024];
-	  sprintf(str, fname, f_count);
-	  cout << str << endl;
+    int f_count=0;
+    while (true)
+    {
+	char str[1024];
+	sprintf(str, fname, f_count);
+	cout << str << endl;
        
-	  int flag=0;
-	  flag |= O_CREAT|O_WRONLY|O_EXCL;
+	int flag=0;
+	flag |= O_CREAT|O_WRONLY|O_EXCL;
 //        flag |= O_SYNC;
 //        flag |= O_LARGEFILE;
          
-	  int fd=open(str, flag ,S_IRUSR|S_IWUSR);
-	  if ( 0 > fd ){
-	       ERR( "can't open file : "<<str);
-	       return -2;
-	  }
+	int fd=open(str, flag ,S_IRUSR|S_IWUSR);
+	if ( 0 > fd ){
+	    ERR( "can't open file : " << str << " " << strerror(errno));
+	    return -2;
+	}
          
-	  const int NUM_SEG=1500;
+	const int NUM_SEG=1500;
 
-	  int i=0;
-	  for (i=0; i<NUM_SEG; i++){
+	int i=0;
+	for (i=0; i<NUM_SEG; i++){
               
-	       char* p=(char*)camera.UpDateFrameBuffer();
+	    char* p=(char*)camera.UpDateFrameBuffer();
 
-	       int frame_no;
-	       camera.GetFrameCount(&frame_no);
-	       if ( last_frame+1 != frame_no ){
-		    total_drop++;
-		    ERR(" drop "
-			<<"(rate "
-			<< (float)total_drop/(f_count*NUM_SEG + i)
-			<<"%)");
-	       }
-	       last_frame = frame_no;
-	       //cout << last_frame << endl;
+	    int frame_no;
+	    camera.GetFrameCount(&frame_no);
+	    if ( last_frame+1 != frame_no ){
+		total_drop++;
+		ERR(" drop "
+		    <<"(rate "
+		    << (float)total_drop/(f_count*NUM_SEG + i)
+		    <<"%)");
+	    }
+	    last_frame = frame_no;
+	    //cout << last_frame << endl;
 
-	       int result = write( fd , p , frame_size );
-	       if ( result != frame_size ){
-		    ERR(" write() says " << strerror(errno) );
-	       }
-	  }
-	  close(fd);
-	  f_count++;
-     }
+	    int result = write( fd , p , frame_size );
+	    if ( result != frame_size ){
+		ERR(" write() says " << strerror(errno) );
+	    }
+	}
+	close(fd);
+	f_count++;
+    }
 
-     /* release buffer */
-     /* release  channel */
-     camera.QueryIsoChannel(&channel);
-     return 0;
+    /* release buffer */
+    /* release  channel */
+    camera.QueryIsoChannel(&channel);
+    return 0;
 }
 
 int display_live_image_on_X(C1394CameraNode &cam)
@@ -471,7 +471,6 @@ int main(int argc, char *argv[]){
 
     if ( do_show_version != -1 ) {
 	printf("libcam1394-%s\n",libcam1394_get_version());
-	exit(0);
     }
 
   
@@ -493,7 +492,7 @@ int main(int argc, char *argv[]){
 	    ERR("not_compatible");
 	} else {
 	    ERR("Failed to open raw1394 device "
-		"("<< strerror(errno)<<")");
+		" "<< strerror(errno));
 	    ERR("The raw1394 module must be loaded, "
 		"and you must have read and write permission "
 		"to /dev/raw1394.");
@@ -641,7 +640,7 @@ int main(int argc, char *argv[]){
     if (do_oneshot!=-1){
 	for (cam=TargetList.begin(); cam!=TargetList.end(); cam++){
 	    if (cam->AllocateFrameBuffer()){
-		cerr<<": failure @ AllocateFrameBuffer() "<<endl;
+		cerr << "Failed to AllocateFrameBuffer() "<<strerror(errno)<<endl;
 		return -2;
 	    }
 	}
