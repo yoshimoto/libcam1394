@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.9 2002-07-22 19:26:39 yosimoto Exp $
-  @date    $Date: 2002-07-22 19:26:39 $
+  @version $Id: cam1394.cc,v 1.10 2002-10-31 09:49:29 yosimoto Exp $
+  @date    $Date: 2002-10-31 09:49:29 $
  */
 #include <stdio.h>
 #include <unistd.h>
@@ -33,6 +33,7 @@
 #include "xview.h"              /* Xの表示オブジェクト*/
 
 using namespace std;
+
 #define DWFV500_MAGICNUMBER 8589965664ULL
 #define MAKE_CAMERA_ID(x) ((int64_t)(x)-DWFV500_MAGICNUMBER)
 #define MAKE_CHIP_ID(x)   ((int64_t)(x)+DWFV500_MAGICNUMBER)

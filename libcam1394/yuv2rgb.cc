@@ -2,7 +2,7 @@
   @file  yuv2rgb.cc
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv2rgb.cc,v 1.2 2002-06-10 07:08:56 yosimoto Exp $
+  @version $Id: yuv2rgb.cc,v 1.3 2002-10-31 09:49:30 yosimoto Exp $
  */
 
 #include "config.h"
@@ -12,6 +12,9 @@
 #endif
 
 #include "yuv.h"
+
+using namespace std;
+
 
 /*  LUT for yuv to RGBA conversion */
 typedef signed int FIX ;

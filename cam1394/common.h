@@ -1,18 +1,23 @@
+/*!
+  \file   common.h
+  \author $Id: common.h,v 1.2 2002-10-31 09:49:29 yosimoto Exp $
+  \date   Thu Oct 31 18:45:40 2002
+  \brief  
+
+*/
+
 #if !defined(_COMMON_H_INCLUDED_)
 #define _COMMON_H_INCLUDED_
 
-// flags
-// DEBUG
-// TRACE_OFF     
 
 #if defined(DEBUG)
-#define LOG(msg) cerr<<__FILE__<<"("<<__LINE__<<")"<< msg <<endl
-#define ERR(msg) cerr<<__FILE__<<"("<<__LINE__<<")"<< msg <<endl
-#define MSG(msg) cerr<<__FILE__<<"("<<__LINE__<<")"<< msg <<endl
+#define LOG(msg) std::cerr<<__FILE__<<"("<<__LINE__<<")"<< msg <<std::endl
+#define ERR(msg) std::cerr<<__FILE__<<"("<<__LINE__<<")"<< msg <<std::endl
+#define MSG(msg) std::cerr<<__FILE__<<"("<<__LINE__<<")"<< msg <<std::endl
 #else // #if defined(DEBUG)
 #define LOG(msg) 
-#define ERR(msg) cerr<<__FILE__<<"("<<__LINE__<<")"<< msg <<endl
-#define MSG(msg) cerr<<__FILE__<<"("<<__LINE__<<")"<< msg <<endl
+#define ERR(msg) std::cerr<<__FILE__<<"("<<__LINE__<<")"<< msg <<std::endl
+#define MSG(msg) std::cerr<<__FILE__<<"("<<__LINE__<<")"<< msg <<std::endl
 #endif // #if defined(DEBUG)
 
 #define TRY(f) f

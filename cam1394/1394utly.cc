@@ -10,7 +10,6 @@
 //
 #include <iostream>
 #include <iomanip>
-using namespace std;
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h> // for bzero()
@@ -38,6 +37,7 @@ using namespace std;
 #include "common.h"
 #include "1394utly.h"
 
+using namespace std;
 
 #define WAIT usleep(100)
 

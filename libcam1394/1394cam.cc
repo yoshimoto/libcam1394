@@ -2,7 +2,7 @@
   @file    1394cam.cc
   @brief   1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.9 2002-07-26 23:19:29 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.10 2002-10-31 09:49:30 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2002 by YOSHIMOTO Hiromasa
@@ -30,7 +30,6 @@
 #include <popt.h>
 #include <libraw1394/raw1394.h>
 #include <libraw1394/csr.h>
-using namespace std;
 #include <iostream>
 #include <iomanip>
 #include <list>
@@ -42,7 +41,9 @@ using namespace std;
 #include "./common.h"
 #include "./1394cam_registers.h"
 #include "./1394cam.h"
+#include "./yuv.h"
 
+using namespace std;
 
 #define QUAD(h,l)  0x##h##l
 #define CHK_PARAM(exp) {if (!(exp)) MSG( "illegal param passed. " << __STRING(exp)); }
@@ -101,6 +102,7 @@ static const char *feature_hi_table[]={
     
     "capture_size",  // +48
     "capture_quality",
+    NULL
 };
 
 
@@ -257,22 +259,14 @@ GetCameraList(raw1394handle_t handle,CCameraList* pList)
     const int NUM_PORT = 16;  /*  port   */
     struct raw1394_portinfo portinfo[NUM_PORT];
   
-    cerr<<setfill('0');
-
-/*
-  printf("successfully got handle\n");
-  printf("current generation number: %d\n",
-  raw1394_get_generation(handle));
-*/
+//    cerr<<setfill('0');
 
     numcards = raw1394_get_port_info(handle, portinfo, NUM_PORT);
     if (numcards < 0) {
 	perror("couldn't get card info");
 	return false;
     } else {
-/*
-  printf("%d card(s) found\n", numcards);
-*/
+	LOG(numcards << "card(s) found");
     }
 
     if (!numcards) {
@@ -355,7 +349,6 @@ C1394CameraNode::~C1394CameraNode()
 #if defined(_WITH_ISO_FRAME_BUFFER_)
     m_BufferSize=0;
 #endif //#if defined(_WITH_ISO_FRAME_BUFFER_)
-
 }
 
 /** 
@@ -641,8 +634,8 @@ C1394CameraNode::AutoModeOn(C1394CAMERA_FEATURE feat)
    
   ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
   if (GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)==0){
-    ERR("the feature "<<feature_hi_table[feat]<<" is not available.");
-    return false;
+      ERR("the feature "<<feature_hi_table[feat]<<" is not available.");
+      return false;
   }
   
   ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
@@ -691,7 +684,6 @@ C1394CameraNode::AutoModeOff(C1394CAMERA_FEATURE feat)
 bool
 C1394CameraNode::PreSet_All()
 {
-
   this->SetParameter(BRIGHTNESS,    0x80);
   this->SetParameter(AUTO_EXPOSURE, 0x80);
   this->SetParameter(SHARPNESS,     0x80);
@@ -843,9 +835,9 @@ C1394CameraNode::SetFormat(FORMAT    fmt,
 /** 
  * query the format, mode, frame_rate of camera.
  * 
- * @param fmt          may be null 
- * @param mode         may be null 
- * @param frame_rate   may be null 
+ * @param fmt          
+ * @param mode         
+ * @param frame_rate   
  * 
  * @return 
  */
@@ -857,55 +849,6 @@ C1394CameraNode::QueryFormat(FORMAT*    fmt,
     quadlet_t tmp;
 
     WriteReg(Addr(INITIALIZE),&tmp);
-    
-    /*
-    tmp=0;
-    WriteReg(Addr(Cur_V_Mode),&tmp);
-
-    tmp=SetParam(Cur_V_Format,,7);
-    WriteReg(Addr(Cur_V_Format),&tmp);
-
-
-//     tmp=SetParam(IMAGE_SIZE,Width,320);
-//     tmp=SetParam(IMAGE_SIZE,Height,240);
-//     WriteReg(CSR_REGISTER_BASE + 0x80400*4 + OFFSET_IMAGE_SIZE,&tmp);
-
-//     tmp=SetParam(IMAGE_POSITION,Left,0);
-//     tmp=SetParam(IMAGE_POSITION,Top,0);
-//     WriteReg(CSR_REGISTER_BASE + 0x80400*4 + OFFSET_IMAGE_POSITION,&tmp);
-
-    tmp = SetParam( COLOR_CODING_ID, Coding_ID, 2);
-    WriteReg( CSR_REGISTER_BASE + 0x80400*4 + OFFSET_COLOR_CODING_ID, &tmp);
-
-    WriteReg( CSR_REGISTER_BASE + 0x80400*4 + OFFSET_VALUE_SETTING, & tmp);
-    tmp = 0;
-    ReadReg(Addr(V_FORMAT_INQ),&tmp);
-    cout <<"V_FORMAT_INQ:"<<hex<<tmp<<dec<<endl;
-
-    ReadReg(Addr(V_MODE_INQ_7),&tmp);
-    cout <<"V_MODE_INQ_7:"<<hex<<tmp<<dec<<endl;
-
-    for (int i=0;i<32;i++){
-	ReadReg(Addr(V_CSR_INQ_7_0)+i*4,&tmp);
-	cout <<i <<" "<<hex<<tmp<<dec<<endl;
-    }
-    
-    for (int i=0;i<=0x7C;i+=4){	
-	WAIT;
-	ReadReg(CSR_REGISTER_BASE + 0x80400*4 + i,&tmp);
-	WAIT;
-	cout << hex << i<<" : "<<tmp<<dec<<endl;
-    }
-
-    ReadReg(Addr(BASIC_FUNC_INQ),&tmp);
-    cout <<"BASIC_FUNC_INQ:"<<hex<<tmp<<dec<<endl;
-
-
-    ReadReg(Addr(Feature_Hi_Inq),&tmp);
-    cout <<"Feature_Hi_Inq:"<<hex<<tmp<<dec<<endl;
-    ReadReg(Addr(Feature_Lo_Inq),&tmp);
-    cout <<"Feature_Lo_Inq:"<<hex<<tmp<<dec<<endl;
-    */    
 
     if (fmt){
 	ReadReg(Addr(Cur_V_Format),&tmp);
@@ -967,7 +910,7 @@ C1394CameraNode::QueryInfo()
 }
 
 /** 
- * 
+ * get current isochronus channel
  * 
  * @param channel 
  * 
@@ -991,7 +934,7 @@ C1394CameraNode::QueryIsoChannel(int* channel)
 }
 
 /** 
- * 
+ * get current isochronus speed
  * 
  * @param spd 
  * 
@@ -1013,7 +956,7 @@ C1394CameraNode::QueryIsoSpeed(SPD* spd)
 }
 
 /** 
- * 
+ * set  isochronus speed
  * 
  * @param iso_speed 
  * 
@@ -1031,7 +974,7 @@ C1394CameraNode::SetIsoSpeed(SPD iso_speed)
 }
 
 /** 
- * 
+ * take one image.
  * 
  * 
  * @return 
@@ -1039,9 +982,9 @@ C1394CameraNode::SetIsoSpeed(SPD iso_speed)
 bool 
 C1394CameraNode::OneShot()
 {
-  quadlet_t tmp=SetParam(One_Shot,,1);
-  WriteReg(Addr(One_Shot),&tmp) ;  
-  return true;
+    quadlet_t tmp=SetParam(One_Shot,,1);
+    WriteReg(Addr(One_Shot),&tmp) ;  
+    return true;
 }
 
 /** 
@@ -1077,7 +1020,7 @@ C1394CameraNode:: StartIsoTx(unsigned int count_number)
 }
 
 /** 
- * 
+ * set trigger mode 
  * 
  * 
  * @return 
@@ -1086,36 +1029,24 @@ bool
 C1394CameraNode:: SetTriggerOn()
 {
     quadlet_t tmp;
-
     ReadReg(Addr(TRIGGER_INQ),	&tmp);  
-    
-
-
     ReadReg(Addr(TRIGGER_MODE), &tmp);  
-    
-
     LOG(" SetTriggerOn"<<tmp);
-  
     tmp=0x82010000;
-
 /*
   SetParam(TRIGGER_MODE,  Presence_Inq, 1)
   |SetParam(TRIGGER_MODE, ON_OFF, 1)
   |SetParam(TRIGGER_MODE, Trigger_Polarity, 1)
   |SetParam(TRIGGER_MODE, Trigger_Mode,1<<4); */
-
     LOG(" SetTriggerOn "<<tmp);
-  
     WriteReg(
 	Addr(TRIGGER_MODE),
 	&tmp);
-     
-
     return true;
 }
 
 /** 
- * 
+ * off the trigger mode
  * 
  * 
  * @return 
@@ -1143,7 +1074,7 @@ C1394CameraNode:: SetTriggerOff()
 
 
 /** 
- * stop the camera not to send image
+ * stop the camera to send image
  * 
  * 
  * @return 
@@ -1159,8 +1090,6 @@ C1394CameraNode:: StopIsoTx()
     return true;
 }
 
-
-#include "yuv.h"
 
 struct VideoPixelInfo{
     char* name;

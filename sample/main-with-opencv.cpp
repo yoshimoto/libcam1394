@@ -1,9 +1,9 @@
 /*!
-  @file    
-  @brief   
-  @version $Id: main-with-opencv.cpp,v 1.1 2002-07-22 18:50:49 yosimoto Exp $
+  @file    main-with-opencv.cpp
+  @brief   OpenCVを用いたサンプル
+  @version $Id: main-with-opencv.cpp,v 1.2 2002-10-31 09:49:32 yosimoto Exp $
   @author  $Author: yosimoto $
-  @date    $Date: 2002-07-22 18:50:49 $
+  @date    $Date: 2002-10-31 09:49:32 $
  */
 
 #include <cv.h>
@@ -22,6 +22,8 @@
 #define DWFV500_MAGICNUMBER 8589965664ULL
 #define MAKE_CAMERA_ID(x) ((int64_t)(x)-DWFV500_MAGICNUMBER)
 #define MAKE_CHIP_ID(x)   ((int64_t)(x)+DWFV500_MAGICNUMBER)
+
+using namespace std;
 
 /* カメラのIDなど */
 const int format=0; 
