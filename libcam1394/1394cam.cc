@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.46 2004-12-21 20:49:38 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.47 2005-02-09 07:54:31 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -1724,12 +1724,12 @@ struct VideoPacketInfo{
 
 static struct VideoPixelInfo video_pixel_info[]=
 {
-    {"YUV(4:4:4)",  4, 4, 4   }, // VFMT_YUV444
-    {"YUV(4:2:2)",  4, 2, 2   }, // VFMT_VUV422
-    {"YUV(4:1:1)",  4, 1, 1   }, // VFMT_VUV411
-    {"RGB(8:8:8)",  8, 8, 8   }, // VFMT_RGB888
-    {" Y (Mono) ",  8, 0, 0   }, // VFMT_Y8
-    {" Y(Mono16)", 16, 0, 0   }, // VFMT_Y16
+    {"YUV(4:4:4)",  4, 4, 4   }, //! VFMT_YUV444
+    {"YUV(4:2:2)",  4, 2, 2   }, //! VFMT_VUV422
+    {"YUV(4:1:1)",  4, 1, 1   }, //! VFMT_VUV411
+    {"RGB(8:8:8)",  8, 8, 8   }, //! VFMT_RGB888
+    {" Y (Mono) ",  8, 0, 0   }, //! VFMT_Y8
+    {" Y(Mono16)", 16, 0, 0   }, //! VFMT_Y16
     {" unknown  ", -1,-1,-1   }
 };
 
@@ -1760,14 +1760,14 @@ static struct VideoImageInfo video_image_info[][8]=  // format / mode
     },
     // format_2
     {
-	RESERVED,
-	RESERVED,
-	RESERVED,
-	RESERVED,
-	RESERVED,
-	RESERVED,
-	RESERVED,
-	RESERVED,
+	{   VFMT_YUV422,       1280, 960}, // format_2/mode_0
+	{   VFMT_RGB888,       1280, 960}, // format_2/mode_1
+	{   VFMT_Y8    ,       1280, 960}, // format_2/mode_2
+	{   VFMT_YUV422,       1600,1200}, // format_2/mode_3
+	{   VFMT_RGB888,       1600,1200}, // format_2/mode_4
+	{   VFMT_Y8    ,       1600,1200}, // format_2/mode_5	
+	{   VFMT_Y16   ,       1280, 960}, // format_2/mode_6
+	{   VFMT_Y16   ,       1600,1200}, // format_2/mode_7	
     },
 };
 #undef RESERVED
@@ -2025,14 +2025,17 @@ PIXEL_FORMAT GetPixelFormat(FORMAT fmt, VMODE mode)
 const char* GetSpeedString(SPD spd)
 {
     static char* speed_string[]={
-	"100Mbps",
-	"200Mbps",
-	"400Mbps",
+	" 100Mbps",
+	" 200Mbps",
+	" 400Mbps",
+	" 800Mbps",
+	"1600Mbps",
+	"3200Mbps",
     };
     if (0 <= spd && spd < (SPD)(sizeof(speed_string)/sizeof(char*)) )
 	return speed_string[spd];
     else
-	return "???Mbps";
+	return "????Mbps";
 }
 
 /** 
@@ -2448,6 +2451,7 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
     }
 #else
     m_num_frame = 16;
+
     pMaped = (char*)mmap_isofb(m_port_no, channel,
 			       m_packet_sz, m_num_packet,
 			       &m_num_frame,

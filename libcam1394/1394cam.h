@@ -2,7 +2,7 @@
  * @file    1394cam.h
  * @brief   1394-based Digital Camera control class
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.h,v 1.21 2004-10-19 09:41:41 yosimoto Exp $
+ * @version $Id: 1394cam.h,v 1.22 2005-02-09 07:54:31 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -15,9 +15,12 @@
 
 #if !defined _OHCI1394_ISO_H_ 
 enum SPD {
-    SPD_100M =0x00,
-    SPD_200M =0x01,
-    SPD_400M =0x02,
+    SPD_100M  =0x00,
+    SPD_200M  =0x01,
+    SPD_400M  =0x02,
+    SPD_800M  =0x03,
+    SPD_1600M =0x04,
+    SPD_3200M =0x05,
 };
 #endif
 
