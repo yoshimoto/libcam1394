@@ -2,7 +2,7 @@
   @file  1394cam_registers.h
   @brief 1394-based Digital Camera command registers
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam_registers.h,v 1.2 2002-03-15 21:08:31 yosimoto Exp $
+  @version $Id: 1394cam_registers.h,v 1.3 2002-03-16 13:00:53 yosimoto Exp $
  */
 
 #if !defined(_1394cam_registers_h_included_)
@@ -227,25 +227,6 @@ BitInfo_ctrl_reg_for_feat(CAPTURE_QUALITY)
 ( CAT(MASK_##name,_##field ) & ((value)<< CAT(WAIT_##name,_##field)))
 #define GetParam(name,field,value)  \
 (( CAT(MASK_##name,_##field) & (value))>> CAT(WAIT_##name,_##field) )
-
-
-//typedef int (*ENUM1394_CALLBACK)(T* node,void* id);
-template <typename T> int
-Enum1394Node(raw1394_handle* handle,
-	     raw1394_portinfo* pPort,
-	     list<T>* pList,
-	     int 
-	     (*func)(raw1394_handle* handle,nodeid_t node_id,
-		     T* pNode,void* arg),
-	     void* arg)
-{
-    T the_node;
-    int i;
-    for (i = 0; i < pPort->nodes; i++)
-	if ((*func)(handle, 0xffc0 | i,&the_node,arg))
-	    pList->push_back(the_node);
-    return 0;
-}
 
 
 #endif // #if !defined(_1394cam_registers_h_included_)

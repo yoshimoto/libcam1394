@@ -1,11 +1,11 @@
-# $Id: configure.in,v 1.7 2002-03-15 21:08:30 yosimoto Exp $
+# $Id: configure.in,v 1.8 2002-03-16 13:00:53 yosimoto Exp $
 
 AC_INIT(Makefile.am)
 AM_INIT_AUTOMAKE(libcam1394, 0.1.1)
 AM_CONFIG_HEADER(config.h)
 
-AC_PROG_CC
 AM_PROG_AS
+AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_LIBTOOL
 AC_PATH_XTRA 

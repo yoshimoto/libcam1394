@@ -3,13 +3,12 @@ LDFLAGS+=-L/usr/local/lib -lraw1394 -lcam1394 -L/usr/X11R6/lib -lX11  -lpopt
 
 CXXFLAGS+=-g
 
-all: main-single main-dual main-caminfo
+all: main-single main-dual 
 
 main-single: xview.o 
 
 main-dual: xview.o 
 
-main-caminfo: xview.o 
 
 clean: 
 	rm -f main-single main-dual *.o

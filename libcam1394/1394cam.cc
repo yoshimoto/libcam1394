@@ -2,7 +2,7 @@
   @file  lz.h 
   @brief 1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.2 2002-03-15 21:08:31 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.3 2002-03-16 13:00:53 yosimoto Exp $
  */
 // Copyright (C) 1999-2002 by YOSHIMOTO Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp> 
 //
@@ -202,7 +202,35 @@ find_camera_by_id(CCameraList& CameraList,uint64_t id)
   return CameraList.end();
 }
 
-const int NUM_PORT = 16;  /*  port   */
+//typedef int (*ENUM1394_CALLBACK)(T* node,void* id);
+/** 
+ * @fn enumrate 1394 node 
+ * 
+ * @param handle
+ * @param pPort
+ * @param pList 
+ * @param func        pointer to the function 
+ * 
+ * @return 
+ */
+template <typename T> int
+Enum1394Node(raw1394_handle* handle,
+	     raw1394_portinfo* pPort,
+	     list<T>* pList,
+	     int 
+	     (*func)(raw1394_handle* handle,nodeid_t node_id,
+		     T* pNode,void* arg),
+	     void* arg)
+{
+    T the_node;
+    int i;
+    for (i = 0; i < pPort->nodes; i++)
+	if ((*func)(handle, 0xffc0 | i,&the_node,arg))
+	    pList->push_back(the_node);
+    return 0;
+}
+
+
 
 /** 
  * make camera list 
@@ -216,6 +244,7 @@ bool
 GetCameraList(raw1394handle_t handle,CCameraList* pList)
 {
     int  numcards;
+    const int NUM_PORT = 16;  /*  port   */
     struct raw1394_portinfo portinfo[NUM_PORT];
   
     cerr<<setfill('0');
@@ -251,7 +280,7 @@ GetCameraList(raw1394handle_t handle,CCameraList* pList)
 	return false;
     }
 
-
+    
 /*  printf("using first card found: %d nodes on bus, local ID is %d\n",
     raw1394_get_nodecount(handle),
     raw1394_get_local_id(handle) & 0x3f);
