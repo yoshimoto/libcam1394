@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.39 2004-09-15 07:29:45 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.40 2004-09-15 17:19:08 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -133,7 +133,7 @@ try_raw1394_read(raw1394handle_t handle, nodeid_t nodeid,
 	}
 	usleep(500);
     }
-    ERR("raw1394_read() failed.");
+    WRN("try_raw1394_read() failed.");
     return -1;
 }
 
@@ -648,13 +648,17 @@ C1394CameraNode::C1394CameraNode()
   m_BufferSize=0;
 #endif //#if defined(_WITH_ISO_FRAME_BUFFER_)
   m_last_read_frame=0;
+
+  fd = -1;
 }
 
 C1394CameraNode::~C1394CameraNode()
 {
 #if defined(_WITH_ISO_FRAME_BUFFER_)
     m_BufferSize=0;
-#endif //#if defined(_WITH_ISO_FRAME_BUFFER_)
+#endif //#if defined(_WITH_ISO_FRAME_BUFFER_)    
+    if (fd>0)
+	close(fd);
 }
 
 
@@ -2071,7 +2075,7 @@ static void* mmap_video1394(int port_no, int channel,
 #else
 static void* mmap_isofb(int port_no, int channel,
 			int m_packet_sz, int m_num_packet,
-			int m_num_frame,
+			int *m_num_frame,
 			int *fd, int *m_BufferSize)
 {
     void *buffer=NULL;
@@ -2079,24 +2083,24 @@ static void* mmap_isofb(int port_no, int channel,
     char devname[1024];
     snprintf(devname, sizeof(devname), "/dev/isofb%d", port_no);
     LOG("open("<<devname<<")");
-    *fd=open(devname,O_RDWR);
+    *fd=open(devname,O_RDONLY);
     if (*fd < 0){
 	ERR("Failed to open isofb device (" 
 	    << devname << ") : " << strerror(errno));
 	ERR("The ohci1394_fb module must be loaded, "
 	    "and you must have read and write permission to "<<devname<<".");
-	return NULL;
+	goto err;
     }
   
     ISO1394_RxParam rxparam;
     if (0>ioctl(*fd, IOCTL_INIT_RXPARAM, &rxparam)){
 	ERR("IOCTL_INIT_RXPARAM failed");
-	return NULL;
+	goto err;
     }
   
     rxparam.sz_packet      = m_packet_sz ;
     rxparam.num_packet     = m_num_packet ;
-    rxparam.num_frames     = m_num_frame;
+    rxparam.num_frames     = *m_num_frame;
     rxparam.packet_per_buf = 0;
     rxparam.wait           = 1;
     rxparam.sync           = 1;
@@ -2104,7 +2108,7 @@ static void* mmap_isofb(int port_no, int channel,
 
     if (0 > ioctl(*fd, IOCTL_CREATE_RXBUF, &rxparam) ){
 	ERR("IOCTL_CREATE_RXBUF failed");
-	return NULL;
+	goto err;
     }
     
     buffer = mmap(NULL,
@@ -2114,18 +2118,23 @@ static void* mmap_isofb(int port_no, int channel,
 		  *fd,0);
     if (buffer == MAP_FAILED){
 	ERR("isofb_mmap failed");
-	return NULL;
+	goto err;
     }
 
 
     if (0 >  ioctl(*fd, IOCTL_START_RX) ){
 	ERR("IOCTL_START_RX failed");
-	return NULL;
+	goto err;
     }
 
     *m_BufferSize = m_packet_sz*m_num_packet;
 
     return buffer;
+
+err:
+    if (*fd>0) close(*fd);
+    *fd=-1;
+    return NULL;
 }
 #endif
 
@@ -2193,7 +2202,7 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
 #else
     pMaped = (char*)mmap_isofb(m_port_no, channel,
 			       m_packet_sz, m_num_packet,
-			       m_num_frame,
+			       &m_num_frame,
 			       &fd, &m_BufferSize);
     if (!pMaped){
 	ERR("mmap_isofb() failed");
