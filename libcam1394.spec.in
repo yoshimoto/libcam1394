@@ -8,12 +8,12 @@ Release: %{rel}
 License: GPL
 Group: System Environment/Libraries
 URL: http://limu.is.kyushu-u.ac.jp/~yosimoto/
-Source0: http://limu.is.kyushu-u.ac.jp/~yosimoto/download/libcam1394-%{version}.tar.gz
+Source0: http://limu.is.kyushu-u.ac.jp/~yosimoto/download/1394/libcam1394-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 
-Requires:  raw1394
+Requires:  libraw1394
 
-BuildRequires: raw1394-devel
+BuildRequires: libraw1394-devel
 BuildRequires: pkgconfig
 
 %description
