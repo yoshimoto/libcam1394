@@ -2,7 +2,7 @@
   @file    1394cam.cc
   @brief   1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.10 2002-10-31 09:49:30 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.11 2002-11-01 12:13:38 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2002 by YOSHIMOTO Hiromasa
@@ -947,10 +947,7 @@ C1394CameraNode::QueryIsoSpeed(SPD* spd)
   CHK_PARAM(spd!=NULL);
   quadlet_t tmp;
    
-  ReadReg(
-    Addr(ISO_Speed),
-    &tmp);  
-  
+  ReadReg(Addr(ISO_Speed),&tmp);  
   *spd=(SPD)GetParam(ISO_Speed,,tmp);
   return true;
 }
