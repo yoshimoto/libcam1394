@@ -1,5 +1,5 @@
 /*
- * $Id: main-single.cpp,v 1.7 2003-10-07 13:16:27 yosimoto Exp $
+ * $Id: main-single.cpp,v 1.8 2004-06-20 02:44:45 yosimoto Exp $
  * main-single.cc - 1394カメラ1台利用サンプルプログラム
  *
  * By Hiromasa Yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp>
@@ -108,7 +108,7 @@ main(int argc, char **argv)
 
      /* start */
      camera->StartIsoTx();
-
+     
      RGBA* image = new RGBA[width*height];
      /* show live images  */
      while (1){
