@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.29 2004-01-13 11:06:58 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.30 2004-06-12 04:37:06 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -31,7 +31,11 @@
 #include <popt.h>
 #include <libraw1394/raw1394.h>
 #include <libraw1394/csr.h>
+#if defined(HAVE_ISOFB)
 #include <linux/ohci1394_iso.h>
+#else
+#include "video1394.h"
+#endif
 
 #if defined HAVE_CV_H
 #include <cv.h>
@@ -1941,7 +1945,12 @@ int ReleaseIsoChannelAll(raw1394handle_t handle)
  */
 int SetFrameCounter(int fd, int counter)
 {
-    return  (0 != ioctl(fd, IOCTL_SET_COUNT, counter));
+#if !defined(HAVE_ISOFB)
+    return -1;
+#else
+    return (0 != ioctl(fd, IOCTL_SET_COUNT, counter));
+#endif
+
 }
 
 /** 
@@ -1956,9 +1965,143 @@ int GetFrameCounter(int fd, int* counter)
 {
     if (NULL==counter)
 	return false;
+#if !defined(HAVE_ISOFB)
+    return -1;
+#else
     return  (0 != ioctl(fd, IOCTL_GET_COUNT, counter));
+#endif
 }
 
+#if !defined(HAVE_ISOFB)
+static void* mmap_video1394(int port_no, int channel,
+			    int m_packet_sz, int m_num_packet, 
+			    int *m_num_frame,
+			    int *fd,  int *m_BufferSize)
+{
+    int i;
+    void *buffer=NULL;
+    
+    char devname[1024];
+    snprintf(devname, sizeof(devname), "/dev/video1394/%d", port_no);
+    *fd = open(devname, O_RDONLY);
+    // quick hack for backward-compatibility
+    if (*fd<0){
+	snprintf(devname, sizeof(devname), "/dev/video1394%c", 
+		 char('a'+port_no));
+	*fd = open(devname, O_RDONLY);	
+    }
+    if (*fd<0){
+	ERR("unable to open video1394 device "
+	    << devname << " " << strerror(errno) );
+	return NULL;
+    }    
+    
+    struct video1394_mmap vmmap;
+    struct video1394_wait vwait;
+
+    vmmap.channel = channel;  
+    vmmap.sync_tag = 1;
+    vmmap.nb_buffers = *m_num_frame;
+    vmmap.buf_size =   m_packet_sz*m_num_packet;
+//    vmmap.packet_size = m_packet_sz;
+    vmmap.fps = 0;
+    vmmap.syt_offset = 0;
+    vmmap.flags = VIDEO1394_SYNC_FRAMES | VIDEO1394_INCLUDE_ISO_HEADERS;
+    
+    /* tell the video1394 system that we want to listen to the given channel */
+    if (ioctl(*fd, VIDEO1394_IOC_LISTEN_CHANNEL, &vmmap) < 0)
+    {
+        ERR("VIDEO1394_IOC_LISTEN_CHANNEL ioctl failed");
+        return NULL;
+    }
+
+    channel = vmmap.channel;
+    *m_BufferSize = vmmap.buf_size;
+    *m_num_frame = vmmap.nb_buffers;
+
+    //printf("channel: %d\n", vmmap.channel);
+
+    /* QUEUE the buffers */
+    for (i = 0; i < vmmap.nb_buffers; i++){
+	vwait.channel = channel;
+        vwait.buffer = i;
+        if (ioctl(*fd,VIDEO1394_IOC_LISTEN_QUEUE_BUFFER,&vwait) < 0)
+        {
+	    printf("unlisten channel %d\n", channel);
+	    ERR("VIDEO1394_IOC_LISTEN_QUEUE_BUFFER ioctl failed");
+            ioctl(*fd,VIDEO1394_IOC_UNLISTEN_CHANNEL,&channel);
+            return NULL;
+        }
+    }
+    
+    /* allocate ring buffer  */
+    vwait.channel= vmmap.channel;
+    buffer = mmap(0, vmmap.nb_buffers * vmmap.buf_size,
+		  PROT_READ,MAP_SHARED, *fd, 0);
+    if (buffer == MAP_FAILED) {
+        ERR("mmap failed");
+        ioctl(*fd, VIDEO1394_IOC_UNLISTEN_CHANNEL, &vmmap.channel);
+        return NULL;
+    }
+    
+    return buffer;
+}
+#else
+static void* mmap_isofb(int port_no, int channel,
+			int m_packet_sz, int m_num_packet,
+			int m_num_frame,
+			int *fd, int *m_BufferSize)
+{
+    void *buffer=NULL;
+
+    char devname[1024];
+    snprintf(devname, sizeof(devname), "/dev/isofb%d", port_no);
+    *fd=open(devname,O_RDWR);
+    if (-1==*fd){
+	ERR("can't open " << devname << " " << strerror(errno));
+	return NULL;
+    }
+  
+    ISO1394_RxParam rxparam;
+    if (0>ioctl(*fd, IOCTL_INIT_RXPARAM, &rxparam)){
+	ERR("IOCTL_INIT_RXPARAM failed");
+	return NULL;
+    }
+  
+    rxparam.sz_packet      = m_packet_sz ;
+    rxparam.num_packet     = m_num_packet ;
+    rxparam.num_frames     = m_num_frame;
+    rxparam.packet_per_buf = 0;
+    rxparam.wait           = 1;
+    rxparam.sync           = 1;
+    rxparam.channelNum     = channel ;
+
+    if (0 > ioctl(*fd, IOCTL_CREATE_RXBUF, &rxparam) ){
+	ERR("IOCTL_CREATE_RXBUF failed");
+	return NULL;
+    }
+    
+    buffer = mmap(NULL,
+		  rxparam.sz_allocated,
+		  PROT_READ,
+		  MAP_SHARED, 
+		  *fd,0);
+    if (buffer == MAP_FAILED){
+	ERR("mmap failed");
+	return NULL;
+    }
+
+
+    if (0 >  ioctl(*fd, IOCTL_START_RX) ){
+	ERR("IOCTL_START_RX failed");
+	return NULL;
+    }
+
+    *m_BufferSize = m_packet_sz*m_num_packet;
+
+    return buffer;
+}
+#endif
 
 /** 
  * Allocate frame buffer memory for the given video format
@@ -1990,7 +2133,6 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
 	LOG(" can't determine channel.");
 	return -1;
     }
-
     
     SetFormat(fmt,mode,rate);
     if ((fmt==Format_X)||(mode==Mode_X)||(rate==FrameRate_X)){
@@ -2012,57 +2154,36 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
 	ERR("packet size is too big");
 	return -2;
     }
-
-    char devname[1024];
-    snprintf(devname, sizeof(devname), "/dev/isofb%d", this->m_port_no);
-    fd=open(devname,O_RDWR);
-    if (-1==fd){
-	ERR("can't open " << devname << " " << strerror(errno));
-	return -1;
-    }
-  
-    ISO1394_RxParam rxparam;
-    if (0>ioctl(fd, IOCTL_INIT_RXPARAM, &rxparam)){
-	ERR("");
-	return -1;
-    }
-  
-    rxparam.sz_packet      = m_packet_sz ;
-    rxparam.num_packet     = m_num_packet ;
-    rxparam.num_frames     = 4;
-    rxparam.packet_per_buf = 0;
-    rxparam.wait           = 1;
-    rxparam.sync           = 1;
-    rxparam.channelNum     = channel ;
-
-    if (0 > ioctl(fd, IOCTL_CREATE_RXBUF, &rxparam) ){
-	ERR("");
-	return -1;
-    }
-
-    pMaped=(char*)mmap(NULL,
-		       rxparam.sz_allocated,
-		       PROT_READ|PROT_WRITE,
-		       MAP_SHARED, 
-		       fd,0);
-    if (!pMaped){
-	ERR("");
-	return -1;
-    }
-
-    m_lpFrameBuffer=pMaped;
-
-    if (0 >  ioctl(fd, IOCTL_START_RX) ){
-	ERR("");
-	return -1;
-    }
     
+    m_num_frame = 8;
+
+#if !defined(HAVE_ISOFB)
+    pMaped = (char*)mmap_video1394(m_port_no, channel, 
+				   m_packet_sz, m_num_packet,
+				   &m_num_frame,
+				   &fd, &m_BufferSize);
+    if (!pMaped){
+	ERR("mmap_video1394() failed");
+	return -3;
+    }
+#else
+    pMaped = (char*)mmap_isofb(m_port_no, channel,
+			       m_packet_sz, m_num_packet,
+			       m_num_frame,
+			       &fd, &m_BufferSize);
+    if (!pMaped){
+	ERR("mmap_isofb() failed");
+	return -3;
+    }
+#endif
+
+
     m_Image_W=::GetImageWidth(fmt,mode);
     m_Image_H=::GetImageHeight(fmt,mode);
-    
-    m_BufferSize=m_packet_sz*m_num_packet;
-    m_pixel_format=video_image_info[fmt][mode].pixel_format;
- 
+
+    m_last_read_frame = 0;
+    m_pixel_format  = video_image_info[fmt][mode].pixel_format;
+    m_lpFrameBuffer = pMaped;
     return 0;
 }
 
@@ -2076,7 +2197,11 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
  */
 int C1394CameraNode::GetFrameCount(int* count)
 {
+#if !defined(HAVE_ISOFB)
+    return m_last_read_frame;
+#else
     return ::GetFrameCounter(fd,count);
+#endif
 }
 
 /** 
@@ -2088,7 +2213,12 @@ int C1394CameraNode::GetFrameCount(int* count)
  */
 int C1394CameraNode::SetFrameCount(int tmp)
 {
+#if !defined(HAVE_ISOFB)
+    ERR("video1394 doesn't supporte this function");
+    return -1;
+#else
     return ::SetFrameCounter(fd,tmp);
+#endif
 }
 
 /** 
@@ -2107,12 +2237,49 @@ int C1394CameraNode::SetFrameCount(int tmp)
  */
 void* C1394CameraNode::UpDateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
 {
+#if !defined(HAVE_ISOFB)
+    int result;
+    struct video1394_wait vwait;
+    vwait.channel = m_channel;
+    vwait.buffer = m_last_read_frame%m_num_frame;
+    result = ioctl(fd, VIDEO1394_IOC_LISTEN_WAIT_BUFFER, &vwait);
+    //result = ioctl(fd, VIDEO1394_IOC_LISTEN_POLL_BUFFER, &vwait);
+    
+    if (result!=0){
+	if (errno == EINTR){
+	    
+	}
+	return m_lpFrameBuffer;
+    }
+
+    int drop_frames = vwait.buffer;
+    while (drop_frames>0){	    
+	ERR("drop frame");
+
+	vwait.channel = m_channel;
+	vwait.buffer = m_last_read_frame%m_num_frame;
+	if (ioctl(fd,VIDEO1394_IOC_LISTEN_QUEUE_BUFFER,&vwait) < 0){
+	    ERR("VIDEO1394_IOC_LISTEN_QUEUE_BUFFER failed");
+	}	    
+	m_last_read_frame++;
+    }
+
+    vwait.channel = m_channel;
+    vwait.buffer = m_last_read_frame++%m_num_frame;
+    if (ioctl(fd,VIDEO1394_IOC_LISTEN_QUEUE_BUFFER,&vwait) < 0){
+	ERR("VIDEO1394_IOC_LISTEN_QUEUE_BUFFER failed");
+    }
+
+    return m_lpFrameBuffer =
+	pMaped + m_BufferSize*((m_last_read_frame-1)%m_num_frame);
+#else
     ISO1394_Chunk chunk;
     if (0 > ioctl(fd, IOCTL_GET_RXBUF, &chunk) ){
 	ERR("");
 	return NULL;
     }
     return m_lpFrameBuffer=(pMaped+chunk.offset);
+#endif
 }
 
 /** 

@@ -2,7 +2,7 @@
  * @file    1394cam.h
  * @brief   1394-based Digital Camera control class
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.h,v 1.14 2003-12-19 12:40:25 yosimoto Exp $
+ * @version $Id: 1394cam.h,v 1.15 2004-06-12 04:37:06 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -10,7 +10,16 @@
 
 #include <list>
 #include <netinet/in.h>
+#include <libraw1394/raw1394.h>
 #include <libcam1394/1394cam_registers.h>
+
+#if !defined _OHCI1394_ISO_H_ 
+enum SPD {
+    SPD_100M =0x00,
+    SPD_200M =0x01,
+    SPD_400M =0x02,
+};
+#endif
 
 #if !defined OPENCVAPI
 struct IplImage;
@@ -207,13 +216,13 @@ private:
     char *pMaped;                  // pointer to the mmaped buffer
 
     PIXEL_FORMAT m_pixel_format;   // the format of the buffered image 
-    int   m_BufferSize;            // size of buffer
+    int   m_BufferSize;            // a frame size in byte
     char*  m_lpFrameBuffer;        // pointer to the latest updated image
     int  m_Image_W;                // image width (in pixels)
     int  m_Image_H;                // image height (in pixels)
     int  m_packet_sz;              // the packet size per a image
     int  m_num_packet;             // the number of packets per a image
-  
+
     bool  m_bIsInitalized; // true means this instance has been initalized
 
 public:
@@ -258,6 +267,7 @@ protected:
     int    AllocateBuffer(); 
     int    ReleaseBuffer();
 
+    int  m_num_frame; // number of frame in frame buffer.
 };
 
 #define ISORX_ISOHEADER 0x000001

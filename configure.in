@@ -1,10 +1,10 @@
-# $Id: configure.in,v 1.28 2004-01-09 15:29:13 yosimoto Exp $
+# $Id: configure.in,v 1.29 2004-06-12 04:37:06 yosimoto Exp $
 
 m4_define([debug_default],[no])
 
 
 AC_INIT(Makefile.am)
-AM_INIT_AUTOMAKE(libcam1394, 0.1.8rc6)
+AM_INIT_AUTOMAKE(libcam1394, 0.1.9rc3)
 AM_CONFIG_HEADER(config.h)
 
 # Save this value here, since automake will set cflags later
@@ -42,6 +42,15 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MMAP
 AC_CHECK_FUNCS([memset strcasecmp strerror strtol])
 
+AC_ARG_WITH([isofb],
+	AC_HELP_STRING([--with-isofb],
+	[use isofb driver @<:@default=no@:>@]),
+	 driver="isofb"
+         CFLAGS="-DHAVE_ISOFB $CFLAGS"
+         CXXFLAGS="-DHAVE_ISOFB $CXXFLAGS",
+	driver="video1394")
+
+
 AC_ARG_ENABLE([debug],
 	AC_HELP_STRING([--enable-debug],
 		[turn on debugging @<:@default=debug_default@:>@]), ,
@@ -50,7 +59,7 @@ AC_ARG_ENABLE([debug],
 if test "x$enable_debug" = "xyes"; then
   if test x$cflags_set != xset ; then
       CFLAGS="-DDEBUG -g $CFLAGS"
-      CPPFLAGS="-DDEBUG -g $CPPFLAGS"
+      CXXFLAGS="-DDEBUG -g $CXXFLAGS"
   fi
 fi
 
@@ -70,8 +79,9 @@ AC_OUTPUT([Makefile libcam1394/Makefile libcam1394/Doxyfile cam1394/Makefile])
 ##################################################
 
 echo "
-configuration:
+configuration:	
               debug:             $enable_debug
+             driver:             $driver
 opencv/cv.h support:             $ac_cv_header_opencv_cv_h
 cv.h        support:             $ac_cv_header_cv_h
 "

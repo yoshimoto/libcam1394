@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.18 2003-10-07 13:16:27 yosimoto Exp $
-  @date    $Date: 2003-10-07 13:16:27 $
+  @version $Id: cam1394.cc,v 1.19 2004-06-12 04:37:06 yosimoto Exp $
+  @date    $Date: 2004-06-12 04:37:06 $
  */
 #include "config.h"
 
@@ -641,8 +641,6 @@ int main(int argc, char *argv[]){
 	}
 
     }
-
-
     return 0;
 }
 
