@@ -1,6 +1,6 @@
-# $Id: configure.in,v 1.26 2003-12-19 12:40:25 yosimoto Exp $
+# $Id: configure.in,v 1.27 2003-12-19 13:25:06 yosimoto Exp $
 
-m4_define([debug_default],[yes])
+m4_define([debug_default],[no])
 
 
 AC_INIT(Makefile.am)
