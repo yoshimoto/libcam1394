@@ -2,7 +2,7 @@
   @file    1394cam.cc
   @brief   1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.8 2002-07-26 18:37:04 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.9 2002-07-26 23:19:29 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2002 by YOSHIMOTO Hiromasa
@@ -515,8 +515,8 @@ C1394CameraNode::SetParameter(C1394CAMERA_FEATURE feat,unsigned int value)
     }
     
     tmp=0;
-    tmp|=SetParam(BRIGHTNESS,Value,value);
-    tmp|=SetParam(BRIGHTNESS,ON_OFF,1);
+    tmp |= SetParam(BRIGHTNESS,Value,value);
+    tmp |= SetParam(BRIGHTNESS,ON_OFF,1);
     WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
     
     return true;
@@ -533,7 +533,7 @@ C1394CameraNode::SetParameter(C1394CAMERA_FEATURE feat,unsigned int value)
 bool
 C1394CameraNode::GetParameter(C1394CAMERA_FEATURE feat,unsigned int *value)
 {
-  quadlet_t tmp;
+  quadlet_t tmp=0;
   
   ReadReg(Addr(BRIGHTNESS)+4*feat,&tmp);
   if (!GetParam(BRIGHTNESS,Presence_Inq,tmp)){
@@ -562,7 +562,8 @@ C1394CameraNode::DisableFeature(C1394CAMERA_FEATURE feat)
     return false;
   }
   
-  tmp&=~SetParam(BRIGHTNESS,ON_OFF,1);
+  ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+  tmp &= ~SetParam(BRIGHTNESS,ON_OFF,1);
   WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
   
   return true;
@@ -586,7 +587,8 @@ C1394CameraNode::EnableFeature(C1394CAMERA_FEATURE feat)
     return false;
   }
   
-  tmp|=SetParam(BRIGHTNESS,ON_OFF,1);
+  ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+  tmp |= SetParam(BRIGHTNESS,ON_OFF,1);
   WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
   
   return true;
@@ -613,7 +615,11 @@ C1394CameraNode::OnePush(C1394CAMERA_FEATURE feat)
     return true;
     }*/
     
-    tmp|=SetParam(BRIGHTNESS,One_Push,1);
+    ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+    tmp |= SetParam(BRIGHTNESS,Presence_Inq,1);  
+    tmp |= SetParam(BRIGHTNESS,One_Push,1);
+    tmp |= SetParam(BRIGHTNESS,ON_OFF,1);
+    tmp &=~SetParam(BRIGHTNESS,A_M_Mode,1);
     WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
     
     return true;
@@ -639,8 +645,10 @@ C1394CameraNode::AutoModeOn(C1394CAMERA_FEATURE feat)
     return false;
   }
   
-  tmp|=SetParam(BRIGHTNESS,ON_OFF,1);
-  tmp|=SetParam(BRIGHTNESS,A_M_Mode,1);
+  ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+  tmp |= SetParam(BRIGHTNESS,Presence_Inq,1);  
+  tmp |= SetParam(BRIGHTNESS,ON_OFF,1);
+  tmp |= SetParam(BRIGHTNESS,A_M_Mode,1);
   WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
   
   return true;
@@ -664,7 +672,10 @@ C1394CameraNode::AutoModeOff(C1394CAMERA_FEATURE feat)
       return false;
   }
   
-  tmp&=~(SetParam(BRIGHTNESS,A_M_Mode,1));
+  ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+  tmp |= SetParam(BRIGHTNESS,Presence_Inq,1);  
+  tmp |= SetParam(BRIGHTNESS,ON_OFF,1);  
+  tmp &=~SetParam(BRIGHTNESS,A_M_Mode,1);
   WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
   
   return true;
@@ -733,8 +744,7 @@ C1394CameraNode::AutoModeOn_All()
 	     GetParam(BRIGHTNESS_INQ,Auto_Inq,tmp) ){
 	    LOG(" auto on "<< GetFeatureName(( C1394CAMERA_FEATURE)i ));
 	    
-	    ReadReg(Addr(BRIGHTNESS)+4*i,&tmp);
-	    
+	    ReadReg(Addr(BRIGHTNESS)+4*i,&tmp);	    
 	    tmp|=SetParam(BRIGHTNESS,ON_OFF,1);
 	    tmp|=SetParam(BRIGHTNESS,A_M_Mode,1);
 	    WriteReg(Addr(BRIGHTNESS)+4*i,&tmp);
@@ -758,12 +768,11 @@ C1394CameraNode::AutoModeOff_All()
     
 	if ( GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp) &&
 	     GetParam(BRIGHTNESS_INQ,Auto_Inq,tmp) ){
-	    ReadReg(Addr(BRIGHTNESS)+4*i,&tmp);
-      
+	    ReadReg(Addr(BRIGHTNESS)+4*i,&tmp);      
 	    LOG(" auto off "<< GetFeatureName( (C1394CAMERA_FEATURE )i) );
-	    tmp&=~SetParam(BRIGHTNESS,A_M_Mode,1);
+	    tmp &= ~SetParam(BRIGHTNESS,A_M_Mode,1);
+	    tmp |=  SetParam(BRIGHTNESS,ON_OFF,1);
 	    WriteReg(Addr(BRIGHTNESS)+4*i,&tmp);
-      
 	}
     }
     return true;
@@ -786,7 +795,8 @@ C1394CameraNode::OnePush_All()
 	     GetParam(BRIGHTNESS_INQ,One_Push_Inq,tmp) ){
 //	    ReadReg(Addr(BRIGHTNESS)+4*i,&tmp);
       
-	    tmp=SetParam(BRIGHTNESS,One_Push,1);
+	    tmp = SetParam(BRIGHTNESS,One_Push,1);
+	    tmp|= SetParam(BRIGHTNESS,ON_OFF,1);
 	    WriteReg(Addr(BRIGHTNESS)+4*i,&tmp);
 	}
     }
@@ -1029,7 +1039,6 @@ C1394CameraNode::SetIsoSpeed(SPD iso_speed)
 bool 
 C1394CameraNode::OneShot()
 {
-//  LOG("one shot.");
   quadlet_t tmp=SetParam(One_Shot,,1);
   WriteReg(Addr(One_Shot),&tmp) ;  
   return true;

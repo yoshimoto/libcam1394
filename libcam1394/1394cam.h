@@ -2,7 +2,7 @@
   @file  1394cam.h
   @brief 1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.h,v 1.4 2002-07-22 18:51:31 yosimoto Exp $
+  @version $Id: 1394cam.h,v 1.5 2002-07-26 23:19:29 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -19,11 +19,11 @@ struct IplImage;
 
 //! pixel format codes
 enum PIXEL_FORMAT {
-    VFMT_YUV444  =0, 
-    VFMT_YUV422  =1,
-    VFMT_YUV411  =2,
-    VFMT_RGB888  =3,
-    VFMT_Y8      =4,
+    VFMT_YUV444  =0,  //!< YUV444  = 24 bit/pixel
+    VFMT_YUV422  =1,  //!< YUV422  = 16 bit/pixel
+    VFMT_YUV411  =2,  //!< YUV411  = 12 bit/pixel
+    VFMT_RGB888  =3,  //!< RGB888  = 24 bit/pixel
+    VFMT_Y8      =4,  //!< Y8      =  8 bip/pixel, gray image
     
     VFMT_NOT_SUPPORTED ,
 };
