@@ -1,4 +1,4 @@
-bin_PROGRAMS = cam1394 cam1394_save
+bin_PROGRAMS = cam1394 cam1394_save 
 
 cam1394_SOURCES  = cam1394.cc mmx_bgs.s common.h xview.cc xview.h
 cam1394_LDADD = ../src/libcam1394.la
