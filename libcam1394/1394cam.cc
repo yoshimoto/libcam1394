@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.40 2004-09-15 17:19:08 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.41 2004-10-19 07:19:45 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -64,7 +64,7 @@ using namespace std;
 #define WAIT usleep(500)
 
 // string-table for feature codes
-static const char *feature_hi_table[]={
+static const char *feature_table[]={
     "brightness" ,   // +0
     "auto_exposure" ,   
     "sharpness" ,
@@ -78,8 +78,11 @@ static const char *feature_hi_table[]={
     "focus" ,  
     "temperature" , 
     "trigger"         ,  //+12
+    "trigger_delay",
+    "white_shading",
+    "frame_rate",
 
-    "reserved","reserved","reserved","reserved","reserved",
+    "reserved","reserved",
     "reserved","reserved","reserved","reserved","reserved",
     "reserved","reserved","reserved","reserved","reserved",
     "reserved","reserved","reserved","reserved",
@@ -890,7 +893,7 @@ const char*
 C1394CameraNode::GetFeatureName(C1394CAMERA_FEATURE feat)
 {
     if (0<=feat && feat < END_OF_FEATURE)
-	return feature_hi_table[feat];
+	return feature_table[feat];
     else
 	return NULL;
 }
@@ -931,11 +934,11 @@ C1394CameraNode::SetParameter(C1394CAMERA_FEATURE feat,unsigned int value)
 
 //  ERR( "tmp:" <<  hex << tmp << dec <<(int)feat );
   if (GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)==0){
-    ERR("the feature "<<feature_hi_table[feat]<<" is not available.");
+    ERR("the feature "<<feature_table[feat]<<" is not available.");
     return false;
   }
   if (GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)==0){
-    ERR("the feature "<<feature_hi_table[feat]<<" is not available.");
+    ERR("the feature "<<feature_table[feat]<<" is not available.");
     return false;
   }
   
@@ -962,6 +965,7 @@ C1394CameraNode::SetParameter(C1394CAMERA_FEATURE feat,unsigned int value)
   
   tmp = 0;
   tmp |= SetParam(BRIGHTNESS,Presence_Inq, 1);
+//  tmp |= SetParam(BRIGHTNESS,Abs_Control, 0);
   tmp |= SetParam(BRIGHTNESS,ON_OFF,1);
   
   tmp |= SetParam(BRIGHTNESS,Value,value);
@@ -985,18 +989,188 @@ C1394CameraNode::GetParameter(C1394CAMERA_FEATURE feat,unsigned int *value)
   
   ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
   if (!GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)){
-    ERR("the feature "<<feature_hi_table[feat]<<" is not available");
+    ERR("the feature "<<feature_table[feat]<<" is not available");
     return false;
   }
   if (!GetParam(BRIGHTNESS_INQ,ReadOut_Inq,tmp)){
-    ERR("the value of feature "<<feature_hi_table[feat]<<" is invalid");
+    ERR("the value of feature "<<feature_table[feat]<<" is invalid");
     return false;
   }
+  
+  // disable abs_control
+  ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+  tmp &= ~SetParam(BRIGHTNESS, Abs_Control, 1);
+  WriteReg(Addr(BRIGHTNESS)+4*feat, &tmp);
   
   ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
   *value=tmp&((1<<24)-1);////GetParam(BRIGHTNESS,Value,tmp);
   return true;
 }
+
+
+/** 
+ * 
+ * 
+ * @param feat 
+ * @param min 
+ * @param max 
+ * 
+ * @return 
+ */
+bool
+C1394CameraNode::GetParameterRange(C1394CAMERA_FEATURE feat,
+				   unsigned int *min,
+				   unsigned int *max)
+{
+    return true;
+}
+
+/** 
+ * 
+ * 
+ * @param feat 
+ * @param value 
+ * 
+ * @return 
+ */
+bool
+C1394CameraNode::SetAbsParameter(C1394CAMERA_FEATURE feat, float value)
+{
+  quadlet_t tmp=0;
+  ReadReg(Addr(BRIGHTNESS)+4*feat,&tmp);
+  if (!GetParam(BRIGHTNESS,Presence_Inq,tmp)){
+      ERR("the feature ( "<<feature_table[feat]<<") is not available");
+      return false;
+  }
+  if (!GetParam(BRIGHTNESS,Abs_Control,tmp)){
+      ERR("the capability of control with absolute value ( "
+	  <<feature_table[feat]<<") is not available");
+    return false;
+  }
+
+
+  // enable abs_control
+  ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+  tmp |= SetParam(BRIGHTNESS, Abs_Control, 1);
+  WriteReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+ 
+  // retrive the offset of absolute value CSR.
+  quadlet_t off = 0;
+  ReadReg(Addr(ABS_CSR_HI_INQ_0)+4*feat, &off);  
+  // write abs value
+  WriteReg(m_command_regs_base + off + 0x0008, (quadlet_t*)&value);
+
+  return true;
+}
+
+/** 
+ * 
+ * 
+ * @param feat 
+ * @param value 
+ * 
+ * @return 
+ */
+bool
+C1394CameraNode::GetAbsParameter(C1394CAMERA_FEATURE feat, float *value)
+{
+  quadlet_t tmp=0;
+  
+  ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
+  if (!GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)){
+      ERR("the feature ( "<<feature_table[feat]<<") is not available");
+      return false;
+  }
+  if (!GetParam(BRIGHTNESS_INQ,Abs_Control_Inq,tmp)){
+      ERR("the capability of control with absolute value ( "
+	  <<feature_table[feat]<<") is not available");
+    return false;
+  }
+
+  // enable absolute control
+  ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+  tmp |= SetParam(BRIGHTNESS, Abs_Control, 1);
+  WriteReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+ 
+  // retrive the offset of absolute value CSR.
+  quadlet_t off = 0;
+  ReadReg(Addr(ABS_CSR_HI_INQ_0)+4*feat, &off);
+  LOG("off is "<<hex<<off<<dec);
+  
+  // read Value
+  ReadReg(CSR_REGISTER_BASE + off*4 + 0x0008, (quadlet_t*)value);
+
+  return true;
+}
+
+
+const char* 
+C1394CameraNode::GetAbsParameterUnit(C1394CAMERA_FEATURE feat)
+{
+    static char* abs_control_unit_table[64] = {
+	"%", "EV", "", "K", 
+	"deg", "%", "", "s",
+	"dB", "F", "m", "",       // gain 
+	"times", "s",  "", "fps", // trigger
+
+	"", "", "", "",   // reserved
+	"", "", "", "",
+	"", "", "", "",
+	"", "", "", "",
+
+	"power", "deg", "deg", "",   // zoom
+	"", "", "", "",
+	"", "", "", "",
+	"", "", "", "",	
+
+	"", "", "", "",
+	"", "", "", "",
+	"", "", "", "",
+	"", "", "", "",
+    };
+
+    //!!FIXME!!
+    return abs_control_unit_table[feat];
+}
+
+/** 
+ * 
+ * 
+ * @param feat 
+ * @param min 
+ * @param max 
+ * 
+ * @return 
+ */
+bool 
+C1394CameraNode::GetAbsParameterRange(C1394CAMERA_FEATURE feat, 
+				      float* min,
+				      float* max)
+{
+    return false;
+}
+
+/** 
+ * 
+ * 
+ * @param feat 
+ * 
+ * @return 
+ */
+bool
+C1394CameraNode::HasAbsControl(C1394CAMERA_FEATURE feat)
+{
+    quadlet_t tmp=0;
+    ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&tmp);
+    if (!GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)){
+	return false;
+    }
+    if (!GetParam(BRIGHTNESS_INQ,Abs_Control_Inq,tmp)){
+	return false;
+    }
+    return true;
+}
+
 
 /** 
  * Disables feature. 
@@ -1034,11 +1208,11 @@ C1394CameraNode::EnableFeature(C1394CAMERA_FEATURE feat)
 
     ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&inq);
     if (0==GetParam(BRIGHTNESS_INQ,Presence_Inq,inq)){
-	ERR("the feature "<<feature_hi_table[feat]<<" is not available");
+	ERR("the feature "<<feature_table[feat]<<" is not available");
 	return false;
     }
     if (0==GetParam(BRIGHTNESS_INQ,On_Off_Inq,inq)){
-	ERR("the feature "<<feature_hi_table[feat]<<" has no ON/OFF cap.");
+	ERR("the feature "<<feature_table[feat]<<" has no ON/OFF cap.");
 	return false;
     }
     
@@ -1939,7 +2113,7 @@ int AllocateIsoChannel(raw1394handle_t handle,
  * @return 
  */
 int ReleaseIsoChannel(raw1394handle_t handle,
-		 int channel)
+		      int channel)
 {
     return true;
 }

@@ -2,7 +2,7 @@
  * @file    1394cam.h
  * @brief   1394-based Digital Camera control class
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.h,v 1.19 2004-09-08 15:00:57 yosimoto Exp $
+ * @version $Id: 1394cam.h,v 1.20 2004-10-19 07:19:45 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -173,12 +173,23 @@ public:
 
     bool SetParameter(C1394CAMERA_FEATURE feat, unsigned int value);
     bool GetParameter(C1394CAMERA_FEATURE feat, unsigned int* value);
+    bool GetParameterRange(C1394CAMERA_FEATURE feat,
+			   unsigned int *min,
+			   unsigned int *max);
+
+    bool SetAbsParameter(C1394CAMERA_FEATURE feat, float value);
+    bool GetAbsParameter(C1394CAMERA_FEATURE feat, float* value);
+    const char* GetAbsParameterUnit(C1394CAMERA_FEATURE feat);
+    bool GetAbsParameterRange(C1394CAMERA_FEATURE feat, 
+			      float* min,
+			      float* max);
 
     const char* GetFeatureName(C1394CAMERA_FEATURE feat);
     const char* GetFeatureStateName(C1394CAMERA_FSTATE fstate);
 
     bool HasFeature(C1394CAMERA_FEATURE feat);
     bool HasCapability(C1394CAMERA_FEATURE feat, C1394CAMERA_FSTATE fstate);
+    bool HasAbsControl(C1394CAMERA_FEATURE feat);
 
     bool EnableFeature(C1394CAMERA_FEATURE feat);
     bool DisableFeature(C1394CAMERA_FEATURE feat);

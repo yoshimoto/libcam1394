@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.24 2004-10-07 16:07:29 yosimoto Exp $
-  @date    $Date: 2004-10-07 16:07:29 $
+  @version $Id: cam1394.cc,v 1.25 2004-10-19 07:19:45 yosimoto Exp $
+  @date    $Date: 2004-10-19 07:19:45 $
  */
 #include "config.h"
 
@@ -137,7 +137,7 @@ show_camera_feature(C1394CameraNode *cam)
 {
     C1394CAMERA_FEATURE feat;
 	    
-    printf("#     feature          value    supported-state \n");
+    printf("#     feature      value     abs value    supported-state \n");
 
     for (feat=BRIGHTNESS;feat<END_OF_FEATURE;
 	 feat=(C1394CAMERA_FEATURE)((int)feat+1)){
@@ -146,10 +146,24 @@ show_camera_feature(C1394CameraNode *cam)
 	    continue;
 	}
 
-	unsigned int value;
-	cam->GetParameter(feat, &value);
+
 	const char *fname = cam->GetFeatureName(feat) ;
-	printf("%20s %7d ", fname, value);
+	printf("%15s  ", fname);
+
+	unsigned int value;
+	if (cam->GetParameter(feat, &value)){
+	    printf("0x%08X  ", value);
+	} else {
+	    printf("%12s","-");
+	} 
+
+	float abs_value;
+	if (cam->GetAbsParameter(feat, &abs_value)){
+	    printf("% 7.3f%-5s", abs_value,
+		   cam->GetAbsParameterUnit(feat));
+	}else{
+	    printf("     -      ");
+	}
 
 	C1394CAMERA_FSTATE st,cur_st;
 	cam->GetFeatureState(feat, &cur_st);
@@ -159,6 +173,10 @@ show_camera_feature(C1394CameraNode *cam)
 		       cam->GetFeatureStateName(st));
 	    }
 	}
+/*	if (cam->HasAbsControl(feat)){
+	    printf("abs ");
+	}
+*/
 	printf("\n");
     }
 }
