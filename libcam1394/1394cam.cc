@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.31 2004-06-12 10:39:41 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.32 2004-07-13 15:44:57 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -2265,7 +2265,7 @@ void* C1394CameraNode::UpDateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
     }
 
     vwait.channel = m_channel;
-    vwait.buffer = m_last_read_frame++%m_num_frame;
+    vwait.buffer = m_last_read_frame++ % m_num_frame;
     if (ioctl(fd,VIDEO1394_IOC_LISTEN_QUEUE_BUFFER,&vwait) < 0){
 	ERR("VIDEO1394_IOC_LISTEN_QUEUE_BUFFER failed");
     }
