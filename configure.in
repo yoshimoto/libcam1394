@@ -1,9 +1,9 @@
-# $Id: configure.in,v 1.35 2004-08-30 02:00:37 yosimoto Exp $
+# $Id: configure.in,v 1.36 2004-09-08 15:00:57 yosimoto Exp $
 
 AC_PREREQ([2.54])
 
 m4_define([debug_default], [no])
-m4_define([libcam1394_version], [0.1.9rc8])
+m4_define([libcam1394_version], [0.1.9rc9])
 
 AC_INIT([libcam1394], [libcam1394_version], [yosimoto@limu.is.kyushu-u.ac.jp])
 AM_INIT_AUTOMAKE([1.7 no-define])

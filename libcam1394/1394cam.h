@@ -2,7 +2,7 @@
  * @file    1394cam.h
  * @brief   1394-based Digital Camera control class
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.h,v 1.18 2004-08-30 08:04:21 yosimoto Exp $
+ * @version $Id: 1394cam.h,v 1.19 2004-09-08 15:00:57 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -298,6 +298,7 @@ int GetImageWidth(FORMAT fmt,VMODE mode);
 int GetImageHeight(FORMAT fmt,VMODE mode);
 SPD GetRequiredSpeed(FORMAT fmt,VMODE mode,FRAMERATE frame_rate);
 const char* GetVideoFormatString(FORMAT fmt,VMODE mode);
+PIXEL_FORMAT GetPixelFormat(FORMAT fmt, VMODE mode);
 const char* GetSpeedString(SPD rate);
 
 typedef std::list<C1394CameraNode> CCameraList; //!< camera list

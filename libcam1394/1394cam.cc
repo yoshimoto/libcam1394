@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.37 2004-08-31 08:42:43 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.38 2004-09-08 15:00:57 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -1746,6 +1746,22 @@ const char* GetVideoFormatString(FORMAT fmt,VMODE mode)
   
     PIXEL_FORMAT pixel=video_image_info[fmt][mode].pixel_format;
     return video_pixel_info[ pixel ].name;
+}
+
+/** 
+ * Returns pixel format.
+ * 
+ * @param fmt 
+ * @param mode 
+ * 
+ * @return PIXEL_FORMAT
+ */
+PIXEL_FORMAT GetPixelFormat(FORMAT fmt, VMODE mode)
+{
+    if (!(0<=fmt&&fmt<=2))
+	return VFMT_NOT_SUPPORTED;
+    else
+	return video_image_info[fmt][mode].pixel_format;
 }
 
 /** 
