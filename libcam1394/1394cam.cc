@@ -2,7 +2,7 @@
   @file    1394cam.cc
   @brief   1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.11 2002-11-01 12:13:38 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.12 2002-11-10 23:12:18 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2002 by YOSHIMOTO Hiromasa
@@ -45,18 +45,19 @@
 
 using namespace std;
 
-#define QUAD(h,l)  0x##h##l
 #define CHK_PARAM(exp) {if (!(exp)) MSG( "illegal param passed. " << __STRING(exp)); }
 #define EXCEPT_FOR_FORMAT_6_ONLY  {if (is_format6) return false;}
 
 #define Addr(name) (m_command_regs_base+OFFSET_##name)
-
-#define HEX(var)     hex<<setw(8)<<var<<dec
-#define VAR32(var)   #var" := 0x"<<HEX(var)
-#define VAR(var)     #var" :="<<var
-#define CHR(var)    CHR_( ((var)&0xff) )
-#define CHR_(c)     ((0x20<=(c) && (c)<='z')?(char)(c):'.')
 #define EQU(val,mask,pattern)  (0==(((val)&(mask))^(pattern)))
+
+//#define QUAD(h,l)  0x##h##l
+//#define HEX(var)     hex<<setw(8)<<var<<dec
+//#define VAR32(var)   #var" := 0x"<<HEX(var)
+//#define VAR(var)     #var" :="<<var
+//#define CHR(var)    CHR_( ((var)&0xff) )
+//#define CHR_(c)     ((0x20<=(c) && (c)<='z')?(char)(c):'.')
+
 
 #define ADDR_CONFIGURATION_ROM        (CSR_REGISTER_BASE + CSR_CONFIG_ROM)
 // for root directory
@@ -396,17 +397,11 @@ C1394CameraNode::ResetToInitialState()
 {
     quadlet_t tmp;
 
-    WriteReg(
-	(CSR_REGISTER_BASE + CSR_CONFIG_ROM)+CSR_STATE_SET, 
-	&tmp);
-  
-  
+    WriteReg((CSR_REGISTER_BASE + CSR_CONFIG_ROM)+CSR_STATE_SET, 
+	     &tmp);
     tmp=SetParam(INITIALIZE,Initialize,1);
     LOG("reset camera..."<<tmp);
-
     WriteReg(Addr(INITIALIZE),&tmp);
-
-    
     return true;
 }
 
@@ -698,25 +693,6 @@ C1394CameraNode::PreSet_All()
 
   return true;
 }
-
-
-/*
-    
-    
-    char str[30];
-    snprintf(str,sizeof(str),"%20s",feature_hi_table[i]);
-    if (GetParam(BRIGHTNESS_INQ,Presence_Inq,tmp)){
-      LOG(str
-	  <<(GetParam(BRIGHTNESS_INQ,Auto_Inq,tmp)    ?"  auto ":"  ---  ")
-	  <<(GetParam(BRIGHTNESS_INQ,Manual_Inq,tmp)  ?" manual":"  ---  ")
-	  <<"["<<GetParam(BRIGHTNESS_INQ,MIN_Value,tmp)<<"-"
-	  <<GetParam(BRIGHTNESS_INQ,MAX_Value,tmp)<<"]"
-	  <<(GetParam(BRIGHTNESS_INQ,On_Off_Inq,tmp)  ?" on/off":"  ---  ")
-	);
-    }else{
-      LOG(str<< " not available.");
-    }
-*/
 
 /** 
  * off the auto-mode of the feature.
@@ -1707,6 +1683,6 @@ C1394CameraNode::SaveToFile(char* filename,FILE_TYPE type)
 /*
  * Local Variables:
  * mode:c++
- * c-basic-offset: 4
+ * c-basic-offset: 2
  * End:
  */

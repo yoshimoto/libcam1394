@@ -2,7 +2,7 @@
   @file  1394cam.h
   @brief 1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.h,v 1.5 2002-07-26 23:19:29 yosimoto Exp $
+  @version $Id: 1394cam.h,v 1.6 2002-11-10 23:12:18 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -15,7 +15,6 @@
 #if !defined IPLAPI
 struct IplImage;
 #endif // #if defined IPLAPI
-
 
 //! pixel format codes
 enum PIXEL_FORMAT {
