@@ -1,4 +1,4 @@
-%define base_version @libcam1394_version@
+%define base_version @VERSION@
 %define rel          1
 
 Summary: Library for 1394-based digital camera
