@@ -1,5 +1,5 @@
 /*
- * $Id: main-dual.cpp,v 1.6 2003-08-25 15:39:17 yosimoto Exp $
+ * $Id: main-dual.cpp,v 1.7 2003-10-07 13:02:36 yosimoto Exp $
  * main-dual.cc - 1394カメラ2台利用サンプルプログラム
  *
  * By Hiromasa Yoshimoto <yosimoto@limu.is.kyushu-u.ac.jp>
@@ -9,8 +9,6 @@
 #include <errno.h>
 
 #include <libraw1394/raw1394.h>  /* libraw1394関連 */
-#include <libraw1394/csr.h>
-
 #include <linux/ohci1394_iso.h> /* ドライバとのインタフェイス関連 */
 #include <libcam1394/1394cam.h>
 #include <libcam1394/yuv.h>     /* for conversion yuv to rgb */
@@ -23,7 +21,7 @@
    具体的な数値については1394-based Digital Camera Specや
    実際に使用する1394カメラの仕様書等で確認してください。*/
 
-#define DWFV500_MAGICNUMBER 8589965664ULL
+#define DWFV500_MAGICNUMBER 576537726707333472ULL
 #define MAKE_CAMERA_ID(x) ((int64_t)(x)-DWFV500_MAGICNUMBER)
 #define MAKE_CHIP_ID(x)   ((int64_t)(x)+DWFV500_MAGICNUMBER)
 
