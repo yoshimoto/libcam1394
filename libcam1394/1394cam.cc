@@ -2,7 +2,7 @@
   @file    1394cam.cc
   @brief   1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.12 2002-11-10 23:12:18 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.13 2002-11-25 12:11:09 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2002 by YOSHIMOTO Hiromasa
@@ -1447,7 +1447,9 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
 	if (mode==Mode_X)      mode=m;
 	if (rate==FrameRate_X) rate=r;
     }
-//    SPD spd=::GetRequiredSpeed(fmt,mode,rate);
+
+    SPD spd=::GetRequiredSpeed(fmt,mode,rate);
+    SetIsoSpeed(spd);
 
     m_packet_sz  = ::GetPacketSize(fmt,mode,rate);
     m_packet_sz += 8;
