@@ -2,7 +2,7 @@
   @file  1394cam.h
   @brief 1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.h,v 1.2 2002-06-09 08:29:16 yosimoto Exp $
+  @version $Id: 1394cam.h,v 1.3 2002-07-10 09:41:00 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -95,6 +95,8 @@ enum C1394CAMERA_FEATURE {
 
     CAPTURE_SIZE   = 48,      //!< capture size control
     CAPTURE_QUALITY    ,      //!< capture quality control
+
+    END_OF_FEATURE   ,
 };
 
 //-------------------------------------------------------

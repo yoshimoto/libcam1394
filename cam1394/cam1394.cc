@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.6 2002-06-09 08:50:15 yosimoto Exp $
-  @date    $Date: 2002-06-09 08:50:15 $
+  @version $Id: cam1394.cc,v 1.7 2002-07-10 09:41:00 yosimoto Exp $
+  @date    $Date: 2002-07-10 09:41:00 $
  */
 #include <stdio.h>
 #include <unistd.h>
@@ -199,11 +199,11 @@ int main(int argc, char *argv[]){
      int spd=2;          /* bus speed 0=100M 1=200M 2=400M */
 
      const char *target_cameras=NULL; /* target camera(s) */
-     const char *save_filename=NULL;
-     const char *save_pattern=NULL;
+     const char *save_filename =NULL;
+     const char *save_pattern  =NULL;
 
-     const char *cp[TRIGGER+1]; /* camera's parameter. 
-				   "NULL"  means the value isn't set. */
+     const char *cp[END_OF_FEATURE]; /* camera's parameter. 
+					"NULL"  means the value isn't set. */
 
      FORMAT    cp_format = Format_X;
      VMODE     cp_mode   = Mode_X;
@@ -411,8 +411,7 @@ int main(int argc, char *argv[]){
      //
      for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++){
 	  C1394CAMERA_FEATURE feat;
-	  for (feat=BRIGHTNESS;
-	       feat<TRIGGER;
+	  for (feat=BRIGHTNESS;feat<=OPTICAL_FILTER;
 	       feat=(C1394CAMERA_FEATURE)((int)feat+1)){
 
 //    LOG(cam->GetFeatureName(feat)<<" "<<cp[feat]);
@@ -438,9 +437,9 @@ int main(int argc, char *argv[]){
 		    char *end=NULL;
 		    val=strtol(cp[feat],&end,0);
 		    if (*end!='\0'){
-			 ERR(cam->GetFeatureName(feat) 
-			     << ": invalid param, " << cp[feat] );
-			 exit(-1);
+			ERR(cam->GetFeatureName(feat) 
+			    << ": invalid param, " << cp[feat] );
+			exit(-1);
 		    }
 		    LOG("set "<<cam->GetFeatureName(feat)<<" feat "<<val);
 		    if (!cam->SetParameter(feat, val)){
