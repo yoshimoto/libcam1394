@@ -2,7 +2,7 @@
   @file    1394cam.cc
   @brief   1394-based Digital Camera control class
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam.cc,v 1.18 2003-03-01 13:34:06 yosimoto Exp $
+  @version $Id: 1394cam.cc,v 1.19 2003-04-28 09:37:10 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -1737,36 +1737,18 @@ C1394CameraNode::CopyRGBAImage(void* dest)
 int  
 C1394CameraNode::SaveToFile(char* filename,FILE_TYPE type)
 {
-//  switch (type){
- 
-    {
-	bool result=false;
-	FILE* fp=fopen(filename,"w");
-	if (fp){
-	    int i;
-	    int w=GetImageWidth();
-	    int h=GetImageHeight();
-	    fprintf(fp,"P6\n %d %d\n 255\n",w,h);
-	    RGBA buf[w*h];
-	    CopyRGBAImage(buf);
-	    RGBA* img=buf;
-	    for (i=0;i<w*h;i++){
-		fwrite(&img->r,1,1,fp);
-		fwrite(&img->g,1,1,fp);
-		fwrite(&img->b,1,1,fp);
-		img++;
-	    }
-	    fclose(fp);
-	}else{
-	    fprintf(stderr,"can't create file %s \n",filename);
-	}
-	return result;
-    }
-    return 0;
+//    switch (type){ 
+//    {
+    int w=GetImageWidth();
+    int h=GetImageHeight();
+    RGBA buf[w*h];
+    CopyRGBAImage(buf);
+    return SaveRGBAtoFile(filename, buf, w, h);
+//    }
 }
 /*
  * Local Variables:
  * mode:c++
- * c-basic-offset: 2
+ * c-basic-offset: 4
  * End:
  */
