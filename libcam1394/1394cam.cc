@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.23 2003-11-30 08:46:55 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.24 2003-11-30 08:53:43 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -660,7 +660,7 @@ C1394CameraNode::GetFeatureName(C1394CAMERA_FEATURE feat)
 const char* 
 C1394CameraNode::GetFeatureStateName(C1394CAMERA_FSTATE fstate)
 {
-    if (OFF<= fstate && fstate < END_OF_FEATURE)
+    if (OFF<= fstate && fstate < END_OF_FSTATE)
 	return featurestate_table[fstate];
     else
 	return NULL;
