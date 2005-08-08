@@ -2,7 +2,7 @@
  * @file    1394cam.h
  * @brief   1394-based Digital Camera control class
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.h,v 1.22 2005-02-09 07:54:31 yosimoto Exp $
+ * @version $Id: 1394cam.h,v 1.23 2005-08-08 02:49:53 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -140,6 +140,7 @@ public:
 
 struct BufferInfo {
     //! @todo  !!FIXME!! -- not implemented yet
+    int timestamp;
 };
 
 class C1394CameraNode : public C1394Node {

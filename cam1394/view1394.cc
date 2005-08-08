@@ -100,7 +100,7 @@ int split_to_ppm(const char *srcfile, const char *dstfile,
 	  // YUV422形式からRGBA形式へ変換 
 	  copy_YUV422toRGBA(work,buf,
 			    info->packet_sz,
-			    info->num_packet,REMOVE_HEADER);
+			    info->num_packet, REMOVE_HEADER);
        
 	  char fmt[1024];
 	  snprintf(fmt,sizeof(fmt),"%s.ppm",dstfile);
@@ -134,8 +134,8 @@ int main(int argc,char *argv[]){
 
 
   FORMAT fmt=Format_0;
-  VMODE  mode=Mode_1;
-  FRAMERATE rate=FrameRate_4;
+  VMODE  mode=Mode_3;
+  FRAMERATE rate=FrameRate_3;
   
   ImgInfo info;
   info.w           = GetImageWidth ( fmt, mode);
@@ -147,9 +147,8 @@ int main(int argc,char *argv[]){
   info.skip = 0;
 
 
-
   info.skip = 0;
-  info.packet_sz  += 8;
+  //info.packet_sz  += 8;
 
   
   split_to_ppm(srcfile, dstfile, &info);

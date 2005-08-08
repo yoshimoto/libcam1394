@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.27 2004-10-28 22:48:58 yosimoto Exp $
-  @date    $Date: 2004-10-28 22:48:58 $
+  @version $Id: cam1394.cc,v 1.28 2005-08-08 02:49:52 yosimoto Exp $
+  @date    $Date: 2005-08-08 02:49:52 $
  */
 #include "config.h"
 
@@ -329,6 +329,7 @@ int main(int argc, char *argv[]){
     const char *opt_filename=NULL;   /* filename to save frame(s). */
     const char *target_cameras=NULL; /* target camera(s) */
     const char *save_filename =NULL;
+    const char *opt_power = NULL;    /**< power "on" or "off"  */
 
     const char *cp[END_OF_FEATURE]; /* camera's parameter. 
 				       "NULL"  means the value isn't set. */
@@ -336,7 +337,6 @@ int main(int argc, char *argv[]){
     memset(cp, 0, sizeof(cp));
 
     const char *opt_magic_string = NULL ;  /* magic number for camera id. */
-
     FORMAT    cp_format = Format_X;
     VMODE     cp_mode   = Mode_X;
     FRAMERATE cp_rate   = FrameRate_X;
@@ -365,6 +365,8 @@ int main(int argc, char *argv[]){
 	  "stop  camera(s) ", NULL } , 
 	{ "disp", 'D',  POPT_ARG_NONE, &do_disp, 'D',
 	  "display live image on X", NULL } ,
+	{ "power", 0, POPT_ARG_STRING, &opt_power, 0,
+	  "power on/off", "{on|off}"},
 	{ NULL, 0, 0, NULL, 0 }
     };
 
@@ -464,7 +466,6 @@ int main(int argc, char *argv[]){
     };
 
     struct poptOption optionsTable[] = {
-
 	{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, control_optionsTable, 0,
 	  "Control options:",NULL},
     
@@ -593,6 +594,31 @@ int main(int argc, char *argv[]){
     if ( do_query != -1 ){
 	for (cam=TargetList.begin(); cam!=TargetList.end(); cam++){
 	    show_camera_feature( &(*cam) );
+	}
+    }
+
+    if (opt_power){
+	int mode = 0;
+	if (0==strcasecmp(opt_power, "on"))
+	    mode = 1;
+	else if (0==strcasecmp(opt_power, "off"))
+	    mode = 2;
+
+	if (mode){
+	    for (cam=TargetList.begin(); cam!=TargetList.end(); cam++){
+		switch(mode){
+		case 1:
+		    if (!cam->PowerUp()){
+			ERR("failed to PowerUp()");
+		    }
+		    break;
+		case 2:
+		    if (!cam->PowerDown()){
+			ERR("failed to PowerDown()");
+		    }
+		    break;
+		}
+	    }
 	}
     }
 

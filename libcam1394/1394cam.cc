@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.48 2005-02-09 09:29:05 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.49 2005-08-08 02:49:53 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -2523,7 +2523,6 @@ int C1394CameraNode::SetFrameCount(int tmp)
  * @return ponter of latest caputered frame.
  *
  * @todo  AS_FIFO and WAIT_NEW_FRAME is not implemented yet.
- * @todo  BufferInfo is not implemented yet.
  */
 void* C1394CameraNode::UpDateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
 {
@@ -2556,8 +2555,7 @@ void* C1394CameraNode::UpDateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
     if (ioctl(fd,VIDEO1394_IOC_LISTEN_QUEUE_BUFFER,&vwait) < 0){
 	ERR("VIDEO1394_IOC_LISTEN_QUEUE_BUFFER failed.");
     }
-
-    return m_lpFrameBuffer =
+    m_lpFrameBuffer =
 	pMaped + m_BufferSize*((m_last_read_frame-1)%m_num_frame);
 #else
     ISO1394_Chunk chunk;
@@ -2565,8 +2563,13 @@ void* C1394CameraNode::UpDateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
 	ERR("ISOFB_IOCTL_GET_RXBUF failed:  " << strerror(errno) );
 	return NULL;
     }
-    return m_lpFrameBuffer=(pMaped+chunk.offset);
+    m_lpFrameBuffer=(pMaped+chunk.offset);
 #endif
+    if (info){
+	quadlet_t *ts = (quadlet_t*)(m_lpFrameBuffer + m_packet_sz - 4);
+	info->timestamp = (*ts) & 0x0000ffff;
+    }
+    return  m_lpFrameBuffer;
 }
 
 /** 
