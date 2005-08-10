@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.28 2005-08-08 02:49:52 yosimoto Exp $
-  @date    $Date: 2005-08-08 02:49:52 $
+  @version $Id: cam1394.cc,v 1.29 2005-08-10 04:13:06 yosimoto Exp $
+  @date    $Date: 2005-08-10 04:13:06 $
  */
 #include "config.h"
 
@@ -27,8 +27,19 @@
 
 #include <iostream>
 
+#if defined HAVE_CV_H
+#include <cv.h>
+#include <highgui.h>
+#elif defined HAVE_OPENCV_CV_H
+#define HAVE_CV_H
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+#endif
+
 #include <libcam1394/1394cam.h>
 #include <libcam1394/yuv.h>                /* 色変換 */
+
+
 #include "common.h"
 #include "xview.h"              /* Xの表示オブジェクト*/
 
@@ -280,7 +291,35 @@ savetofile(C1394CameraNode& camera,char *fname)
     return 0;
 }
 
-int display_live_image_on_X(C1394CameraNode &cam)
+#ifdef HAVE_CV_H
+
+static int 
+get_bayer_code(const char *string)
+{
+    if (NULL==string)
+	return -1;
+    if ('\0'==*string)
+	return -1;
+
+    static const char *tbl[]={
+	"BG","GB","RG","GR",NULL,
+    };
+    int code = 46;
+    const char **cur = tbl;
+    while (NULL!=*cur){
+	if (0==strcasecmp(string, *cur)){
+	    return code;
+	}
+	code++;
+	cur++;
+    }
+    return -1;
+}
+
+#endif /* #ifdef HAVE_CV_H */
+
+int 
+display_live_image_on_X(C1394CameraNode &cam, const char *fmt)
 {
   int channel;
 
@@ -297,7 +336,7 @@ int display_live_image_on_X(C1394CameraNode &cam)
   const int w = cam.GetImageWidth();
   const int h = cam.GetImageHeight();
 
-
+#ifndef HAVE_CV_H
   /* make a Window */
   char tmp[256];
   snprintf(tmp,sizeof(tmp),"-- Live image from #%llu/ %2dch --",
@@ -315,6 +354,51 @@ int display_live_image_on_X(C1394CameraNode &cam)
     cam.CopyRGBAImage(tmp);
     xview.UpDate(tmp);
   }
+#else  /* #ifndef HAVE_CV_H */
+  cvNamedWindow("disp", !0);
+  int ch=3;
+  IplImage *img = NULL;
+  IplImage *buf = NULL;
+  int buf_option=0;
+
+  if (fmt){
+      int code = get_bayer_code(fmt);
+      if (code>0){
+	  buf = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, 3);     
+	  buf_option = code;
+      }
+  }
+  
+  if (!buf){
+      ch = 3;
+  } else {      
+      // bayer conversion.
+      ch = 1;
+  }
+  img = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, ch);
+
+  while ('q' != cvWaitKey(10)){
+      cam.UpDateFrameBuffer();
+      switch (ch){
+      case 3:
+	  cam.CopyIplImage(img);
+	  break;
+      case 1:
+	  cam.CopyIplImageGray(img);
+	  break;
+      }
+      
+      if (buf){
+	  cvCvtColor(img, buf, buf_option);
+	  cvShowImage("disp", buf);
+      }else{
+	  cvShowImage("disp", img);
+      }
+  }
+  cvReleaseImage(&img);
+  cvReleaseImage(&buf);
+#endif   /* #ifndef HAVE_CV_H */
+  return 0;
 }
 
 
@@ -355,6 +439,8 @@ int main(int argc, char *argv[]){
     int  do_show_version =-1;
 
     int  opt_debug_level = 0;
+
+    const char *opt_bayer_string=NULL;
 
     bool is_all=false; // if target cameras are all camera, then set true
 
@@ -454,10 +540,14 @@ int main(int argc, char *argv[]){
 
 	{ NULL, 0, 0, NULL, 0 }
     };
-
+    
     struct poptOption common_optionsTable[] = {
 	{ "magic", 0,  POPT_ARG_STRING, &opt_magic_string, 0,
 	  "Set magic number for camera id", "MAGIC" } ,   
+#ifdef HAVE_CV_H
+	{ "bayer", 0,  POPT_ARG_STRING, &opt_bayer_string, 0,
+	  "bayer code.", "{BG,GB,RG,GR}"},
+#endif
 	{ "verbose", 'v', POPT_ARG_NONE, NULL, 'v',
 	  "Provide more detailed output.",0},
 	{ "version", 'V', POPT_ARG_NONE, &do_show_version, 'V',
@@ -691,7 +781,7 @@ int main(int argc, char *argv[]){
     // disp
     if (do_disp!=-1){
 	for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++){
-	    display_live_image_on_X(*cam);
+	    display_live_image_on_X(*cam, opt_bayer_string);
 	}
     }
 

@@ -1,9 +1,9 @@
-# $Id: configure.in,v 1.43 2005-02-09 07:54:31 yosimoto Exp $
+# $Id: configure.in,v 1.44 2005-08-10 04:13:06 yosimoto Exp $
 m4_define([debug_default], [no])
 m4_define([libcam1394_version], [0.2.0rc5])
 AC_INIT([libcam1394], [libcam1394_version], [yosimoto@limu.is.kyushu-u.ac.jp])
 AM_INIT_AUTOMAKE([libcam1394], [libcam1394_version])
-AM_CONFIG_HEADER([config.h])
+AM_CONFIG_HEADER(config.h)
 
 # Save this value here, since automake will set cflags later
 cflags_set=${CFLAGS+set}
