@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.29 2005-08-10 04:13:06 yosimoto Exp $
-  @date    $Date: 2005-08-10 04:13:06 $
+  @version $Id: cam1394.cc,v 1.30 2005-10-11 05:29:13 yosimoto Exp $
+  @date    $Date: 2005-10-11 05:29:13 $
  */
 #include "config.h"
 
@@ -47,10 +47,12 @@ using namespace std;
 
 #define MAKE_CAMERA_ID(x, off) ((x)-(off))
 #define MAKE_CHIP_ID(x, off)   ((x)+(off))
-uint64_t magic_number = 0;
+uint64_t magic_number = 0ULL;
 
 // const 
 const int NUM_PORT=16;  // number of 1394 interfaces 
+
+int opt_debug_level = 0;
 
 void usage(poptContext optCon, int exitcode, char *error, char *addl) 
 {
@@ -233,9 +235,10 @@ savetofile(C1394CameraNode& camera,char *fname)
     const int h =camera.GetImageHeight();
 
     const int frame_size= camera.GetFrameBufferSize();
+    LOG("frame_size: "<<frame_size);
 
-  
     int last_frame;
+    camera.UpDateFrameBuffer();
     camera.GetFrameCount(&last_frame);
     int total_drop=0;
   
@@ -243,7 +246,7 @@ savetofile(C1394CameraNode& camera,char *fname)
     while (true)
     {
 	char str[1024];
-	sprintf(str, fname, f_count);
+	snprintf(str, sizeof(str), fname, f_count);
 	cout << str << endl;
        
 	int flag=0;
@@ -270,7 +273,7 @@ savetofile(C1394CameraNode& camera,char *fname)
 		total_drop++;
 		ERR(" drop a frame"
 		    <<"(rate "
-		    << (float)total_drop/(f_count*NUM_SEG + i)
+		    << (float)total_drop/(f_count*NUM_SEG + i+1)
 		    <<"%)");
 	    }
 	    last_frame = frame_no;
@@ -437,8 +440,6 @@ int main(int argc, char *argv[]){
     int  do_stop    =-1;
     int  do_query   =-1;
     int  do_show_version =-1;
-
-    int  opt_debug_level = 0;
 
     const char *opt_bayer_string=NULL;
 
@@ -791,16 +792,15 @@ int main(int argc, char *argv[]){
 	    cerr << "please specify camera id." << endl;
 	    exit(-1);
 	}
+
+	cam=TargetList.begin();
 	char fname[1024];
-	
 	if (NULL==opt_filename)
 	    snprintf(fname,sizeof(fname),"%llu_%%02d.yuv",
 		     MAKE_CAMERA_ID(cam->GetID(),magic_number));
 	else
 	    snprintf(fname,sizeof(fname),opt_filename, 
 		     MAKE_CAMERA_ID(cam->GetID(),magic_number));
-
-	cam=TargetList.begin();
 	savetofile(*cam, fname);
     }
 

@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.49 2005-08-08 02:49:53 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.50 2005-10-11 05:29:13 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -2442,6 +2442,8 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
     
     m_num_frame = 64;
 
+    LOG("packet size: " << m_packet_sz);
+    LOG("packet num:  " << m_num_packet);
 #if !defined(HAVE_ISOFB)
     pMaped = (char*)mmap_video1394(m_port_no, channel, 
 				   m_packet_sz, m_num_packet,
