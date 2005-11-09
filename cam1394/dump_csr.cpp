@@ -72,7 +72,6 @@ int parse_string_leaf(raw1394handle_t handle,
 		      nodeid_t nodeid,
 		      nodeaddr_t addr)
 {
-     int result = 0;
      quadlet_t leaf_length;
      if (get_directory_length(handle, nodeid, addr, &leaf_length))
 	  return -1;

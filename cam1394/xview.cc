@@ -1,5 +1,5 @@
 /**
-   @file   $Id: xview.cc,v 1.10 2004-11-06 08:49:41 yosimoto Exp $
+   @file   $Id: xview.cc,v 1.11 2005-11-09 10:41:29 yosimoto Exp $
    @author YOSHIMOTO Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
    @date   Sat Aug 31 03:58:46 2002
    @brief    
@@ -11,11 +11,13 @@
 #include <X11/Xutil.h>
 #include <libcam1394/yuv.h>
 
-#if defined HAVE_CV_H
+#if defined HAVE_CV_H || defined HAVE_OPENCV
 #include <cv.h>
+#define IPL_IMG_SUPPORTED
 #endif
 #if defined HAVE_OPENCV_CV_H
 #include <opencv/cv.h>
+#define IPL_IMG_SUPPORTED
 #endif
 
 #include "xview.h"
@@ -155,7 +157,7 @@ bool CXview::UpDate(RGBA* src)
 }
 
 
-#if defined OPENCVAPI
+#ifdef IPL_IMG_SUPPORTED
 //! combines an image with CXview
 /*! 
   
@@ -193,7 +195,13 @@ bool CXview::UpDate(IplImage *src)
 
      return true;
 }
-#endif // #if defined OPENCVAPI
+#else
+bool CXview::UpDate(IplImage *src)
+{
+    fprintf(stderr, "This system don't have ipl or OpenCV library.\n");
+    return false;
+}
+#endif // #ifdef IPL_IMG_SUPPORTED
 
 
 CXview::CXview():

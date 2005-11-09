@@ -1,0 +1,12 @@
+libcam1394 (@VERSION@-1) unstable; urgency=low
+
+  * CVS HEAD
+
+ -- Hiromasa YOSHIMOTO <yosimoto@vision.kuee.kyoto-u.ac.jp>  Wed,  9 Nov 2005 18:06:43 +0900
+
+libcam1394 (0.2.0rc8-1) unstable; urgency=low
+
+  * Initial release
+
+ -- Hiromasa YOSHIMOTO <yosimoto@vision.kuee.kyoto-u.ac.jp>  Wed,  9 Nov 2005 18:06:43 +0900
+

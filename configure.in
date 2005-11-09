@@ -1,6 +1,6 @@
-# $Id: configure.in,v 1.46 2005-11-07 15:07:13 yosimoto Exp $
+# $Id: configure.in,v 1.47 2005-11-09 10:41:29 yosimoto Exp $
 m4_define([debug_default], [no])
-m4_define([libcam1394_version], [0.2.0rc7])
+m4_define([libcam1394_version], [0.2.0rc9])
 AC_INIT([libcam1394], [libcam1394_version], [yosimoto@vision.kuee.kyoto-u.ac.jp])
 AM_INIT_AUTOMAKE([libcam1394], [libcam1394_version])
 AM_CONFIG_HEADER(config.h)
@@ -23,12 +23,16 @@ AC_HEADER_STDC
 
 AC_CHECK_HEADERS([errno.h fcntl.h netinet/in.h string.h sys/ioctl.h unistd.h])
 
-PKG_CHECK_MODULES(OPENCV, "opencv",[have_opencv=yes, 
-			  AC_DEFINE(HAVE_OPENCV,,[OpenCV library])],
+PKG_CHECK_MODULES([OPENCV], [opencv], [have_opencv=yes, 
+			  AC_DEFINE(HAVE_OPENCV,1,[OpenCV library])],
 			  have_opencv=no)
-if test "$have_opencv" != "yes"; then
+## quick hack for old-opencv or crazy environments.
+if test "x$have_opencv" != "xyes"; then
    AC_CHECK_HEADERS(cv.h, have_opencv=yes)
    AC_CHECK_HEADERS(opencv/cv.h, have_opencv=yes)
+   if test "x$have_opencv" = "xyes"; then
+      OPENCV_LIBS="-lcxcore -lcv -lhighgui -lcvaux"
+   fi
 fi
 
 AC_CHECK_LIB(popt,poptGetContext)
@@ -86,6 +90,8 @@ libcam1394/Doxyfile
 cam1394/Makefile
 sample/Makefile.opencv
 sample/Makefile
+debian/Makefile
+debian/changelog
 libcam1394.pc
 libcam1394.spec
 ])

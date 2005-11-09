@@ -1,5 +1,5 @@
 /*!
-  \file   $Id: xview.h,v 1.6 2003-01-08 18:38:01 yosimoto Exp $
+  \file   $Id: xview.h,v 1.7 2005-11-09 10:41:29 yosimoto Exp $
   \author YOSHIMOTO Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
   \date   Sat Aug 31 03:58:46 2002
   
@@ -11,6 +11,8 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+
+typedef struct _IplImage IplImage;
 
 class CXview{
      typedef unsigned int UINT;
@@ -37,9 +39,8 @@ public:
   
      bool CreateWindow(int width,int height,const char* strCaption);
      bool UpDate(RGBA*);
-#if defined OPENCVAPI
      bool UpDate(IplImage*);
-#endif 
+
      Display *GetDisplay() const;
      Window  GetWindow() const;
 };

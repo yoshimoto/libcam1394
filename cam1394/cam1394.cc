@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.30 2005-10-11 05:29:13 yosimoto Exp $
-  @date    $Date: 2005-10-11 05:29:13 $
+  @version $Id: cam1394.cc,v 1.31 2005-11-09 10:41:29 yosimoto Exp $
+  @date    $Date: 2005-11-09 10:41:29 $
  */
 #include "config.h"
 
@@ -27,13 +27,15 @@
 
 #include <iostream>
 
-#if defined HAVE_CV_H
+#if defined HAVE_CV_H || defined HAVE_OPENCV
 #include <cv.h>
 #include <highgui.h>
+#define IPL_IMG_SUPPORTED
 #elif defined HAVE_OPENCV_CV_H
 #define HAVE_CV_H
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
+#define IPL_IMG_SUPPORTED
 #endif
 
 #include <libcam1394/1394cam.h>
@@ -231,8 +233,8 @@ savetofile(C1394CameraNode& camera,char *fname)
 	return -2;
     }
 
-    const int w =camera.GetImageWidth();
-    const int h =camera.GetImageHeight();
+    //const int w =camera.GetImageWidth();
+    //const int h =camera.GetImageHeight();
 
     const int frame_size= camera.GetFrameBufferSize();
     LOG("frame_size: "<<frame_size);
@@ -294,7 +296,7 @@ savetofile(C1394CameraNode& camera,char *fname)
     return 0;
 }
 
-#ifdef HAVE_CV_H
+#ifdef IPL_IMG_SUPPORTED
 
 static int 
 get_bayer_code(const char *string)
@@ -319,7 +321,7 @@ get_bayer_code(const char *string)
     return -1;
 }
 
-#endif /* #ifdef HAVE_CV_H */
+#endif /* #ifdef IPL_IMG_SUPPORTED */
 
 int 
 display_live_image_on_X(C1394CameraNode &cam, const char *fmt)
@@ -339,7 +341,7 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt)
   const int w = cam.GetImageWidth();
   const int h = cam.GetImageHeight();
 
-#ifndef HAVE_CV_H
+#ifndef IPL_IMG_SUPPORTED
   /* make a Window */
   char tmp[256];
   snprintf(tmp,sizeof(tmp),"-- Live image from #%llu/ %2dch --",
@@ -357,7 +359,7 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt)
     cam.CopyRGBAImage(tmp);
     xview.UpDate(tmp);
   }
-#else  /* #ifndef HAVE_CV_H */
+#else  /* #ifndef IPL_IMG_SUPPORTED */
   cvNamedWindow("disp", !0);
   int ch=3;
   IplImage *img = NULL;
@@ -400,7 +402,7 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt)
   }
   cvReleaseImage(&img);
   cvReleaseImage(&buf);
-#endif   /* #ifndef HAVE_CV_H */
+#endif   /* #ifndef IPL_IMG_SUPPORTED */
   return 0;
 }
 
@@ -410,12 +412,12 @@ int main(int argc, char *argv[]){
     poptContext optCon;  /* context for parsing command-line options */
     char c;              /* for parse options */
     int channel=-1;      /* iso channel */
-    int card_no=0;       /* oh1394 interface number */
+    //int card_no=0;       /* oh1394 interface number */
     int spd=-1;          /* bus speed 0=100M 1=200M 2=400M */
 
     const char *opt_filename=NULL;   /* filename to save frame(s). */
     const char *target_cameras=NULL; /* target camera(s) */
-    const char *save_filename =NULL;
+    //const char *save_filename =NULL;
     const char *opt_power = NULL;    /**< power "on" or "off"  */
 
     const char *cp[END_OF_FEATURE]; /* camera's parameter. 
@@ -545,7 +547,7 @@ int main(int argc, char *argv[]){
     struct poptOption common_optionsTable[] = {
 	{ "magic", 0,  POPT_ARG_STRING, &opt_magic_string, 0,
 	  "Set magic number for camera id", "MAGIC" } ,   
-#ifdef HAVE_CV_H
+#ifdef IPL_IMG_SUPPORTED
 	{ "bayer", 0,  POPT_ARG_STRING, &opt_bayer_string, 0,
 	  "bayer code.", "{BG,GB,RG,GR}"},
 #endif

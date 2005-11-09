@@ -2,18 +2,20 @@
   @file  yuv2rgb.cc
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv2rgb.cc,v 1.11 2004-08-30 08:04:21 yosimoto Exp $
+  @version $Id: yuv2rgb.cc,v 1.12 2005-11-09 10:41:29 yosimoto Exp $
  */
 
 #include "config.h"
 #include <stdio.h>
 
-#if defined HAVE_CV_H
+#if defined HAVE_CV_H || defined HAVE_OPENCV
 #include <cv.h>
 #define IPL_IMG_SUPPORTED
 #elif defined HAVE_OPENCV_CV_H
 #include <opencv/cv.h>
 #define IPL_IMG_SUPPORTED
+#else
+#undef  IPL_IMG_SUPPORTED
 #endif
 
 #include "yuv.h"
@@ -779,8 +781,8 @@ copy_Y16toIplImage(IplImage* img, const void *lpY16,
  */
 bool
 copy_Y16toIplImageGray(IplImage* img, const void *lpY16, 
-			  int packet_sz,
-			  int num_packet, int flag)
+		       int packet_sz,
+		       int num_packet, int flag)
 {
     uchar *dst = (uchar*)(img->imageData);
     

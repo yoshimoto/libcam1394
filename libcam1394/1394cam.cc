@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.50 2005-10-11 05:29:13 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.51 2005-11-09 10:41:29 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -37,12 +37,14 @@
 #include "video1394.h"
 #endif
 
-#if defined HAVE_CV_H
+#if defined HAVE_CV_H || defined HAVE_OPENCV
 #include <cv.h>
 #define IPL_IMG_SUPPORTED
 #elif defined HAVE_OPENCV_CV_H
 #include <opencv/cv.h>
 #define IPL_IMG_SUPPORTED
+#else
+#undef  IPL_IMG_SUPPORTED
 #endif
 
 #include "common.h"
@@ -294,7 +296,6 @@ static int get_name_leaf(char *buf, int size,
 	return -1;
 
 
-    int result = 0;
     if (get_directory_length(&length, handle, node_id, leaf_address))
 	return -1;
     length *= 4;
@@ -587,7 +588,7 @@ GetCameraList(raw1394handle_t handle, CCameraList* pList)
 	    ERR("couldn't set port. "<< strerror(errno));
 	    return false;
 	}	
-	int pre = pList->size();
+	size_t pre = pList->size();
 	Enum1394Node(new_handle, &portinfo[i],
 		     pList, callback_1394Camera, (void*)i);
 	if ( pList->size() == pre )
@@ -784,28 +785,30 @@ bool
 C1394CameraNode::HasCapability(C1394CAMERA_FEATURE feat, 
 			       C1394CAMERA_FSTATE fstate)
 {
-  quadlet_t inq=0;
-  ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&inq);
-  bool r=false;
+    quadlet_t inq=0;
+    ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&inq);
+    bool r=false;
  
-  if (GetParam(BRIGHTNESS_INQ, Presence_Inq, inq)){
-    switch (fstate){
-    case OFF:
-      r = (0!=GetParam(BRIGHTNESS_INQ,On_Off_Inq,inq));
-      break;
-    case MANUAL:
-      r = (0!=GetParam(BRIGHTNESS_INQ,Manual_Inq,inq));
-      break;
-    case AUTO:
-      r = (0!=GetParam(BRIGHTNESS_INQ,Auto_Inq,inq));
-      break;
-    case ONE_PUSH:
-      r = (0!=GetParam(BRIGHTNESS_INQ,One_Push_Inq,inq));
-      break;
+    if (GetParam(BRIGHTNESS_INQ, Presence_Inq, inq)){
+	switch (fstate){
+	case OFF:
+	    r = (0!=GetParam(BRIGHTNESS_INQ,On_Off_Inq,inq));
+	    break;
+	case MANUAL:
+	    r = (0!=GetParam(BRIGHTNESS_INQ,Manual_Inq,inq));
+	    break;
+	case AUTO:
+	    r = (0!=GetParam(BRIGHTNESS_INQ,Auto_Inq,inq));
+	    break;
+	case ONE_PUSH:
+	    r = (0!=GetParam(BRIGHTNESS_INQ,One_Push_Inq,inq));
+	    break;
+	default:
+	    break;
+	}
     }
-  }
 
-  return r;
+    return r;
 }
 
 /** 
@@ -819,57 +822,59 @@ C1394CameraNode::HasCapability(C1394CAMERA_FEATURE feat,
 bool C1394CameraNode::SetFeatureState(C1394CAMERA_FEATURE feat, 
 				      C1394CAMERA_FSTATE  fstate)
 {
-  bool r=false;
-  quadlet_t tmp=0;
-  quadlet_t inq=0;
+    bool r=false;
+    quadlet_t tmp=0;
+    quadlet_t inq=0;
 
-  ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&inq);
-  if ( 0==GetParam(BRIGHTNESS_INQ,Presence_Inq,inq) )
-    return false;
+    ReadReg(Addr(BRIGHTNESS_INQ)+4*feat,&inq);
+    if ( 0==GetParam(BRIGHTNESS_INQ,Presence_Inq,inq) )
+	return false;
 
-  ReadReg(Addr(BRIGHTNESS)+4*feat,&tmp);
-  switch (fstate){
-  case OFF:
-    if (GetParam(BRIGHTNESS_INQ,On_Off_Inq,inq)){      
-      tmp |=  SetParam(BRIGHTNESS,Presence_Inq,1);
-      tmp &= ~SetParam(BRIGHTNESS,ON_OFF,1);  
-      WriteReg(Addr(BRIGHTNESS)+4*feat, &tmp);
-      r = true;
+    ReadReg(Addr(BRIGHTNESS)+4*feat,&tmp);
+    switch (fstate){
+    case OFF:
+	if (GetParam(BRIGHTNESS_INQ,On_Off_Inq,inq)){      
+	    tmp |=  SetParam(BRIGHTNESS,Presence_Inq,1);
+	    tmp &= ~SetParam(BRIGHTNESS,ON_OFF,1);  
+	    WriteReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+	    r = true;
+	}
+	break;
+    case MANUAL:
+	if (GetParam(BRIGHTNESS_INQ,Manual_Inq,inq)){      
+	    ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+	    tmp |=  SetParam(BRIGHTNESS,Presence_Inq,1);
+	    tmp |=  SetParam(BRIGHTNESS,ON_OFF,1);  
+	    tmp &= ~SetParam(BRIGHTNESS,A_M_Mode,1);    
+	    WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
+	    r = true;
+	}
+	break;
+    case AUTO:
+	if (GetParam(BRIGHTNESS_INQ,Auto_Inq,inq)){      
+	    ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+	    tmp |=  SetParam(BRIGHTNESS,Presence_Inq,1);
+	    tmp |=  SetParam(BRIGHTNESS,ON_OFF,1);  
+	    tmp |=  SetParam(BRIGHTNESS,A_M_Mode,1);    
+	    WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
+	    r = true;
+	}
+	break;
+    case ONE_PUSH:
+	if (GetParam(BRIGHTNESS_INQ,One_Push_Inq,inq)){      
+	    ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
+	    tmp |=  SetParam(BRIGHTNESS,Presence_Inq,1);
+	    tmp |=  SetParam(BRIGHTNESS,One_Push, 1);  
+	    tmp |=  SetParam(BRIGHTNESS,ON_OFF,1);  
+	    tmp &=  ~SetParam(BRIGHTNESS,A_M_Mode,1);    
+	    WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
+	    r = true;
+	}
+	break;
+    default:
+	break;
     }
-    break;
-  case MANUAL:
-    if (GetParam(BRIGHTNESS_INQ,Manual_Inq,inq)){      
-      ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
-      tmp |=  SetParam(BRIGHTNESS,Presence_Inq,1);
-      tmp |=  SetParam(BRIGHTNESS,ON_OFF,1);  
-      tmp &= ~SetParam(BRIGHTNESS,A_M_Mode,1);    
-      WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
-      r = true;
-    }
-    break;
-  case AUTO:
-    if (GetParam(BRIGHTNESS_INQ,Auto_Inq,inq)){      
-      ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
-      tmp |=  SetParam(BRIGHTNESS,Presence_Inq,1);
-      tmp |=  SetParam(BRIGHTNESS,ON_OFF,1);  
-      tmp |=  SetParam(BRIGHTNESS,A_M_Mode,1);    
-      WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
-      r = true;
-    }
-    break;
-  case ONE_PUSH:
-    if (GetParam(BRIGHTNESS_INQ,One_Push_Inq,inq)){      
-      ReadReg(Addr(BRIGHTNESS)+4*feat, &tmp);
-      tmp |=  SetParam(BRIGHTNESS,Presence_Inq,1);
-      tmp |=  SetParam(BRIGHTNESS,One_Push, 1);  
-      tmp |=  SetParam(BRIGHTNESS,ON_OFF,1);  
-      tmp &=  ~SetParam(BRIGHTNESS,A_M_Mode,1);    
-      WriteReg(Addr(BRIGHTNESS)+4*feat,&tmp);
-      r = true;
-    }
-    break;
-  }
-  return r;
+    return r;
 }
 
 /** 
@@ -2252,7 +2257,7 @@ static void* mmap_video1394(int port_no, int channel,
 			    int *m_num_frame,
 			    int *fd,  int *m_BufferSize)
 {
-    int i;
+    unsigned int i;
     void *buffer=NULL;
     
     char devname[1024];

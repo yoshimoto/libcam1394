@@ -2,8 +2,8 @@
   @file    yuv.h
   @brief   convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv.h,v 1.6 2004-08-29 08:54:34 yosimoto Exp $
-  @date    $Date: 2004-08-29 08:54:34 $
+  @version $Id: yuv.h,v 1.7 2005-11-09 10:41:29 yosimoto Exp $
+  @date    $Date: 2005-11-09 10:41:29 $
  */
 
 #if !defined(_YUV_H_INCLUDED_)
@@ -12,6 +12,7 @@
 #if !defined UCHAR
 typedef unsigned char UCHAR; 
 #endif 
+typedef struct _IplImage IplImage;
 
 class RGBA {
 public:
@@ -49,7 +50,7 @@ bool copy_Y16toRGBA(RGBA* lpRGBA, const void* lpYUV16,
 int  SaveRGBAtoFile(char *pFile, const RGBA* img, int w, int h, int fmt=0);
 int  CreateYUVtoRGBAMap();
 
-#if defined OPENCVAPI || defined HAVE_IPL || defined IPL_DEPTH_8U
+
 bool copy_YUV411toIplImage(IplImage* dst, const void* lpYUV411,
 			   int sz_packet, int num_packet, int flag);
 bool copy_YUV422toIplImage(IplImage* dst, const void* lpYUV422,
@@ -75,7 +76,6 @@ bool copy_Y8toIplImageGray(IplImage* dst, const void* lpY8,
 			   int sz_packet, int num_packet, int flag);
 bool copy_Y16toIplImageGray(IplImage* dst, const void* lpY16,
 			    int sz_packet, int num_packet, int flag);
-#endif // #if !defined IPL_IMAGE_MAGIC_VAL
 
 
 
