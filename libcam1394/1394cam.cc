@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.51 2005-11-09 10:41:29 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.52 2005-11-17 07:37:31 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -2262,22 +2262,28 @@ static void* mmap_video1394(int port_no, int channel,
     
     char devname[1024];
     snprintf(devname, sizeof(devname), "/dev/video1394/%d", port_no);
-    LOG("open("<<devname<<")");
+    LOG("trying to open("<<devname<<")");
     *fd = open(devname, O_RDONLY);
     // quick hack for backward-compatibility
     if (*fd<0){
 	snprintf(devname, sizeof(devname), "/dev/video1394%c", 
 		 char('a'+port_no));
+	LOG("trying to open("<<devname<<")");
+	*fd = open(devname, O_RDONLY);	
+    }
+    if (*fd<0){
+	snprintf(devname, sizeof(devname), "/dev/video1394-%d", 
+		 port_no);
+	LOG("trying to open("<<devname<<")");
 	*fd = open(devname, O_RDONLY);	
     }
     // check whether the driver is loaded or not.
     if (*fd<0){
-	ERR("Failed to open video1394 device (" 
-	    << devname << ") : " << strerror(errno));
+	ERR("Failed to open video1394 device ");
 	ERR("The video1394 module must be loaded, "
-	    "and you must have read and write permission to "<<devname<<".");
+	    "and you must have read and write permission to its device file.");
 	return NULL;
-    }    
+    }
     
     struct video1394_mmap vmmap;
     struct video1394_wait vwait;
