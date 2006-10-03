@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.31 2005-11-09 10:41:29 yosimoto Exp $
-  @date    $Date: 2005-11-09 10:41:29 $
+  @version $Id: cam1394.cc,v 1.32 2006-10-03 15:37:20 yosimoto Exp $
+  @date    $Date: 2006-10-03 15:37:20 $
  */
 #include "config.h"
 
@@ -417,7 +417,6 @@ int main(int argc, char *argv[]){
 
     const char *opt_filename=NULL;   /* filename to save frame(s). */
     const char *target_cameras=NULL; /* target camera(s) */
-    //const char *save_filename =NULL;
     const char *opt_power = NULL;    /**< power "on" or "off"  */
 
     const char *cp[END_OF_FEATURE]; /* camera's parameter. 
