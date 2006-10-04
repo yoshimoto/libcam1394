@@ -1,4 +1,4 @@
-# $Id: configure.in,v 1.48 2005-11-09 11:23:49 yosimoto Exp $
+# $Id: configure.in,v 1.49 2006-10-04 02:08:46 yosimoto Exp $
 m4_define([debug_default], [no])
 m4_define([libcam1394_version], [0.2.0rc9])
 AC_INIT([libcam1394], [libcam1394_version], [yosimoto@vision.kuee.kyoto-u.ac.jp])
@@ -38,9 +38,17 @@ fi
 
 AC_CHECK_LIB(popt,poptGetContext)
 
-AC_LIB_RAW1394(0.9)
+
+PKG_CHECK_MODULES([LIBRAW1394], [libraw1394],
+		[ac_libraw1394_found=yes
+		AC_DEFINE(HAVE_LIBRAW1394,1,[libraw1394])],
+		ac_libraw1394_found=no)
+if test "x$ac_libraw1394_found" != "xyes"; then
+   # AC_LIB_RAW1394() is no longer supported.
+   AC_CHECK_LIB(raw1394,raw1394_new_handle, ac_libraw1394_found=yes)
+fi
 if test "$ac_libraw1394_found" != "yes"; then
-   AC_MSG_ERROR( not found libraw1394(>=0.9) )
+   AC_MSG_ERROR( not found libraw1394 (>=0.9) )
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -92,7 +100,6 @@ cam1394/Makefile
 sample/Makefile.opencv
 sample/Makefile
 debian/Makefile
-debian/changelog
 libcam1394.pc
 libcam1394.spec
 ])
