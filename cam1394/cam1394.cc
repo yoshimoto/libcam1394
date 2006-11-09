@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.32 2006-10-03 15:37:20 yosimoto Exp $
-  @date    $Date: 2006-10-03 15:37:20 $
+  @version $Id: cam1394.cc,v 1.33 2006-11-09 13:14:03 yosimoto Exp $
+  @date    $Date: 2006-11-09 13:14:03 $
  */
 #include "config.h"
 
@@ -373,7 +373,7 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt)
 	  buf_option = code;
       }
   }
-  
+
   if (!buf){
       ch = 3;
   } else {      
@@ -382,7 +382,7 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt)
   }
   img = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, ch);
 
-  while ('q' != cvWaitKey(10)){
+  while ('q' != cvWaitKey(10)&0xff ){
       cam.UpDateFrameBuffer();
       switch (ch){
       case 3:
@@ -392,7 +392,7 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt)
 	  cam.CopyIplImageGray(img);
 	  break;
       }
-      
+
       if (buf){
 	  cvCvtColor(img, buf, buf_option);
 	  cvShowImage("disp", buf);

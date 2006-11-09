@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.52 2005-11-17 07:37:31 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.53 2006-11-09 13:14:03 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -2450,8 +2450,8 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
 	ERR("packet size is too big");
 	return -2;
     }
-    
-    m_num_frame = 64;
+
+    m_num_frame = 16;
 
     LOG("packet size: " << m_packet_sz);
     LOG("packet num:  " << m_num_packet);

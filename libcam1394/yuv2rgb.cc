@@ -2,7 +2,7 @@
   @file  yuv2rgb.cc
   @brief convert YUV to RGBA
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: yuv2rgb.cc,v 1.12 2005-11-09 10:41:29 yosimoto Exp $
+  @version $Id: yuv2rgb.cc,v 1.13 2006-11-09 13:14:03 yosimoto Exp $
  */
 
 #include "config.h"
@@ -234,7 +234,7 @@ copy_RGB888toRGBA(RGBA* lpRGBA,const void *lpRGB888,
 	p+=4;
     }
     while (num_packet-->0){
-	for (int i=0;i<packet_sz;i++){      
+	for (int i=0;i<packet_sz/3;i++){      
 	    lpRGBA->r=*p++;
 	    lpRGBA->g=*p++;
 	    lpRGBA->b=*p++;
@@ -609,7 +609,7 @@ copy_RGB888toIplImage(IplImage* img, const void *lpRGB888,
 	p+=4;
     }
     while (num_packet-->0){
-	for (i=0;i<packet_sz;i++){
+	for (i=0;i<packet_sz/3;i++){
 	    unsigned char r=*p++;
 	    unsigned char g=*p++;
 	    unsigned char b=*p++;
@@ -647,7 +647,7 @@ copy_RGB888toIplImageGray(IplImage* img, const void *lpRGB888,
 	p+=4;
     }
     while (num_packet-->0){
-	for (i=0;i<packet_sz;i++){
+	for (i=0;i<packet_sz/3;i++){
 	    unsigned char r=*p++;
 	    unsigned char g=*p++;
 	    unsigned char b=*p++;
@@ -744,11 +744,11 @@ copy_Y8toIplImageGray(IplImage* img, const void *lpY8,
  */
 bool
 copy_Y16toIplImage(IplImage* img, const void *lpY16, 
-		      int packet_sz,
-		      int num_packet, int flag)
+		   int packet_sz,
+		   int num_packet, int flag)
 {
     uchar *dst = (uchar*)(img->imageData);
-    
+
     UCHAR *p=(UCHAR*)lpY16;
     int i;
     if (flag&REMOVE_HEADER){
@@ -756,10 +756,11 @@ copy_Y16toIplImage(IplImage* img, const void *lpY16,
 	p+=4;
     }
     while (num_packet-->0){
-	for (i=0;i<packet_sz;i++){	    
+	for (i=0;i<packet_sz/2;i++){
 	    *dst++ = *p;
 	    *dst++ = *p;
 	    *dst++ = *p;
+	    p++;
 	    // ignore lower byte:
 	    p++;
 	} //     for (i=0;i<packet_sz/4;i++){
@@ -793,11 +794,12 @@ copy_Y16toIplImageGray(IplImage* img, const void *lpY16,
 	p+=4;
     }
     while (num_packet-->0){
-	for (i=0;i<packet_sz;i++){
+	for (i=0;i<packet_sz/2;i++){
 	    *dst++ = *p++;
+	    p++;
 	} //     for (i=0;i<packet_sz/4;i++){
 	if (flag&REMOVE_HEADER)
-	    p+=4*2;
+	    p += 4*2;
     } //   while (num_packet-->0) {
     return true;
 }
