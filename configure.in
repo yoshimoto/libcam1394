@@ -1,6 +1,6 @@
-# $Id: configure.in,v 1.51 2006-11-14 10:55:49 yosimoto Exp $
+# $Id: configure.in,v 1.52 2006-11-27 08:51:20 yosimoto Exp $
 m4_define([debug_default], [no])
-m4_define([libcam1394_version], [0.2.0rc11])
+m4_define([libcam1394_version], [0.2.0rc12])
 AC_INIT([libcam1394], [libcam1394_version], [yosimoto@vision.kuee.kyoto-u.ac.jp])
 AM_INIT_AUTOMAKE([libcam1394], [libcam1394_version])
 AM_CONFIG_HEADER(config.h)
