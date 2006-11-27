@@ -3,4 +3,5 @@ EXTRA_DIST = 		\
 	changelog 	\
 	copyright 	\
 	control 	\
-	*.install 
+	*.files		\
+	*.dirs
