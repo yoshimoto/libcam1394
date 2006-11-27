@@ -3,7 +3,7 @@ Section: libs
 Priority: optional
 Maintainer: Hiromasa YOSHIMOTO <yosimoto@vision.kuee.kyoto-u.ac.jp>
 Build-Depends: debhelper (>= 4.0.0), autotools-dev
-Standards-Version: 3.6.2
+Standards-Version: 3.6.1
 
 Package: libcam1394-dev
 Section: libdevel

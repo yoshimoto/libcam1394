@@ -1,8 +1,8 @@
-libcam1394 (0.2.0rc9-1) unstable; urgency=low
+libcam1394 (0.2.0rc12-1) unstable; urgency=low
 
   * CVS HEAD
 
- -- Hiromasa YOSHIMOTO <yosimoto@users.sf.net>  Wed,  4 Oct 2006 10:41:44 +0900
+ -- Hiromasa YOSHIMOTO <yosimoto@users.sf.net>  Mon, 27 Nov 2006 18:13:08 +0900
 
 libcam1394 (0.2.0rc8-1) unstable; urgency=low
 
