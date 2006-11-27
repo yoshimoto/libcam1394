@@ -3,5 +3,6 @@ EXTRA_DIST = 		\
 	changelog 	\
 	copyright 	\
 	control 	\
+	dirs		\
 	*.files		\
 	*.dirs

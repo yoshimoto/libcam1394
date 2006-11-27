@@ -1,9 +1,9 @@
 Source: libcam1394
+Section: libs
 Priority: optional
 Maintainer: Hiromasa YOSHIMOTO <yosimoto@vision.kuee.kyoto-u.ac.jp>
 Build-Depends: debhelper (>= 4.0.0), autotools-dev
 Standards-Version: 3.6.2
-Section: libs
 
 Package: libcam1394-dev
 Section: libdevel
@@ -22,7 +22,7 @@ Description: library for IEEE1394-based digital camera.
  This package contains shared libraries.
 
 Package: cam1394
-Section: libdevel
+Section: libs
 Architecture: any
 Depends: libcam1394 (= ${Source-Version})
 Description: library for IEEE1394-based digital camera.
