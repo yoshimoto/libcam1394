@@ -57,7 +57,6 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %{_includedir}/libcam1394/*.h
 %{_libdir}/libcam1394*.a
-%{_libdir}/libcam1394*.la
 %{_libdir}/pkgconfig/libcam1394.pc
 
 %changelog
