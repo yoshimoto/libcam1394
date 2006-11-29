@@ -50,13 +50,14 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 
 %doc AUTHORS COPYING  ChangeLog NEWS README
-%{_libdir}/libcam1394.so*
+%{_libdir}/lib*.so
 %{_bindir}/cam1394
 
 %files devel
 %defattr(-,root,root,-)
 %{_includedir}/libcam1394/*.h
-%{_libdir}/libcam1394*.a
+%{_libdir}/lib*.a
+%{_libdir}/lib*.so.*
 %{_libdir}/pkgconfig/libcam1394.pc
 
 %changelog

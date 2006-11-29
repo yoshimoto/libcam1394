@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.33 2006-11-09 13:14:03 yosimoto Exp $
-  @date    $Date: 2006-11-09 13:14:03 $
+  @version $Id: cam1394.cc,v 1.34 2006-11-29 10:06:10 yosimoto Exp $
+  @date    $Date: 2006-11-29 10:06:10 $
  */
 #include "config.h"
 
@@ -54,7 +54,7 @@ uint64_t magic_number = 0ULL;
 // const 
 const int NUM_PORT=16;  // number of 1394 interfaces 
 
-int opt_debug_level = 0;
+int opt_debug_level = 1;
 
 void usage(poptContext optCon, int exitcode, char *error, char *addl) 
 {
@@ -360,6 +360,9 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt)
     xview.UpDate(tmp);
   }
 #else  /* #ifndef IPL_IMG_SUPPORTED */
+  int argc = 1;
+  char *argv[]={"dummy"};
+  cvInitSystem(argc, argv);
   cvNamedWindow("disp", !0);
   int ch=3;
   IplImage *img = NULL;
@@ -382,7 +385,7 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt)
   }
   img = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, ch);
 
-  while ('q' != cvWaitKey(10)&0xff ){
+  while ('q' != ((unsigned int)cvWaitKey(10))&0xff ){
       cam.UpDateFrameBuffer();
       switch (ch){
       case 3:

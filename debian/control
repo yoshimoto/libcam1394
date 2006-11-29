@@ -1,9 +1,9 @@
 Source: libcam1394
 Section: libs
 Priority: optional
-Maintainer: Hiromasa YOSHIMOTO <yosimoto@vision.kuee.kyoto-u.ac.jp>
-Build-Depends: debhelper (>= 4.0.0), autotools-dev
-Standards-Version: 3.6.1
+Maintainer: Hiromasa YOSHIMOTO <yosimoto@users.sf.net>
+Build-Depends: debhelper (>= 5), autotools-dev, libraw1394-dev
+Standards-Version: 3.7.2
 
 Package: libcam1394-dev
 Section: libdevel
@@ -20,10 +20,3 @@ Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: library for IEEE1394-based digital camera.
  libcam1394 is a library for IEEE1394-based digital camera.
  This package contains shared libraries.
-
-Package: cam1394
-Section: libs
-Architecture: any
-Depends: libcam1394 (= ${Source-Version})
-Description: library for IEEE1394-based digital camera.
- cam1394 is a CUI for controlling IEEE1394-based digital camera.

@@ -1,8 +1,10 @@
 EXTRA_DIST = 		\
-        rules 		\
 	changelog 	\
 	copyright 	\
+	compat		\
 	control 	\
 	dirs		\
-	*.files		\
-	*.dirs
+	docs		\
+	*.install	\
+	*.dirs		\
+        rules
