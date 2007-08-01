@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.34 2006-11-29 10:06:10 yosimoto Exp $
-  @date    $Date: 2006-11-29 10:06:10 $
+  @version $Id: cam1394.cc,v 1.35 2007-08-01 07:44:21 yosimoto Exp $
+  @date    $Date: 2007-08-01 07:44:21 $
  */
 #include "config.h"
 
@@ -195,7 +195,7 @@ show_camera_feature(C1394CameraNode *cam)
 	} 
 
 	float abs_value;
-	if (cam->GetAbsParameter(feat, &abs_value)){
+	if (cam->HasAbsControl(feat) && cam->GetAbsParameter(feat, &abs_value)){
 	    printf("% 7.3f%-5s", abs_value,
 		   cam->GetAbsParameterUnit(feat));
 	}else{
@@ -385,7 +385,7 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt)
   }
   img = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, ch);
 
-  while ('q' != ((unsigned int)cvWaitKey(10))&0xff ){
+  while ('q' != (((unsigned int)cvWaitKey(10))&0xff) ){
       cam.UpDateFrameBuffer();
       switch (ch){
       case 3:
@@ -445,6 +445,9 @@ int main(int argc, char *argv[]){
     int  do_query   =-1;
     int  do_show_version =-1;
 
+    int  do_query_vender =-1;
+    int  do_query_model  =-1;
+
     const char *opt_bayer_string=NULL;
 
     bool is_all=false; // if target cameras are all camera, then set true
@@ -466,6 +469,10 @@ int main(int argc, char *argv[]){
 	  "show infomation camera", NULL } ,   
 	{ "query", 'Q', POPT_ARG_NONE, &do_query, 'Q',
 	  "query setting (EXPERIMENTAL)", NULL},
+	{ "vender", 0, POPT_ARG_NONE, &do_query_vender, 0,
+	  "show vender name", NULL},
+	{ "model", 0, POPT_ARG_NONE, &do_query_model, 0,
+	  "show model name", NULL},
 	{ NULL, 0, 0, NULL, 0 }
     };
 
@@ -686,11 +693,7 @@ int main(int argc, char *argv[]){
     }
 
     CCameraList::iterator cam;
-    if ( do_query != -1 ){
-	for (cam=TargetList.begin(); cam!=TargetList.end(); cam++){
-	    show_camera_feature( &(*cam) );
-	}
-    }
+
 
     if (opt_power){
 	int mode = 0;
@@ -766,14 +769,31 @@ int main(int argc, char *argv[]){
 
     if (do_disp!=-1 || do_save_bin!=-1 || do_oneshot!=-1 )
 	CreateYUVtoRGBAMap();
-    
-    // disp infomation camere(s)
-    if (do_info!=-1){
-	for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++){
-	    display_current_status(*cam);
-	}    
-    }
 
+    // disp infomation camere(s)
+
+    if ( do_query        != -1 ||
+	 do_info         != -1 ||
+	 do_query_model  != -1 || 
+	 do_query_vender != -1 ) {
+	for (cam=TargetList.begin(); cam!=TargetList.end(); cam++) {
+	    char buf[1024];
+	    if (do_query_vender != -1) {
+		char *name = (*cam).GetVenderName(buf, sizeof(buf));
+		cout << name << endl;
+	    }
+	    if ( do_query_model != -1 ) {
+		char *name = (*cam).GetModelName(buf, sizeof(buf));
+		cout << name << endl;
+	    }
+	    if (do_info!=-1){
+		display_current_status(*cam);
+	    }
+	    if ( do_query != -1 ) {
+		show_camera_feature( &(*cam) );
+	    }
+	}
+    }
 
     // start camere(s)
     if (do_start!=-1 || do_oneshot!=-1 ){

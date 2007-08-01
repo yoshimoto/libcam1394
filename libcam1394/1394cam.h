@@ -2,7 +2,7 @@
  * @file    1394cam.h
  * @brief   1394-based Digital Camera control class
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.h,v 1.25 2005-11-09 10:41:29 yosimoto Exp $
+ * @version $Id: 1394cam.h,v 1.26 2007-08-01 07:44:21 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -154,7 +154,7 @@ protected:
     int   m_iso_speed;               // isochronus speed
 public:
     char* m_lpModelName;             // camera name
-    char* m_lpVecderName;            // camera vender name
+    char* m_lpVenderName;            // camera vender name
 
     int    m_port_no;		     // port no of 1394 I/F
     raw1394handle_t m_handle;        // handle of 1394 I/F
@@ -163,9 +163,9 @@ public:
 
     C1394CameraNode();
     virtual ~C1394CameraNode();
-  
-    char* GetModelName(char* lpBuffer,size_t* lpLength);
-    char* GetVenderName(char* lpBuffer,size_t* lpLength);
+
+    char* GetModelName(char* buffer, size_t length);
+    char* GetVenderName(char* buffer, size_t length);
 
     bool ReadReg(nodeaddr_t addr,quadlet_t* value);
     bool WriteReg(nodeaddr_t addr,quadlet_t* value);

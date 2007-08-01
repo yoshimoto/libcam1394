@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.53 2006-11-09 13:14:03 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.54 2007-08-01 07:44:21 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -151,7 +151,7 @@ static const char* abs_control_unit_table[64] = {
  */
 static int 
 try_raw1394_read(raw1394handle_t handle, nodeid_t nodeid,
-			    nodeaddr_t addr, int len, quadlet_t *buf)
+		 nodeaddr_t addr, int len, quadlet_t *buf)
 {
     int retry = 3;
     while (retry-->0){
@@ -201,7 +201,7 @@ get_directory_length(int *length,
     quadlet_t tmp;    
     if (try_raw1394_read(handle, nodeid, addr, sizeof(tmp), &tmp))
 	return -1;
-    tmp = htonl( tmp );
+    tmp = ntohl( tmp );
     *length = tmp >> 16;
     return 0;
 }
@@ -228,7 +228,7 @@ get_value(quadlet_t  *value,
     while (length-->0){
 	addr+=4;
 	try_raw1394_read(handle, node_id, addr, sizeof(tmp), &tmp);	
-	tmp = htonl( tmp );	 
+	tmp = ntohl( tmp );	 
 	if (key == (tmp >> 24)){
 	    if (value)
 		*value = tmp & 0xffffff;
@@ -261,7 +261,7 @@ get_sub_directory_address(nodeaddr_t *directory,
     while (length-->0){
 	addr+=4;
 	try_raw1394_read(handle, node_id, addr, sizeof(tmp), &tmp);	
-	tmp = htonl( tmp );	 
+	tmp = ntohl( tmp );	 
 	if (key == (tmp >> 24)){
 	    if (directory)
 		*directory = addr + 4*(tmp & 0xffffff);
@@ -275,55 +275,46 @@ get_sub_directory_address(nodeaddr_t *directory,
 /** 
  * 
  * 
- * @param buf 
- * @param size 
- * @param ket 
+ * @param key
  * @param handle 
  * @param node_id 
  * @param addr 
  * @param length 
  * 
- * @return 
+ * @return  a pointer to the string, or NULL
+ *
+ * @note  the string returned by this function must be released by delete[].
  */
-static int get_name_leaf(char *buf, int size, 
-			 unsigned char key,
-			 raw1394handle_t handle, 
-			 nodeid_t node_id, nodeaddr_t addr, int length)
+static char* get_name_leaf(unsigned char key,
+			   raw1394handle_t handle, 
+			   nodeid_t node_id, nodeaddr_t addr, int length)
 {
     nodeaddr_t leaf_address;
     if (get_sub_directory_address(&leaf_address,
 				  key, handle, node_id, addr, length))
-	return -1;
-
+	return NULL;
 
     if (get_directory_length(&length, handle, node_id, leaf_address))
-	return -1;
+	return NULL;
+
     length *= 4;
     length -= 8;
     leaf_address += 0x0c;
-    
-    char *p=buf;
-    while (length > 0 && size>0){
-	quadlet_t tmp;
-	try_raw1394_read(handle, node_id, leaf_address, sizeof(tmp), &tmp);
-	tmp = htonl( tmp );	  
-	
-	int c=32;
-	while (c>=0 && size-->0){
-	    c-=8;
-	    *p++ = tmp >> c;
-	}
 
-	length -= 4;
-	leaf_address += 4;
+    char *buf = new char[ length + 1 ];
+    try_raw1394_read(handle, node_id, leaf_address, length, (quadlet_t*)buf);
+    // byte order conversion
+    for (int i=0; i<length; i+=4) {
+	quadlet_t tmp = *(quadlet_t*)(buf + i);
+	buf[i + 3] = tmp>>24;
+	buf[i + 2] = tmp>>16;
+	buf[i + 1] = tmp>>8;
+	buf[i + 0] = tmp;
     }
+    // append '\0' terminator
+    buf[length] = '\0';
 
-    // fill with zero
-    while (size-->0){
-	*p++ = 0;
-    }
-
-    return 0;
+    return buf;
 }
 
 /** 
@@ -459,23 +450,11 @@ callback_1394Camera(raw1394handle_t handle, nodeid_t node_id,
     
 
     // get "unit_dependent_directory.vendor_name_leaf"
+    pNode->m_lpVenderName  = get_name_leaf(0x81, handle, node_id,
+					   addr_unit_dep_dir, len_unit_dep_dir);
     // get "unit_dependent_directory.model_name_leaf"
-
-    char buf[32];
-    if (!get_name_leaf(buf, sizeof(buf), 0x81, handle, node_id,
-		       addr_unit_dep_dir, len_unit_dep_dir)) {
-	pNode->m_lpVecderName = new char[ strlen(buf)+1 ];
-	strcpy(pNode->m_lpVecderName, buf);
-    } else {
-	pNode->m_lpVecderName = NULL;
-    }
-    if (!get_name_leaf(buf, sizeof(buf), 0x82, handle, node_id,
-		       addr_unit_dep_dir, len_unit_dep_dir)) {
-	pNode->m_lpModelName = new char[ strlen(buf)+1 ];
-	strcpy(pNode->m_lpModelName, buf);
-    } else {
-	pNode->m_lpModelName = NULL;
-    }
+    pNode->m_lpModelName = get_name_leaf(0x82, handle, node_id,
+					 addr_unit_dep_dir, len_unit_dep_dir);
 
     // get   node_unique_id_leaf.node_vendor_id and so on.
     // search "unit_dependent_directory"
@@ -668,7 +647,7 @@ C1394CameraNode::C1394CameraNode()
   m_iso_speed=SPD_400M;
   is_format6=0;
   m_lpModelName=NULL;
-  m_lpVecderName=NULL;
+  m_lpVenderName=NULL;
 
 #if defined(_WITH_ISO_FRAME_BUFFER_)
   m_lpFrameBuffer=NULL;
@@ -681,6 +660,9 @@ C1394CameraNode::C1394CameraNode()
 
 C1394CameraNode::~C1394CameraNode()
 {
+    //delete[] m_lpVenderName;
+    //delete[] m_lpModelName;
+
 #if defined(_WITH_ISO_FRAME_BUFFER_)
     m_BufferSize=0;
 #endif //#if defined(_WITH_ISO_FRAME_BUFFER_)    
@@ -752,6 +734,51 @@ C1394CameraNode::PowerUp()
     return WriteReg(Addr(Camera_Power),&tmp);
 }
 
+//--------------------------------------------------------------------------
+
+/** 
+ * 
+ * 
+ * @param buffer 
+ * @param length 
+ * 
+ * @return 
+ */
+char* 
+C1394CameraNode::GetModelName(char* buffer, size_t length)
+{
+    if (0>=length)
+	return NULL;
+
+    if (m_lpModelName)
+	strncpy(buffer, m_lpModelName, length);
+    else
+	buffer[0]='\0';
+
+    return buffer;
+}
+
+/** 
+ * 
+ * 
+ * @param buffer 
+ * @param length 
+ * 
+ * @return 
+ */
+char* 
+C1394CameraNode::GetVenderName(char* buffer, size_t length)
+{
+    if (0>=length)
+	return NULL;
+
+    if (m_lpVenderName)
+	strncpy(buffer, m_lpVenderName, length);
+    else
+	buffer[0]='\0';
+
+    return buffer;
+}
 
 //--------------------------------------------------------------------------
 
