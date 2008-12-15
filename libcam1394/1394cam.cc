@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.55 2008-12-15 07:23:03 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.56 2008-12-15 12:00:55 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -1490,7 +1490,6 @@ C1394CameraNode::SetFormat(FORMAT    fmt,
 	return false;
     }
     ReadReg(Addr(V_RATE_INQ_0_0) + f*0x20 + m*4, &tmp);
-    LOG("V_RATE_INQ "<<hex<<tmp<<dec << "r:"<<r);
     if (0==((tmp >> (31-r))&0x1 )) {
 	LOG("your camera has no format_"<<f<< " mode_"<<m<<" framerate_"<<r<<" feature");
 	return false;

@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.36 2008-12-15 07:23:03 yosimoto Exp $
-  @date    $Date: 2008-12-15 07:23:03 $
+  @version $Id: cam1394.cc,v 1.37 2008-12-15 12:00:55 yosimoto Exp $
+  @date    $Date: 2008-12-15 12:00:55 $
  */
 #include "config.h"
 
@@ -26,6 +26,7 @@
 #include <libraw1394/raw1394.h> 
 
 #include <iostream>
+#include <iomanip>
 
 #if defined HAVE_CV_H || defined HAVE_OPENCV
 #include <cv.h>
@@ -464,12 +465,49 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt,
 }
 
 
+struct reg_and_value {
+    quadlet_t reg;
+    quadlet_t val;
+};
+
+const int MAX_REG_QUEUE = 128;
+static reg_and_value reg_read_queue[MAX_REG_QUEUE];
+static int num_reg_read = 0;
+static reg_and_value reg_write_queue[MAX_REG_QUEUE];
+static int num_reg_write = 0;
+
+static int
+parse_reg_and_value(const char *str, quadlet_t *reg, quadlet_t *value)
+{
+    char *endp = NULL;
+    quadlet_t tmp;
+
+    tmp = strtoll(str, &endp, 0);
+    if (str==endp) {
+	return -1;
+    }
+
+    if (reg) {
+	*reg = tmp;
+    }
+
+    if (value) {
+	str = endp + 1;
+	tmp = strtoll(str, &endp, 0);
+	if (str==endp) {
+	    return -1;
+	}
+	*value = tmp;
+    }
+    return 0;
+}
+
 int main(int argc, char *argv[]){
 
     poptContext optCon;  /* context for parsing command-line options */
-    char c;              /* for parse options */
+    int c;              /* for parse options */
     int channel=-1;      /* iso channel */
-    //int card_no=0;       /* oh1394 interface number */
+    //int card_no=0;     /* oh1394 interface number */
     int spd=-1;          /* bus speed 0=100M 1=200M 2=400M */
 
     const char *opt_filename=NULL;   /* filename to save frame(s). */
@@ -480,8 +518,8 @@ int main(int argc, char *argv[]){
 				       "NULL"  means the value isn't set. */
 
     enum {
-	CMD_SET_REG  = 180,
-	CMD_SHOW_REG ,
+	CMD_SET_REG  = 0x1000,
+	CMD_SHOW_REG,
     };
 
     memset(cp, 0, sizeof(cp));
@@ -511,9 +549,6 @@ int main(int argc, char *argv[]){
     int  trigger_mode = -1;
 
     const char *opt_bayer_string=NULL;
-    const char *opt_show_reg = NULL;
-    const char *opt_set_reg = NULL;
-
 
     bool is_all=false; // if target cameras are all camera, then set true
 
@@ -641,9 +676,9 @@ int main(int argc, char *argv[]){
     };
 
     struct poptOption expert_optionsTable[] = {
-	{ "setreg", 0, POPT_ARG_STRING, &opt_set_reg,  CMD_SET_REG,
+	{ "setreg",  0, POPT_ARG_STRING, NULL,  CMD_SET_REG,
 	  "write register", "OFFSET,VALUE"},
-	{ "showreg", 0, POPT_ARG_STRING, &opt_show_reg, CMD_SHOW_REG,
+	{ "showreg", 0, POPT_ARG_STRING, NULL, CMD_SHOW_REG,
 	  "print register value", "OFFSET"},
 	{ NULL, 0, 0, NULL, 0 }
     };
@@ -653,8 +688,8 @@ int main(int argc, char *argv[]){
 	{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, control_optionsTable, 0,
 	  "Control options:",NULL},
     
-//    { "dev",      'd',  POPT_ARG_INT, &card_no, 'd',
-//      "device no", "DEVICE" } ,
+	// { "dev",      'd',  POPT_ARG_INT, &card_no, 'd',
+	//      "device no", "DEVICE" } ,
 
 	{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, query_optionsTable, 0,
 	  "Query options:",NULL},
@@ -669,7 +704,7 @@ int main(int argc, char *argv[]){
 	  "Image quality options:",NULL},
 
 	{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, expert_optionsTable, 0,
-	  "options:",NULL},   
+	  "Direct access options:",NULL},   
 
 	{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, common_optionsTable, 0,
 	  "Common options options:",NULL},   
@@ -690,16 +725,38 @@ int main(int argc, char *argv[]){
     }
 	
     while ((c = poptGetNextOpt(optCon)) >= 0) {
+	const char *str;
+	quadlet_t reg, val;
+	int result ;
 	switch (c){
 	case 'v':
 	    opt_debug_level ++;
 	    break;
-
-	case CMD_SHOW_REG:
-	    LOG("show reg" );
+	case CMD_SHOW_REG:	   
+	    if (num_reg_read>MAX_REG_QUEUE){
+		ERR("too many --showreg option");
+	    }
+	    str = poptGetOptArg(optCon);
+	    result = parse_reg_and_value(str,
+					 &reg_read_queue[num_reg_read].reg, 
+					 NULL);
+	    if (result) {
+		ERR("bad address "<< str);
+	    }
+	    ++num_reg_read;
 	    break;
 	case CMD_SET_REG:
-	    LOG("set reg"  );
+	    if (num_reg_write>MAX_REG_QUEUE){
+		ERR("too many --setreg option");
+	    }
+	    str = poptGetOptArg(optCon);
+	    result = parse_reg_and_value(str,
+					 &reg_write_queue[num_reg_write].reg, 
+					 &reg_write_queue[num_reg_write].val);
+	    if (result) {
+		ERR("bad address or value "<< str);
+	    }
+	    ++num_reg_write;
 	    break;
 	}
     }
@@ -808,6 +865,44 @@ int main(int argc, char *argv[]){
 		    }
 		    break;
 		}
+	    }
+	}
+    }
+
+    if (num_reg_read>0) {
+	cout << "    cam id           reg      value" <<endl;
+	cout << setfill('0');
+	for (int i=0; i<num_reg_read; ++i) {
+	    for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++){
+		quadlet_t val;
+		bool r;
+		r = cam->ReadReg(cam->m_command_regs_base
+				 + reg_read_queue[i].reg,
+				 &val);
+		cout << MAKE_CAMERA_ID(cam->GetID(), magic_number)
+		     << "  " 
+		     << hex << setw(8) << reg_read_queue[i].reg << dec;
+		if (r)
+		    cout << " " << hex << setw(8) << val << dec << endl;
+		else
+		    cout << "  N/A " << endl;
+	    }
+	}
+    }
+    if (num_reg_write>0) {
+	for (int i=0; i<num_reg_write; ++i) {
+	    for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++){
+		bool r;
+		r = cam->WriteReg(cam->m_command_regs_base
+				  + reg_write_queue[i].reg,
+				  &reg_write_queue[i].val);
+		if (!r) {
+		    cout << " setreg " << hex << reg_write_queue[i].reg 
+			 << " " << reg_write_queue[i].val 
+			 << " to " 
+			 << MAKE_CAMERA_ID(cam->GetID(), magic_number)
+			 << " failed ";
+                }
 	    }
 	}
     }
