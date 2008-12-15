@@ -2,7 +2,7 @@
  * @file    1394cam.h
  * @brief   1394-based Digital Camera control class
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.h,v 1.26 2007-08-01 07:44:21 yosimoto Exp $
+ * @version $Id: 1394cam.h,v 1.27 2008-12-15 07:23:03 yosimoto Exp $
  */
 
 #if !defined(_1394cam_h_included_)
@@ -213,6 +213,9 @@ public:
     bool SetTriggerOn();
     bool SetTriggerOff();
 
+    bool SetTriggerMode(int mode);
+    bool QueryTriggerMode(int *mode);
+
     bool  QueryInfo();
     bool  QueryIsoChannel(int* channel);
     bool  QueryIsoSpeed(SPD* iso_speed);
@@ -323,7 +326,7 @@ bool GetCameraList(raw1394handle_t,CCameraList *);
 CCameraList::iterator find_camera_by_id(CCameraList& CameraList,uint64_t id);
 
 void libcam1394_set_debug_level(int level);
-char *libcam1394_get_version(void);
+const char *libcam1394_get_version(void);
 
 #endif // #if !defined(_1394cam_h_included_)
 /*

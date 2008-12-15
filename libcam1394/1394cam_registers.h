@@ -2,7 +2,7 @@
   @file  1394cam_registers.h
   @brief 1394-based Digital Camera command registers
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: 1394cam_registers.h,v 1.6 2004-10-19 07:19:45 yosimoto Exp $
+  @version $Id: 1394cam_registers.h,v 1.7 2008-12-15 07:23:03 yosimoto Exp $
  */
 
 #if !defined(_1394cam_registers_h_included_)
@@ -27,6 +27,7 @@ RegInfo(0x0188,V_MODE_INQ_2)
 //RegInfo(0x0194,V_MODE_INQ_5)
 RegInfo(0x0198,V_MODE_INQ_6)
 RegInfo(0x019c,V_MODE_INQ_7)
+RegInfo(0x0200,V_RATE_INQ_0_0)
 
 RegInfo(0x02e0,V_CSR_INQ_7_0)
 
@@ -61,8 +62,11 @@ RegInfo(0x0600,Cur_V_Frm_Rate)
 RegInfo(0x0600,Revision)
 RegInfo(0x0604,Cur_V_Mode)
 RegInfo(0x0608,Cur_V_Format)
-RegInfo(0x060C,ISO_Channel)
-RegInfo(0x060C,ISO_Speed)
+RegInfo(0x060C,ISO_Channel_L)
+RegInfo(0x060C,ISO_Speed_L)
+RegInfo(0x060C,Operation_Mode)
+RegInfo(0x060C,ISO_Channel_B)
+RegInfo(0x060C,ISO_Speed_B)
 RegInfo(0x0610,Camera_Power)
 RegInfo(0x0614,ISO_EN)
 RegInfo(0x0614,Continous_Shot)
@@ -129,6 +133,7 @@ BitInfo(V_FORMAT_INQ    , Format_5      ,  5, 5)
 BitInfo(V_FORMAT_INQ    , Format_6      ,  6, 6)
 BitInfo(V_FORMAT_INQ    , Format_7      ,  7, 7)
 BitInfo(BASIC_FUNC_INQ  ,Advanced_Feature_Inq , 0, 0)
+BitInfo(BASIC_FUNC_INQ  ,1394b_mode_Capability, 8, 8) 
 BitInfo(BASIC_FUNC_INQ  ,Cam_Power_Cntl       ,16,16)
 BitInfo(BASIC_FUNC_INQ  ,One_Shot_Inq         ,19,19)
 BitInfo(BASIC_FUNC_INQ  ,Multi_Shot_Inq       ,20,20)
@@ -203,8 +208,11 @@ BitInfo(Cur_V_Frm_Rate,, 0, 2)
 BitInfo(Revision,      , 0, 2)
 BitInfo(Cur_V_Mode,    , 0, 2)
 BitInfo(Cur_V_Format,  , 0, 2)
-BitInfo(ISO_Channel,   , 0, 3)
-BitInfo(ISO_Speed,     , 6, 7)
+BitInfo(ISO_Channel_L, , 0, 3)
+BitInfo(ISO_Speed_L,   , 6, 7)
+BitInfo(Operation_Mode,,16,16)
+BitInfo(ISO_Channel_B, ,18,23)
+BitInfo(ISO_Speed_B,   ,29,31)
 BitInfo(Camera_Power,  , 0, 0)
 BitInfo(ISO_EN,        , 0, 0)
 BitInfo(Continous_Shot,, 0, 0)

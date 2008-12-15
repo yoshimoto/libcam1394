@@ -3,7 +3,7 @@
  * @brief   1394-based Digital Camera control class
  * @date    Sat Dec 11 07:01:01 1999
  * @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
- * @version $Id: 1394cam.cc,v 1.54 2007-08-01 07:44:21 yosimoto Exp $
+ * @version $Id: 1394cam.cc,v 1.55 2008-12-15 07:23:03 yosimoto Exp $
  */
 
 // Copyright (C) 1999-2003 by YOSHIMOTO Hiromasa
@@ -1466,8 +1466,37 @@ C1394CameraNode::SetFormat(FORMAT    fmt,
 			   VMODE      mode,
 			   FRAMERATE frame_rate)
 {
+    FORMAT f; VMODE m; FRAMERATE r;
     quadlet_t tmp;
+
+    QueryFormat(&f,&m,&r);
+
+    if (fmt!=Format_X)
+	f = fmt;
+    if (mode!=Mode_X)
+	m = mode;
+    if (frame_rate!=FrameRate_X)
+	r = frame_rate;
+
     // check fmt,mode,frame_rate
+    ReadReg(Addr(V_FORMAT_INQ), &tmp);
+    if (0==((tmp >> (31-f))&0x1)) {
+	LOG("your camera has no format_"<<f<< " feature");
+	return false;
+    }
+    ReadReg(Addr(V_MODE_INQ_0) + f*4, &tmp);
+    if (0==((tmp >> (31-m))&0x1)) {
+	LOG("your camera has no format_"<<f<< " mode_"<<m<<" feature");
+	return false;
+    }
+    ReadReg(Addr(V_RATE_INQ_0_0) + f*0x20 + m*4, &tmp);
+    LOG("V_RATE_INQ "<<hex<<tmp<<dec << "r:"<<r);
+    if (0==((tmp >> (31-r))&0x1 )) {
+	LOG("your camera has no format_"<<f<< " mode_"<<m<<" framerate_"<<r<<" feature");
+	return false;
+    }
+
+    // set params
     if (fmt!=Format_X){
 	tmp=SetParam(Cur_V_Format,,fmt);
 	WriteReg(Addr(Cur_V_Format),&tmp);	
@@ -1482,7 +1511,7 @@ C1394CameraNode::SetFormat(FORMAT    fmt,
 	
     }
 
-    FORMAT f; VMODE m; FRAMERATE r;
+
     SPD cur_speed, req_speed;
     QueryIsoSpeed(&cur_speed);
     QueryFormat(&f,&m,&r);
@@ -1536,10 +1565,19 @@ C1394CameraNode::SetIsoChannel(int channel)
 {
     EXCEPT_FOR_FORMAT_6_ONLY;
     quadlet_t tmp;
-    ReadReg(Addr(ISO_Channel), &tmp);
-    tmp &= ~SetParam(ISO_Channel,,0xfffff); // clear field
-    tmp |=  SetParam(ISO_Channel,,channel); // set field
-    WriteReg(Addr(ISO_Channel),&tmp);
+    ReadReg(Addr(ISO_Channel_L), &tmp);
+
+    if (0==GetParam(Operation_Mode,,tmp)) {
+	LOG("legacy mode");
+	tmp &= ~SetParam(ISO_Channel_L,,0xfffff);
+	tmp |=  SetParam(ISO_Channel_L,,channel);
+	WriteReg(Addr(ISO_Channel_L),&tmp);
+    } else {
+	LOG("1394b mode");
+	tmp &= ~SetParam(ISO_Channel_B,,0xfffff);
+	tmp |=  SetParam(ISO_Channel_B,,channel);
+	WriteReg(Addr(ISO_Channel_L),&tmp);
+    }
     m_channel = channel;
     return true;  
 }
@@ -1578,9 +1616,13 @@ C1394CameraNode::QueryIsoChannel(int* channel)
   EXCEPT_FOR_FORMAT_6_ONLY;
   CHK_PARAM(channel!=NULL);
   quadlet_t tmp;
-   
-  ReadReg(Addr(ISO_Speed), &tmp);    
-  m_channel= GetParam(ISO_Channel,,tmp);
+  ReadReg(Addr(ISO_Speed_L), &tmp);    
+  
+  if (0==GetParam(Operation_Mode,,tmp)) {
+      m_channel= GetParam(ISO_Channel_L,,tmp);
+  } else {
+      m_channel= GetParam(ISO_Channel_B,,tmp);
+  }
   *channel = m_channel;
   return true;
 }
@@ -1599,8 +1641,15 @@ C1394CameraNode::QueryIsoSpeed(SPD* spd)
   CHK_PARAM(spd!=NULL);
   quadlet_t tmp;
    
-  ReadReg(Addr(ISO_Speed),&tmp);  
-  *spd=(SPD)GetParam(ISO_Speed,,tmp);
+  ReadReg(Addr(ISO_Speed_L),&tmp);  
+  if (0==GetParam(Operation_Mode,,tmp)) {
+//    LOG("legacy mode");
+    *spd=(SPD)GetParam(ISO_Speed_L,,tmp);
+  }else{
+//    LOG("1394b mode");
+    *spd=(SPD)GetParam(ISO_Speed_B,,tmp);
+  }
+
   return true;
 }
 
@@ -1616,11 +1665,38 @@ C1394CameraNode::SetIsoSpeed(SPD iso_speed)
 {
   EXCEPT_FOR_FORMAT_6_ONLY;
   quadlet_t tmp;
-  ReadReg(Addr(ISO_Speed), &tmp); 
-  tmp &= ~SetParam(ISO_Speed,,0xfffff);    // clear field
-  tmp |=  SetParam(ISO_Speed,,iso_speed);  // set field
-  WriteReg(Addr(ISO_Speed),&tmp); 
+  ReadReg(Addr(ISO_Speed_L), &tmp); 
+  
+  const bool need_1394b = (iso_speed >= SPD_800M) ;
+
+  if (need_1394b) {
+    // check 1394b capability
+    quadlet_t inq;
+    ReadReg(Addr(BASIC_FUNC_INQ), &inq);
+    if (0==GetParam(BASIC_FUNC_INQ,1394b_mode_Capability,inq)) {
+      ERR("no 1394b mode capability");
+      return false;
+    }
+  }
+
+  if (!need_1394b) {
+    LOG("legacy mode");
+    tmp &= ~SetParam(ISO_Speed_L,,0xfffff);
+    //tmp &= ~SetParam(ISO_Speed_B,,0xfffff);
+    tmp &= ~SetParam(Operation_Mode,,1);
+    tmp |=  SetParam(ISO_Speed_L,,iso_speed);
+    WriteReg(Addr(ISO_Speed_L),&tmp); 
+  } else {
+    LOG("1394b mode");
+    //tmp &= ~SetParam(ISO_Speed_L,,0xfffff);
+    tmp &= ~SetParam(ISO_Speed_B,,0xfffff);  
+    tmp |=  SetParam(Operation_Mode,,1);
+    tmp |=  SetParam(ISO_Speed_B,,iso_speed);
+    WriteReg(Addr(ISO_Speed_L),&tmp); 
+  }
+
   m_iso_speed = iso_speed;
+
   return true;
 }
 
@@ -1671,38 +1747,53 @@ C1394CameraNode:: StartIsoTx(unsigned int count_number)
 }
 
 /** 
- * Sets  external trigger mode.
- * 
- * @todo Currentry this function supports only trigger mode0. (But You
- * can change trigger mode with SetParameter().)
+ * Sets  external trigger mode. 
+ *
+ * @note This function is synonym to EnableFeature(TRIGGER)
  * 
  * @return True.
  */
 bool
 C1394CameraNode:: SetTriggerOn()
 {
-    quadlet_t tmp;
-    tmp=0x82010000;
-    WriteReg(Addr(TRIGGER_MODE),&tmp);
-    return true;
+  return EnableFeature(TRIGGER);
 }
 
 /** 
  * Sets internal trigger mode.
  * 
+ * @note This function is synonym to DisableFeature(TRIGGER)
  * 
  * @return True.
  */
 bool
 C1394CameraNode:: SetTriggerOff()
 {
-    LOG("SetTriggerOff");
-    quadlet_t tmp;
-    tmp=0x80000000;
-    WriteReg(Addr(TRIGGER_MODE),&tmp);     
-    return true;
+  return DisableFeature(TRIGGER);
 }
 
+bool
+C1394CameraNode::SetTriggerMode(int mode)
+{
+  LOG("SetTriggerMode "<<mode);
+  quadlet_t tmp;
+  ReadReg(Addr(TRIGGER_MODE), &tmp); 
+  tmp &= ~SetParam(TRIGGER_MODE,Trigger_Mode,0xfffff);
+  tmp |=  SetParam(TRIGGER_MODE,Trigger_Mode, mode);
+  WriteReg(Addr(TRIGGER_MODE), &tmp);
+  return true;
+}
+
+bool
+C1394CameraNode::QueryTriggerMode(int* mode)
+{
+  quadlet_t tmp;
+  ReadReg(Addr(TRIGGER_MODE), &tmp); 
+  if (mode) {
+    *mode = GetParam(TRIGGER_MODE,Trigger_Mode, tmp);
+  }
+  return true;
+}
 
 /** 
  * Stops to send images.
@@ -1727,7 +1818,7 @@ C1394CameraNode:: StopIsoTx()
  *
  */
 struct VideoPixelInfo{
-    char* name;			/**< pixel format name */
+    const char* name;	        /**< pixel format name */
 
     int weight0;		/**< 1st component weight */
     int weight1;		/**< 2nd component weight */
@@ -1993,7 +2084,7 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    { 250*4,1200* 8/5, SPD_100M }, // 3.75 fps
 	    { 500*4,1200* 4/5, SPD_200M }, // 7.5  fps
 	    {1000*4,1200* 2/5, SPD_400M }, // 15   fps
-	    RESERVED,                      
+	    {2000*4,1200* 1/5, SPD_800M }, // 30   fps
 	    RESERVED,                      
 	},
 	{ // format_2 mode_6
@@ -2058,7 +2149,7 @@ PIXEL_FORMAT GetPixelFormat(FORMAT fmt, VMODE mode)
  */
 const char* GetSpeedString(SPD spd)
 {
-    static char* speed_string[]={
+    static const char* speed_string[]={
 	" 100Mbps",
 	" 200Mbps",
 	" 400Mbps",
@@ -2359,7 +2450,8 @@ static void* mmap_video1394(int port_no, int channel,
         ioctl(*fd, VIDEO1394_IOC_UNLISTEN_CHANNEL, &vmmap.channel);
         return NULL;
     }
-    
+
+    LOG("done mmap()");
     return buffer;
 }
 #else
@@ -2457,7 +2549,11 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
 	return -1;
     }
     
-    SetFormat(fmt,mode,rate);
+    if (!SetFormat(fmt,mode,rate)){
+	LOG(" SetFormat() failed.");
+	return -1;
+    }
+
     if ((fmt==Format_X)||(mode==Mode_X)||(rate==FrameRate_X)){
 	FORMAT f; VMODE m; FRAMERATE r;
 	QueryFormat(&f,&m,&r);
@@ -2478,11 +2574,11 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
 	return -2;
     }
 
-    m_num_frame = 16;
-
     LOG("packet size: " << m_packet_sz);
     LOG("packet num:  " << m_num_packet);
 #if !defined(HAVE_ISOFB)
+    m_num_frame = 16;
+
     pMaped = (char*)mmap_video1394(m_port_no, channel, 
 				   m_packet_sz, m_num_packet,
 				   &m_num_frame,
@@ -2862,7 +2958,7 @@ void libcam1394_set_debug_level(int level)
  * 
  * @return pointer to the string.
  */
-char *libcam1394_get_version(void)
+const char *libcam1394_get_version(void)
 {
     return PACKAGE_VERSION;
 }

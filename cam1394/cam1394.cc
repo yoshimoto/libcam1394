@@ -2,8 +2,8 @@
   @file  cam1394.cc
   @brief cam1394 main 
   @author  YOSHIMOTO,Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
-  @version $Id: cam1394.cc,v 1.35 2007-08-01 07:44:21 yosimoto Exp $
-  @date    $Date: 2007-08-01 07:44:21 $
+  @version $Id: cam1394.cc,v 1.36 2008-12-15 07:23:03 yosimoto Exp $
+  @date    $Date: 2008-12-15 07:23:03 $
  */
 #include "config.h"
 
@@ -38,6 +38,7 @@
 #define IPL_IMG_SUPPORTED
 #endif
 
+#include <sys/time.h>
 #include <libcam1394/1394cam.h>
 #include <libcam1394/yuv.h>                /* ¿§ÊÑ´¹ */
 
@@ -264,8 +265,16 @@ savetofile(C1394CameraNode& camera,char *fname)
          
 	const int NUM_SEG=1500;
 
+        
+	quadlet_t value = 0;
+	camera.ReadReg(camera.m_command_regs_base + 0x830, &value);
+	LOG(hex << value );
+	camera.WriteReg(camera.m_command_regs_base + 0x830, &value);
+
+
 	int i=0;
-	for (i=0; i<NUM_SEG; i++){
+	uint64_t v_prev=0;
+	for (i=0; 1 ; i++){
               
 	    char* p=(char*)camera.UpDateFrameBuffer();
 
@@ -281,10 +290,18 @@ savetofile(C1394CameraNode& camera,char *fname)
 	    last_frame = frame_no;
 	    //cout << last_frame << endl;
 
-	    int result = write( fd , p , frame_size );
-	    if ( result != frame_size ){
+
+	    uint64_t v = ntohl(*((u_int32_t *)(p+4)));
+	    v = ((v >> 25) & 0x7f) * 1000000 + ((v >> 12) & 0x1fff) * 125 + (int)(((v) & 0xfff) * (1.0/24.576));
+	    fprintf(stderr, "%lld = %lld - %lld\n", (128000000 + v - v_prev) % 128000000, v, v_prev);
+	    v_prev = v;
+	    
+//	    int result = write( fd , p , frame_size );
+/*	    int result = write( fd , p+4, 4 );
+	    if ( result != 4 ){
 		ERR(" write() failed : " << strerror(errno) );
 	    }
+*/
 	}
 	close(fd);
 	f_count++;
@@ -324,7 +341,8 @@ get_bayer_code(const char *string)
 #endif /* #ifdef IPL_IMG_SUPPORTED */
 
 int 
-display_live_image_on_X(C1394CameraNode &cam, const char *fmt)
+display_live_image_on_X(C1394CameraNode &cam, const char *fmt, 
+			double scale, int draw_fps)
 {
   int channel;
 
@@ -360,13 +378,22 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt)
     xview.UpDate(tmp);
   }
 #else  /* #ifndef IPL_IMG_SUPPORTED */
+
+  CvFont font;
+  if (draw_fps) {
+      font = cvFont(1);
+  }
+
   int argc = 1;
-  char *argv[]={"dummy"};
+  char tmp[]="dummy";
+  char *argv[]={tmp};
   cvInitSystem(argc, argv);
   cvNamedWindow("disp", !0);
   int ch=3;
   IplImage *img = NULL;
   IplImage *buf = NULL;
+  IplImage *resize = NULL;
+
   int buf_option=0;
 
   if (fmt){
@@ -384,8 +411,16 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt)
       ch = 1;
   }
   img = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, ch);
+  if (scale != 1.) {
+      int channel = (buf)?buf->nChannels:ch;
+      resize = cvCreateImage(cvSize(cvRound(w*scale), cvRound(h*scale)),
+			     IPL_DEPTH_8U, channel);
+  }
 
-  while ('q' != (((unsigned int)cvWaitKey(10))&0xff) ){
+  timeval last;
+  gettimeofday(&last, NULL);
+  while ('q' != (((unsigned int)cvWaitKey(5))&0xff) ){
+
       cam.UpDateFrameBuffer();
       switch (ch){
       case 3:
@@ -398,13 +433,32 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt)
 
       if (buf){
 	  cvCvtColor(img, buf, buf_option);
-	  cvShowImage("disp", buf);
-      }else{
-	  cvShowImage("disp", img);
       }
+      if (resize) {
+	  cvResize(buf?buf:img, resize);
+      }
+
+      IplImage *tmp = resize?resize:(buf?buf:img);
+      if (draw_fps) {
+	  timeval current;
+	  gettimeofday(&current, NULL);
+
+	  double diff = (current.tv_sec - last.tv_sec) + 
+	      (current.tv_usec - last.tv_usec)/(1000.*1000.);
+
+	  last = current;
+
+	  char str[1024];
+	  snprintf(str, sizeof(str), "% 3.1ffps", 1./diff);
+	  cvPutText(tmp, str, cvPoint(tmp->width-100, tmp->height-10), 
+		    &font, CV_RGB(255,255,255));
+      }
+      cvShowImage("disp", tmp);
+      
   }
   cvReleaseImage(&img);
   cvReleaseImage(&buf);
+  cvReleaseImage(&resize);
 #endif   /* #ifndef IPL_IMG_SUPPORTED */
   return 0;
 }
@@ -425,6 +479,11 @@ int main(int argc, char *argv[]){
     const char *cp[END_OF_FEATURE]; /* camera's parameter. 
 				       "NULL"  means the value isn't set. */
 
+    enum {
+	CMD_SET_REG  = 180,
+	CMD_SHOW_REG ,
+    };
+
     memset(cp, 0, sizeof(cp));
 
     const char *opt_magic_string = NULL ;  /* magic number for camera id. */
@@ -444,11 +503,17 @@ int main(int argc, char *argv[]){
     int  do_stop    =-1;
     int  do_query   =-1;
     int  do_show_version =-1;
-
+    double display_scale = 1.;
+    int  draw_fps = 0;
     int  do_query_vender =-1;
     int  do_query_model  =-1;
 
+    int  trigger_mode = -1;
+
     const char *opt_bayer_string=NULL;
+    const char *opt_show_reg = NULL;
+    const char *opt_set_reg = NULL;
+
 
     bool is_all=false; // if target cameras are all camera, then set true
 
@@ -459,6 +524,12 @@ int main(int argc, char *argv[]){
 	  "stop  camera(s) ", NULL } , 
 	{ "disp", 'D',  POPT_ARG_NONE, &do_disp, 'D',
 	  "display live image on X", NULL } ,
+#ifdef IPL_IMG_SUPPORTED
+	{ "scale", 0 , POPT_ARG_DOUBLE, &display_scale, 0,
+	  "scale the live image", "SCALE"}, 
+	{ "drawfps", 0, POPT_ARG_NONE, &draw_fps, 0,
+	  "draw frame rate on the live image",},
+#endif
 	{ "power", 0, POPT_ARG_STRING, &opt_power, 0,
 	  "power on/off", "{on|off}"},
 	{ NULL, 0, 0, NULL, 0 }
@@ -549,6 +620,8 @@ int main(int argc, char *argv[]){
 	  "capture size", "{CAPTURE_SIZE|on|off|manual|auto|one_push}" } ,
 	{ "capture_quality", '\0', POPT_ARG_STRING, &cp[CAPTURE_QUALITY], 0,
 	  "capture quality", "{CAPTURE_QUALITY|on|off|manual|auto|one_push}" } ,
+	{ "trigger_mode", '\0', POPT_ARG_INT, &trigger_mode, 0,
+	  "trigger mode (0..15)"},
 
 	{ NULL, 0, 0, NULL, 0 }
     };
@@ -566,6 +639,15 @@ int main(int argc, char *argv[]){
 	  "Print the version string of libcam1394 library and exit.",0},
 	{ NULL, 0, 0, NULL, 0 }
     };
+
+    struct poptOption expert_optionsTable[] = {
+	{ "setreg", 0, POPT_ARG_STRING, &opt_set_reg,  CMD_SET_REG,
+	  "write register", "OFFSET,VALUE"},
+	{ "showreg", 0, POPT_ARG_STRING, &opt_show_reg, CMD_SHOW_REG,
+	  "print register value", "OFFSET"},
+	{ NULL, 0, 0, NULL, 0 }
+    };
+
 
     struct poptOption optionsTable[] = {
 	{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, control_optionsTable, 0,
@@ -585,6 +667,9 @@ int main(int argc, char *argv[]){
 
 	{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, quality_optionsTable, 0,
 	  "Image quality options:",NULL},
+
+	{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, expert_optionsTable, 0,
+	  "options:",NULL},   
 
 	{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, common_optionsTable, 0,
 	  "Common options options:",NULL},   
@@ -608,6 +693,13 @@ int main(int argc, char *argv[]){
 	switch (c){
 	case 'v':
 	    opt_debug_level ++;
+	    break;
+
+	case CMD_SHOW_REG:
+	    LOG("show reg" );
+	    break;
+	case CMD_SET_REG:
+	    LOG("set reg"  );
 	    break;
 	}
     }
@@ -723,6 +815,9 @@ int main(int argc, char *argv[]){
     // set camera register for each feature.
     for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++){
 	set_camera_feature( &(*cam), cp);
+	if (-1 != trigger_mode) {
+	    (*cam).SetTriggerMode( trigger_mode );
+	}
     }
 
     // set camera channel
@@ -737,10 +832,20 @@ int main(int argc, char *argv[]){
 
     // set camera format
     if ((cp_format != Format_X)
-	||(cp_mode   != Mode_X)
-	||(cp_rate   != FrameRate_X)){
+	||(cp_mode != Mode_X)
+	||(cp_rate != FrameRate_X)){
 	for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++){
-	    cam->SetFormat(cp_format,cp_mode,cp_rate);    
+	    bool result = cam->SetFormat(cp_format,cp_mode,cp_rate);    
+	    if (!result) {
+		FORMAT f;
+		VMODE m;
+		FRAMERATE r;
+		cam->QueryFormat(&f, &m, &r);
+		MSG("your camera doesn't support " 
+		    << " Format_"<< ((cp_format==Format_X)?f:cp_format) 
+		    << ",Mode_"<< ((cp_mode==Mode_X)?m:cp_mode)
+		    << ",FrameRate_"<< ((cp_rate==FrameRate_X)?r:cp_rate));
+	    }
         }
     }
     // set iso speed
@@ -806,7 +911,8 @@ int main(int argc, char *argv[]){
     // disp
     if (do_disp!=-1){
 	for ( cam=TargetList.begin(); cam!=TargetList.end(); cam++){
-	    display_live_image_on_X(*cam, opt_bayer_string);
+	    display_live_image_on_X(*cam, opt_bayer_string, 
+				    display_scale, draw_fps);
 	}
     }
 
@@ -820,7 +926,7 @@ int main(int argc, char *argv[]){
 	cam=TargetList.begin();
 	char fname[1024];
 	if (NULL==opt_filename)
-	    snprintf(fname,sizeof(fname),"%llu_%%02d.yuv",
+	    snprintf(fname,sizeof(fname),"%llu_%%02d.raw",
 		     MAKE_CAMERA_ID(cam->GetID(),magic_number));
 	else
 	    snprintf(fname,sizeof(fname),opt_filename, 
