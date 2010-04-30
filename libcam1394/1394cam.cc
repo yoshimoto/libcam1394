@@ -402,7 +402,7 @@ static int
 callback_1394Camera(raw1394handle_t handle, nodeid_t node_id,
 		    C1394CameraNode* pNode, void* arg)
 {
-    int port_no = (int)arg;
+    long port_no = (long)arg;
 
     // search  "root_directory"
     nodeaddr_t addr_root;

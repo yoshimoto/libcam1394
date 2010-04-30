@@ -1,6 +1,12 @@
+libcam1394 (0.2.3) unstable; urgency=low
+
+  * ready for 64bit env.
+
+ -- Hiromasa YOSHIMOTO <yosimoto@users.sf.net>  Fri, 30 Apr 2010 21:57:59 +0900
+
 libcam1394 (0.2.1) unstable; urgency=low
 
-  * CVS HEAD
+  * verion 0.2.1
 
  -- Hiromasa YOSHIMOTO <yosimoto@users.sf.net>  Mon, 27 Nov 2006 18:13:08 +0900
 
