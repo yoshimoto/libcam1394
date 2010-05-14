@@ -137,8 +137,7 @@ public:
 };
 
 struct BufferInfo {
-    //! @todo  !!FIXME!! -- not implemented yet
-    int timestamp;
+    unsigned int timestamp;
 };
 
 class C1394CameraNode : public C1394Node {

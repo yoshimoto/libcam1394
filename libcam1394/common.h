@@ -21,6 +21,7 @@ extern int libcam1394_debug_level;
  std::cerr<<"libcam1394: "<<msg<<std::endl
 #endif // #if defined(DEBUG)
 
+#define DBG(msg) do { if (libcam1394_debug_level>3){ LIBCAM1394_OUTPUT(msg);} } while(0)
 #define LOG(msg) do { if (libcam1394_debug_level>2){ LIBCAM1394_OUTPUT(msg);} } while(0)
 #define WRN(msg) do { if (libcam1394_debug_level>1){ LIBCAM1394_OUTPUT(msg);} } while(0)
 #define ERR(msg) do { if (libcam1394_debug_level>0){ LIBCAM1394_OUTPUT(msg);} } while(0)

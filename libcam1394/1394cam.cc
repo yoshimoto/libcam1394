@@ -2454,16 +2454,7 @@ void* C1394CameraNode::UpdateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
     if (!driver) {
 	return NULL;
     }
-
     m_lpFrameBuffer = (char*)driver->updateFrameBuffer(driver, opt, info);
-    if (!m_lpFrameBuffer) {
-	return NULL;
-    }
-
-    if (info){
-	quadlet_t *ts = (quadlet_t*)(m_lpFrameBuffer + m_packet_sz - 4);
-	info->timestamp = (*ts) & 0x0000ffff;
-    }
     return  m_lpFrameBuffer;
 }
 

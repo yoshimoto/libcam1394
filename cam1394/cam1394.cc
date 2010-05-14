@@ -418,11 +418,14 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt,
 			     IPL_DEPTH_8U, channel);
   }
 
+  unsigned int lastcycle = 0;
   timeval last;
   gettimeofday(&last, NULL);
   while ('q' != (((unsigned int)cvWaitKey(5))&0xff) ){
 
-      cam.UpdateFrameBuffer();
+      BufferInfo info;
+      info.timestamp = 0;
+      cam.UpdateFrameBuffer(C1394CameraNode::BUFFER_DEFAULT, &info);
       switch (ch){
       case 3:
 	  cam.CopyIplImage(img);
@@ -438,6 +441,9 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt,
       if (resize) {
 	  cvResize(buf?buf:img, resize);
       }
+
+      LOG("ts: " << info.timestamp - lastcycle);
+      lastcycle = info.timestamp;
 
       IplImage *tmp = resize?resize:(buf?buf:img);
       if (draw_fps) {

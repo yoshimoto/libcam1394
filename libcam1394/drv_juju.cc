@@ -126,14 +126,15 @@ queue_dma_desc(drv_juju_data *d, int index)
      q.size = d->num_packet * sizeof( pkt[0] );
      q.handle = d->isorxhandle;
 
-     LOG(q.size);
-
      retval = ioctl(d->fd, FW_CDEV_IOC_QUEUE_ISO, &q);
      if (retval < 0) {
 	  ERR("FW_CDEV_IOC_QUEUE_ISO failed");
 	  goto err;
      }
-     LOG("queued "<<retval << "  " << q.size);
+     if (0 != q.size) {
+	  ERR("FW_CDEV_IOC_QUEUE_ISO is not completed.");
+	  goto err;
+     }
      return 0;
 err:
      return -1;
@@ -201,7 +202,7 @@ drv_juju_mmap(libcam1394_driver *ctx,
      assert( d );
 
      static const char *dname = "/dev/fw";
-     if (0 != strncmp(devicename, dname, sizeof(dname))) {
+     if (0 != strncmp(devicename, dname, sizeof(dname)-1)) {
 	  // this module supports juju stack only
 	  return -1;
      }
@@ -288,7 +289,7 @@ drv_juju_mmap(libcam1394_driver *ctx,
 	  goto err;
      }
 
-     *header_size = get_header_size(d);
+     *header_size = 0;//get_header_size(d);
      return 0;
 err:
      drv_juju_close(ctx);
@@ -321,7 +322,7 @@ drv_juju_updateFrameBuffer(libcam1394_driver *ctx,
 	       LOG("poll() timedout");
 	       continue;
 	  } else {
-	       LOG("poll() done");
+	       DBG("poll() done");
 	  }
 
 	  len = read(d->fd, &evt, sizeof(evt));
@@ -342,13 +343,17 @@ drv_juju_updateFrameBuffer(libcam1394_driver *ctx,
 	       }
 
 	       d->index = (d->index + 1)%d->num_frame;
+
+	       if (info) {
+		    info->timestamp = evt.iso_interrupt.cycle;
+	       }
 	       break;
 	  } else {
 	       LOG("unknown event");
 	  }
      }
 
-     return d->mmaped + d->buffer_size*d->index;
+     return frame;
 err:
      return NULL;
 }

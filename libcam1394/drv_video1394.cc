@@ -29,6 +29,7 @@ struct drv_video1394_data {
      int fd;                        // file descriptor of the driver
      char *buffer;                  // pointer to the mmaped buffer
      int buffer_size;
+     int offset_to_timestamp;       // offset to timestamp field
      int num_frame;
      int last_read_frame;
      int channel;
@@ -124,6 +125,7 @@ drv_video1394_mmap(libcam1394_driver *ctx,
      channel = vmmap.channel;
      d->buffer_size = vmmap.buf_size;
      d->num_frame = vmmap.nb_buffers;
+     d->offset_to_timestamp = (sz_packet + *header_size)*(num_packet-1);
 
      /* QUEUE the buffers */
      for (i = 0; i < vmmap.nb_buffers; i++){
@@ -191,8 +193,15 @@ drv_video1394_updateFrameBuffer(libcam1394_driver *ctx,
      if (ioctl(d->fd, VIDEO1394_IOC_LISTEN_QUEUE_BUFFER, &vwait) < 0){
 	  ERR("VIDEO1394_IOC_LISTEN_QUEUE_BUFFER failed.");
      }
+
      char * p =
-	  d->buffer + d->buffer_size*((d->last_read_frame-1)%d->num_frame);
+	  d->buffer + d->buffer_size*(d->last_read_frame-1+d->num_frame)%d->num_frame;
+
+     if (info){
+	  quadlet_t *ts = (quadlet_t*)(p + d->offset_to_timestamp + 4);
+	  info->timestamp = (*ts) & 0x0000ffff;
+     }
+
      return p;
 }
 
