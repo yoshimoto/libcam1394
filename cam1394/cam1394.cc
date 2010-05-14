@@ -442,7 +442,8 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt,
 	  cvResize(buf?buf:img, resize);
       }
 
-      LOG("ts: " << info.timestamp - lastcycle);
+      
+      DBG("ts: " <<  info.timestamp << " diff: "<<((info.timestamp - lastcycle)&0xffff) );
       lastcycle = info.timestamp;
 
       IplImage *tmp = resize?resize:(buf?buf:img);

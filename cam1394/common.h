@@ -20,6 +20,7 @@ extern int opt_debug_level;
  std::cerr<<msg<<std::endl
 #endif // #if defined(DEBUG)
 
+#define DBG(msg) do { if (opt_debug_level>3){ CAM1394_OUTPUT(msg);} } while(0)
 #define LOG(msg) do { if (opt_debug_level>2){ CAM1394_OUTPUT(msg);} } while(0)
 #define WRN(msg) do { if (opt_debug_level>1){ CAM1394_OUTPUT(msg);} } while(0)
 #define ERR(msg) do { if (opt_debug_level>0){ CAM1394_OUTPUT(msg);} } while(0)
