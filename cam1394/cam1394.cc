@@ -242,7 +242,7 @@ savetofile(C1394CameraNode& camera,char *fname)
     LOG("frame_size: "<<frame_size);
 
     int last_frame;
-    camera.UpDateFrameBuffer();
+    camera.UpdateFrameBuffer();
     camera.GetFrameCount(&last_frame);
     int total_drop=0;
   
@@ -277,7 +277,7 @@ savetofile(C1394CameraNode& camera,char *fname)
 	uint64_t v_prev=0;
 	for (i=0; 1 ; i++){
               
-	    char* p=(char*)camera.UpDateFrameBuffer();
+	    char* p=(char*)camera.UpdateFrameBuffer();
 
 	    int frame_no;
 	    camera.GetFrameCount(&frame_no);
@@ -297,7 +297,7 @@ savetofile(C1394CameraNode& camera,char *fname)
 	    fprintf(stderr, "%lld = %lld - %lld\n", (128000000 + v - v_prev) % 128000000, v, v_prev);
 	    v_prev = v;
 	    
-//	    int result = write( fd , p , frame_size );
+	    int result = write( fd , p , frame_size );
 /*	    int result = write( fd , p+4, 4 );
 	    if ( result != 4 ){
 		ERR(" write() failed : " << strerror(errno) );
@@ -374,7 +374,7 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt,
   
   while (1){
     RGBA tmp[w*h];
-    cam.UpDateFrameBuffer();
+    cam.UpdateFrameBuffer();
     cam.CopyRGBAImage(tmp);
     xview.UpDate(tmp);
   }
@@ -422,7 +422,7 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt,
   gettimeofday(&last, NULL);
   while ('q' != (((unsigned int)cvWaitKey(5))&0xff) ){
 
-      cam.UpDateFrameBuffer();
+      cam.UpdateFrameBuffer();
       switch (ch){
       case 3:
 	  cam.CopyIplImage(img);
@@ -1049,7 +1049,7 @@ int main(int argc, char *argv[]){
 			 MAKE_CAMERA_ID(cam->GetID(),magic_number));
 	    
 
-	    cam->UpDateFrameBuffer();
+	    cam->UpdateFrameBuffer();
 	    cam->SaveToFile(fname);
 	}
 
