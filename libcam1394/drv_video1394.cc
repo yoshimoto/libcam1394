@@ -22,11 +22,8 @@
 #include "common.h"
 #include "1394cam_drv.h"
 
-#define HAVE_VIDEO1394
-
 #if defined HAVE_VIDEO1394
 #include "video1394.h"
-
 
 struct drv_video1394_data {
      int fd;                        // file descriptor of the driver
@@ -66,13 +63,20 @@ drv_video1394_mmap(libcam1394_driver *ctx,
 		   int port_no, const char *devicename,
 		   int channel,
 		   int sz_packet, int num_packet, 
-		   int num_frame)
+		   int num_frame,
+		   int *header_size)
 {
      CHECK_CTX(ctx);
      drv_video1394_data *d = GETDATA(ctx);
 
      unsigned int i;
      void *buffer=NULL;
+     if (0 != strcmp(devicename, "ohci1394")){
+	  // this module supports ohci1394 only
+	  return -1;
+     }
+
+     *header_size = 8;
 
      char devname[1024];
      snprintf(devname, sizeof(devname), "/dev/video1394/%d", port_no);
@@ -105,8 +109,7 @@ drv_video1394_mmap(libcam1394_driver *ctx,
      vmmap.channel = channel;  
      vmmap.sync_tag = 1;
      vmmap.nb_buffers = num_frame;
-     vmmap.buf_size =   sz_packet*num_packet;
-//    vmmap.packet_size = m_packet_sz;
+     vmmap.buf_size =   (sz_packet + *header_size)*num_packet;
      vmmap.fps = 0;
      vmmap.syt_offset = 0;
      vmmap.flags = VIDEO1394_SYNC_FRAMES | VIDEO1394_INCLUDE_ISO_HEADERS;
@@ -121,8 +124,6 @@ drv_video1394_mmap(libcam1394_driver *ctx,
      channel = vmmap.channel;
      d->buffer_size = vmmap.buf_size;
      d->num_frame = vmmap.nb_buffers;
-
-     LOG("channel: "<< vmmap.channel);
 
      /* QUEUE the buffers */
      for (i = 0; i < vmmap.nb_buffers; i++){
@@ -217,7 +218,7 @@ drv_video1394_setFrameCount(libcam1394_driver *ctx,
 libcam1394_driver*
 drv_video1394_new()
 {
-
+#if defined HAVE_VIDEO1394
      const int sz = sizeof(libcam1394_driver) + sizeof(drv_video1394_data);
      libcam1394_driver * drv;
      drv = (libcam1394_driver*)malloc(sz);
@@ -230,4 +231,8 @@ drv_video1394_new()
      drv->updateFrameBuffer = drv_video1394_updateFrameBuffer;
 
      return drv;
+#else
+     LOG("video1394 support is disabled");
+     return NULL;
+#endif
 }

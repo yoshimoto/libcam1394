@@ -21,21 +21,17 @@
 #include <string.h>
 #include <assert.h>
 
-#include <linux/firewire-cdev.h>
-
 #include "1394cam_drv.h"
 #include "common.h"
+
+#if defined HAVE_JUJU
+#include <linux/firewire-cdev.h>
 
 #define ptr_to_u64(p) ((__u64)(unsigned long)(p))
 #define u64_to_ptr(p) ((void *)(unsigned long)(p))
 
 #define CHECK_CTX(ctx) do { if (!(ctx)) return -1; } while(0)
 #define GETDATA(ctx) (drv_juju_data*)((char*)(ctx) + sizeof(libcam1394_driver))
-
-
-#define HAVE_JUJU
-
-#if defined HAVE_JUJU
 
 
 //
@@ -192,7 +188,8 @@ drv_juju_mmap(libcam1394_driver *ctx,
 	      int port_no, const char *devicename,
 	      int channel,
 	      int sz_packet, int num_packet, 
-	      int num_frame)
+	      int num_frame,
+	      int *header_size)
 {
      int i;
      drv_juju_data *d;
@@ -202,6 +199,12 @@ drv_juju_mmap(libcam1394_driver *ctx,
      CHECK_CTX(ctx);
      d = GETDATA(ctx);
      assert( d );
+
+     static const char *dname = "/dev/fw";
+     if (0 != strncmp(devicename, dname, sizeof(dname))) {
+	  // this module supports juju stack only
+	  return -1;
+     }
 
      LOG("trying to open("<<devicename<<")");
      d->fd = open(devicename, O_RDWR);
@@ -285,6 +288,7 @@ drv_juju_mmap(libcam1394_driver *ctx,
 	  goto err;
      }
 
+     *header_size = get_header_size(d);
      return 0;
 err:
      drv_juju_close(ctx);
@@ -365,8 +369,6 @@ drv_juju_setFrameCount(libcam1394_driver *ctx,
      return -1;
 }
 
-
-
 #endif //  #if defined HAVE_JUJU
 
 libcam1394_driver*
@@ -391,6 +393,7 @@ drv_juju_new()
 
      return drv;
 #else
+     LOG("juju support is disabled");
      return NULL;
 #endif 
 }

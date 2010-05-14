@@ -2370,26 +2370,31 @@ int C1394CameraNode::AllocateFrameBuffer(int channel,
     }
 
     LOG("packet size: " << m_packet_sz);
-    LOG("packet num:  " << m_num_packet);
-    LOG("port num:    " << m_port_no);
+    LOG(" packet num: " << m_num_packet);
+    LOG("   port num: " << m_port_no);
     if (this->driver) {
 	LOG("re initalized?");
 	close_1394_driver(&this->driver);
     }
+    int header_size = 0;
     m_num_frame = 16;
     this->driver = open_1394_driver(m_port_no, m_devicename,
 				    channel,
-				    m_packet_sz, m_num_packet, m_num_frame);
+				    m_packet_sz, m_num_packet, m_num_frame,
+				    &header_size);
 
-    if (!this->driver) {
+    if (NULL == this->driver) {
 	ERR("open_1394_driver() failed");
 	return -3;
     }
+    LOG("header_size: " << header_size);
+    if (header_size>0) {
+	m_packet_sz += header_size;
+	m_remove_header |= REMOVE_HEADER;
+    } else {
+	m_remove_header &= ~REMOVE_HEADER;
+    }
 
-    // !!FIXME!!
-    //m_packet_sz += 8;
-    m_remove_header = 0;
-    
     m_Image_W=::GetImageWidth(fmt,mode);
     m_Image_H=::GetImageHeight(fmt,mode);
 

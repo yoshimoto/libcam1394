@@ -1,8 +1,9 @@
 # $Id: configure.in,v 1.54 2007-08-01 07:44:21 yosimoto Exp $
 m4_define([debug_default], [no])
-m4_define([libcam1394_version], [0.2.3])
+m4_define([libcam1394_version], [0.3.0])
 AC_INIT([libcam1394], [libcam1394_version], [yosimoto@users.sf.net])
 AM_INIT_AUTOMAKE([libcam1394], [libcam1394_version])
+AC_CONFIG_MACRO_DIR([m4])
 AM_CONFIG_HEADER(config.h)
 
 # Save this value here, since automake will set cflags later
@@ -36,8 +37,7 @@ if test "x$have_opencv" != "xyes"; then
    fi
 fi
 
-AC_CHECK_LIB(popt,poptGetContext)
-
+AC_CHECK_LIB(popt,poptGetContext,,AC_MSG_ERROR([libpopt not found]))
 
 PKG_CHECK_MODULES([LIBRAW1394], [libraw1394],
 		[ac_libraw1394_found=yes
@@ -59,14 +59,25 @@ AC_TYPE_SIZE_T
 #AC_FUNC_MMAP
 AC_CHECK_FUNCS([memset strcasecmp strerror strtol])
 
-AC_ARG_WITH([isofb],
-	AC_HELP_STRING([--with-isofb],
-	[use isofb driver @<:@default=no@:>@]),
-	 driver="isofb"
-         CFLAGS="-DHAVE_ISOFB $CFLAGS"
-         CXXFLAGS="-DHAVE_ISOFB $CXXFLAGS",
-	driver="video1394")
+AC_CHECK_HEADERS([linux/firewire-cdev.h])
 
+AC_ARG_ENABLE([juju],
+	AC_HELP_STRING([--enable-juju],
+		[use juju driver @<:@default=yes@:>@]),
+		[have_juju=$enableval],[have_juju=yes])
+AM_CONDITIONAL([HAVE_JUJU], [test x$have_juju = xyes])
+
+AC_ARG_ENABLE([video1394],
+	AC_HELP_STRING([--enable-video1394],
+		[use video1394 driver @<:@default=yes@:>@]),
+		[have_video1394=$enableval],[have_video1394=yes])
+AM_CONDITIONAL([HAVE_VIDEO1394], [test x$have_video1394 = xyes])
+
+AC_ARG_ENABLE([isofb],
+	AC_HELP_STRING([--enable-isofb],
+		[use isofb driver @<:@default=yes@:>@]),
+		[have_isofb=$enableval],[have_isofb=no])
+AM_CONDITIONAL([HAVE_ISOFB], [test x$have_isofb = xyes])
 
 AC_ARG_ENABLE([debug],
         AC_HELP_STRING([--enable-debug],
@@ -109,7 +120,10 @@ libcam1394.spec
 
 echo "
  configuration:	
-         debug:   $enable_debug
-        driver:   $driver
-opencv support:   $have_opencv
+            debug:   $enable_debug
+
+     juju support:   $have_juju
+video1394 support:   $have_video1394
+    isofb support:   $have_isofb 
+   opencv support:   $have_opencv
 "

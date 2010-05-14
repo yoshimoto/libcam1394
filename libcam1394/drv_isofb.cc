@@ -7,9 +7,9 @@
  * 
  * 
  */
-
 #include "config.h"
 #include "1394cam_drv.h"
+#include "common.h"
 
 #if defined HAVE_ISOFB
 # include <linux/ohci1394_iso.h>
@@ -97,6 +97,7 @@ drv_video1394_updateFrameBuffer(libcam1394_driver *ctx,
 libcam1394_driver*
 drv_isofb_new()
 {
+     LOG("isofb support is disabled");
      return NULL;
 }
 

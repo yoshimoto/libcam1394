@@ -2,9 +2,19 @@
 
 EXTRA_DIST = Doxyfile.in
 
+
 lib_LTLIBRARIES = libcam1394.la
 libcam1394_la_LDFLAGS = -version-info @lt_major@:@lt_revision@:@lt_age@
 libcam1394_la_CXXFLAGS = @LIBRAW1394_CFLAGS@ @OPENCV_CFLAGS@
+if HAVE_JUJU
+libcam1394_la_CXXFLAGS += -DHAVE_JUJU
+endif
+if HAVE_VIDEO1394
+libcam1394_la_CXXFLAGS += -DHAVE_VIDEO1394
+endif
+if HAVE_ISOFB
+libcam1394_la_CXXFLAGS += -DHAVE_ISOFB
+endif
 libcam1394_la_LIBADD   = @LIBRAW1394_LIBS@
 libcam1394_la_SOURCES = \
 	1394cam.cc \

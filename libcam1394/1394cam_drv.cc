@@ -17,7 +17,8 @@ libcam1394_driver *
 open_1394_driver(int port_no, const char *devicename, 
 		 int channel,
 		 int sz_packet, int num_packet,
-		 int num_frame)
+		 int num_frame,
+		 int *header_size)
 {
 
      extern libcam1394_driver * drv_juju_new();
@@ -37,10 +38,14 @@ open_1394_driver(int port_no, const char *devicename,
 
      for (; *func; ++func) {
 	  drv = (*func)();
+	  if (NULL==drv)
+	       continue;
+
 	  int r;
+	  *header_size = 0;
 	  r = drv->mmap(drv, port_no, devicename,
 			channel, 
-			sz_packet, num_packet, num_frame);
+			sz_packet, num_packet, num_frame, header_size);
 	  if (0 == r) {
 	       // found suitable one, break
 	       break;
