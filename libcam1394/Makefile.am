@@ -14,7 +14,12 @@ libcam1394_la_SOURCES = \
 	yuv.h \
 	common.h \
 	video1394.h \
-	ieee1394-ioctl.h
+	ieee1394-ioctl.h \
+	drv_video1394.cc \
+	drv_isofb.cc \
+	drv_juju.cc \
+	1394cam_drv.cc \
+	1394cam_drv.h
 
 LIBS =
 pkginclude_HEADERS = 1394cam.h 1394cam_registers.h yuv.h

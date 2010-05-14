@@ -156,7 +156,8 @@ public:
     char* m_lpModelName;             // camera name
     char* m_lpVenderName;            // camera vender name
 
-    int    m_port_no;		     // port no of 1394 I/F
+    int   m_port_no;		     // port no of 1394 I/F
+    char  m_devicename[32];          // device file name
     raw1394handle_t m_handle;        // handle of 1394 I/F
     nodeid_t m_node_id;              // node_id of this node
     nodeaddr_t m_command_regs_base;  // base address of camera's cmd reg
@@ -232,12 +233,10 @@ public:
     int   GetChannel(){return m_channel;}
 
 private:
-    int fd;                        // file descriptor of the driver
-    char *pMaped;                  // pointer to the mmaped buffer
+    struct libcam1394_driver* driver;
 
+    char *m_lpFrameBuffer;
     PIXEL_FORMAT m_pixel_format;   // the format of the buffered image 
-    int   m_BufferSize;            // a frame size in byte
-    char*  m_lpFrameBuffer;        // pointer to the latest updated image
     int  m_Image_W;                // image width (in pixels)
     int  m_Image_H;                // image height (in pixels)
     int  m_packet_sz;              // the packet size per a image
@@ -245,10 +244,10 @@ private:
 
     bool  m_bIsInitalized; // true means this instance has been initalized
 
+    int  m_remove_header;
 public:
-    int m_last_read_frame;    // the counter of the last read frame number.
 
-    //! buffer option. \sa UpDateFrameBuffer()
+    //! buffer option. \sa UpdateFrameBuffer()
     enum BUFFER_OPTION {
 	BUFFER_DEFAULT    = 0 ,
 	LAST              ,   //!< read last  captured image.
@@ -271,7 +270,7 @@ public:
   
     int    GetFrameCount(int*);
     int    SetFrameCount(int);
-    void*  UpDateFrameBuffer(BUFFER_OPTION opt=BUFFER_DEFAULT,
+    void*  UpdateFrameBuffer(BUFFER_OPTION opt=BUFFER_DEFAULT,
 			     BufferInfo* info=0);
     int    GetFrameBufferSize();
     int    GetImageWidth();
@@ -309,8 +308,9 @@ int AllocateFrameBuffer(raw1394handle_t handle,
 			int num_packets,
 			int buf_count,
 			int flag);
-int SetFrameCounter(int fd,int counter);
-int GetFrameCounter(int fd,int* ounter);
+// those functions are obsolated since libcam1394-0.2.3
+//int SetFrameCounter(int fd,int counter);
+//int GetFrameCounter(int fd,int* ounter);
 
 int GetPacketSize(FORMAT fmt,VMODE mode,FRAMERATE frame_rate);
 int GetNumPackets(FORMAT fmt,VMODE mode,FRAMERATE frame_rate);
