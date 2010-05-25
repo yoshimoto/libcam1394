@@ -25,6 +25,7 @@
 #include <time.h>
 #include <libraw1394/raw1394.h>
 #include <libraw1394/csr.h>
+#include <stdlib.h>
 
 #include "1394cam_drv.h"
 

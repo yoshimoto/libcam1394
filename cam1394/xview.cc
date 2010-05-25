@@ -10,6 +10,8 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <libcam1394/yuv.h>
+#include <stdlib.h>
+#include <string.h>
 
 #if defined HAVE_CV_H || defined HAVE_OPENCV
 #include <cv.h>
