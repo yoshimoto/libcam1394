@@ -94,7 +94,7 @@ int main(int argc, char **argv)
      while (1){
 	  int n=0;
 	  for (cam=CameraList.begin(); cam!=CameraList.end(); cam++){	
-	       cam->UpDateFrameBuffer();
+	       cam->UpdateFrameBuffer();
 	       cam->CopyRGBAImage(image[n]);
 	       xview[n]->UpDate(image[n]);
 	       n++;

@@ -6,6 +6,7 @@
  * Thu Mar 15 18:23:53 2001 By YOSHIMOTO Hiromasa 
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 
 #include <libcam1394/1394cam.h>
@@ -146,11 +147,11 @@ int main(int argc, char **argv)
 	  /* UpDateFrameBuffer() は画像を一枚取り終えるまで
 	     return してきません。本来なら別スレッドとするべきですが
 	     このサンプルは何も考えず交互に表示を繰り返します。*/
-	  camera[0]->UpDateFrameBuffer();
+	  camera[0]->UpdateFrameBuffer();
 	  camera[0]->CopyRGBAImage(image[0]);
 	  xview[0].UpDate(image[0]);
 
-	  camera[1]->UpDateFrameBuffer();
+	  camera[1]->UpdateFrameBuffer();
 	  camera[1]->CopyRGBAImage(image[1]);
 	  xview[1].UpDate(image[1]);
      }

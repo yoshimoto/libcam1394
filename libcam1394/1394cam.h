@@ -247,10 +247,15 @@ private:
 public:
 
     //! buffer option. \sa UpdateFrameBuffer()
+    //
+    //              LAST   AS_FIFO    WAIT_NEW_FRAME
+    // blocking      NO      YES       YES
+    // frame drop    YES     NO        YES
+    //
     enum BUFFER_OPTION {
 	BUFFER_DEFAULT    = 0 ,
-	LAST              ,   //!< read last  captured image.
-	AS_FIFO           ,   //!< read first captured image.   
+	LAST              ,   //!< read last captured image.
+	AS_FIFO           ,   //!< read first captured image. 
 	WAIT_NEW_FRAME    ,   //!< block till new frame will be caputerd.
     };
     //! file type. \sa SaveToFile()

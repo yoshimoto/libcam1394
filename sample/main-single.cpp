@@ -108,7 +108,7 @@ main(int argc, char **argv)
      RGBA* image = new RGBA[width*height];
      /* show live images  */
      while (1){
-	  camera->UpDateFrameBuffer();
+	  camera->UpdateFrameBuffer();
 	  camera->CopyRGBAImage(image);
 	  xview.UpDate(image);
      }

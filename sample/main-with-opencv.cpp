@@ -79,7 +79,7 @@ main(int argc, char **argv)
 
      /* show live images  */
      while (1){
-	  camera->UpDateFrameBuffer();
+	  camera->UpdateFrameBuffer();
 
 	  camera->CopyIplImage(image);
 	  

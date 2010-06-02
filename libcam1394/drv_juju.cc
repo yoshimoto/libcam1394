@@ -296,60 +296,111 @@ err:
      return -1;
 }
 
+enum FETCH_STATUS {
+     FS_SUCCESS,
+     FS_FAILED,
+     FS_TIMEOUT,
+};
+
+static FETCH_STATUS
+drv_juju_fetch_next(drv_juju_data *d, int timeout, 
+		    BufferInfo *info, void **frame)
+{
+     int retval;
+     int len;
+     union fw_cdev_event evt;
+
+     struct pollfd fds[1];
+     fds[0].fd = d->fd;
+     fds[0].events = POLLIN;
+
+     retval = poll(fds, sizeof(fds)/sizeof(fds[0]), timeout);
+     if (retval < 0) {
+	  ERR("poll() failed.");
+	  return FS_FAILED;
+     } if (0==retval) {
+	  LOG("poll() timedout");
+	  return FS_TIMEOUT;
+     } else {
+	  DBG("poll() done");
+     }
+
+     len = read(d->fd, &evt, sizeof(evt));
+     if (len < sizeof(evt)) {
+	  ERR("read() failed.");
+	  return FS_FAILED;
+     }
+
+     if (FW_CDEV_EVENT_ISO_INTERRUPT != evt.common.type) {
+	  LOG("unknown event");
+     } else {
+	  int prev = (d->index + d->num_frame - 1) % d->num_frame;
+
+	  *frame = d->mmaped + d->buffer_size*d->index;
+
+	  retval = queue_dma_desc(d, prev);
+	  if (retval < 0) {
+	       ERR("queue_dma_desc() failed.");
+	       return FS_FAILED;
+	  }
+
+	  d->index = (d->index + 1)%d->num_frame;
+
+	  if (info) {
+	       info->timestamp = evt.iso_interrupt.cycle;
+	  }
+     }
+     return FS_SUCCESS;
+}
+
 static void *
 drv_juju_updateFrameBuffer(libcam1394_driver *ctx,
 			   C1394CameraNode::BUFFER_OPTION opt,
 			   BufferInfo *info)
 {
-     struct pollfd fds[1];
      drv_juju_data *d = GETDATA(ctx);
      void *frame = NULL;
 
      assert(d);
-     fds[0].fd = d->fd;
-     fds[0].events = POLLIN;
 
-     while (1) {
-	  int retval;
-	  int len;
-	  union fw_cdev_event evt;
+     if (C1394CameraNode::BUFFER_DEFAULT == opt)
+	  opt = C1394CameraNode::WAIT_NEW_FRAME;
 
-	  retval = poll(fds, 1, -1);
-	  if (retval < 0) {
-	       ERR("poll() failed.");
-	       goto err;
-	  } if (0==retval) {
-	       LOG("poll() timedout");
-	       continue;
-	  } else {
-	       DBG("poll() done");
-	  }
-
-	  len = read(d->fd, &evt, sizeof(evt));
-	  if (len < sizeof(evt)) {
-	       ERR("read() failed.");
-	       goto err;
-	  }
-
-	  if (FW_CDEV_EVENT_ISO_INTERRUPT == evt.common.type) {
-	       int prev = (d->index + d->num_frame - 1) % d->num_frame;
-
-	       frame = d->mmaped + d->buffer_size*d->index;
-
-	       retval = queue_dma_desc(d, prev);
-	       if (retval < 0) {
-		    ERR("queue_dma_desc() failed.");
-		    goto err;
-	       }
-
-	       d->index = (d->index + 1)%d->num_frame;
-
-	       if (info) {
-		    info->timestamp = evt.iso_interrupt.cycle;
-	       }
+     // Waits for a new frame
+     if (C1394CameraNode::AS_FIFO == opt  ||
+	 C1394CameraNode::WAIT_NEW_FRAME == opt) {
+	  FETCH_STATUS fs = drv_juju_fetch_next(d, -1, 
+						info, &frame);
+	  switch (fs) {
+	  case FS_SUCCESS:
 	       break;
-	  } else {
-	       LOG("unknown event");
+	  case FS_FAILED:
+	       LOG("drv_juju_fetch_next() failed");
+	       goto err;
+	  case FS_TIMEOUT:
+	       LOG("drv_juju_fetch_next() timedout");
+	       goto err;
+	  }
+     }
+
+     // Drops frames if needed
+     if (C1394CameraNode::LAST == opt ||
+	 C1394CameraNode:: WAIT_NEW_FRAME) {
+	  FETCH_STATUS fs;
+	  do {
+	       fs = drv_juju_fetch_next(d, 0, info, &frame);
+	  } while (FS_SUCCESS == fs);
+
+	  switch (fs) {
+	  case FS_SUCCESS:
+	       assert(0);
+	       break;
+	  case FS_FAILED:
+	       LOG("drv_juju_fetch_next() timedout");
+	       goto err;
+	  case FS_TIMEOUT:
+	       // success dropiing
+	       break;
 	  }
      }
 
