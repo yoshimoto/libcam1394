@@ -422,10 +422,10 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt,
   unsigned int lastcycle = 0;
   timeval last;
   gettimeofday(&last, NULL);
-  while ('q' != (((unsigned int)cvWaitKey(5))&0xff) ){
+  while ('q' != (((unsigned int)cvWaitKey(3))&0xff) ){
 
       BufferInfo info;
-      info.timestamp = 0;
+      memset(&info, 0, sizeof(info));
       cam.UpdateFrameBuffer(C1394CameraNode::BUFFER_DEFAULT, &info);
       switch (ch){
       case 3:
@@ -444,7 +444,11 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt,
       }
 
       
-      DBG("ts: " <<  info.timestamp << " diff: "<<((info.timestamp - lastcycle)&0xffff) );
+
+      int diff = (info.timestamp - lastcycle)&0xffff;
+      DBG("diff: "<< setw(5) << diff << " cycle " 
+	  << setw(5) << setprecision(3) << diff*0.125 << " msec "
+	  << setw(5) << setprecision(3) << 1000./(diff*0.125) << " fps");
       lastcycle = info.timestamp;
 
       IplImage *tmp = resize?resize:(buf?buf:img);

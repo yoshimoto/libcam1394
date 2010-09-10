@@ -34,12 +34,11 @@
 #define GETDATA(ctx) (drv_juju_data*)((char*)(ctx) + sizeof(libcam1394_driver))
 
 
-//
-//  mmaped[]                packets[]
+//  mmaped[]              fw_cdev_iso_packet packets[]
 //  +------------+           +---+
 //  |            |           +---+
 //  | index=0    |             :
-//  |            |           +---+ 
+//  |            |           +---+
 //  +------------+           +---+
 //  |            |           +---+
 //  | index=1    |             :
@@ -73,7 +72,7 @@ struct drv_juju_data {
      int num_frame;
 
      int index;                     // point to receiving image
-
+     unsigned int total_frame;      // # of total received image
      int channel;
 };
 
@@ -257,6 +256,7 @@ drv_juju_mmap(libcam1394_driver *ctx,
      d->buffer_size = (sz_packet + get_header_size(d)) * num_packet;
      d->num_frame = num_frame;
      d->index = 0;
+     d->total_frame = 0;
      d->channel = channel;
 
      d->mmaped = (char*)mmap(NULL, d->buffer_size * d->num_frame, 
@@ -345,6 +345,7 @@ drv_juju_fetch_next(drv_juju_data *d, int timeout,
 	  }
 
 	  d->index = (d->index + 1)%d->num_frame;
+	  d->total_frame++;
 
 	  if (info) {
 	       info->timestamp = evt.iso_interrupt.cycle;
@@ -385,7 +386,7 @@ drv_juju_updateFrameBuffer(libcam1394_driver *ctx,
 
      // Drops frames if needed
      if (C1394CameraNode::LAST == opt ||
-	 C1394CameraNode:: WAIT_NEW_FRAME) {
+	 C1394CameraNode::WAIT_NEW_FRAME == opt) {
 	  FETCH_STATUS fs;
 	  do {
 	       fs = drv_juju_fetch_next(d, 0, info, &frame);
@@ -411,18 +412,24 @@ err:
 
 static int 
 drv_juju_getFrameCount(libcam1394_driver *ctx,
-			    int *counter)
+		       int *counter)
 {
-     ERR("juju doesn't support this function");
-     return -1;
+     CHECK_CTX(ctx);
+     drv_juju_data *d = GETDATA(ctx);
+
+     *counter = d->total_frame;
+     return 0;
 }
 
 static int
 drv_juju_setFrameCount(libcam1394_driver *ctx,
-			    int counter)
+		       int counter)
 {
-     ERR("juju doesn't support this function");
-     return -1;
+     CHECK_CTX(ctx);
+     drv_juju_data *d = GETDATA(ctx);
+
+     d->total_frame = counter;
+     return 0;
 }
 
 #endif //  #if defined HAVE_JUJU
