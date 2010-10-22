@@ -67,7 +67,7 @@ struct drv_juju_data {
 
      int sz_packet;
      int num_packet;
-     int buffer_size;               // (sz_packet+get_header_size(d))*num_packet
+     int buffer_size;               // sz_packet*num_packet
 
      int num_frame;
 
@@ -249,15 +249,17 @@ drv_juju_mmap(libcam1394_driver *ctx,
 	  goto err;
      }
      d->isorxhandle = create.handle;
-     LOG("isorxhandle "<< d->isorxhandle);
-
+     LOG("isorxhandle " << d->isorxhandle);
      d->sz_packet = sz_packet;
      d->num_packet = num_packet;
-     d->buffer_size = (sz_packet + get_header_size(d)) * num_packet;
+     d->buffer_size = sz_packet * num_packet;
      d->num_frame = num_frame;
      d->index = 0;
      d->total_frame = 0;
      d->channel = channel;
+
+     LOG("header size: " << get_header_size(d) );
+     LOG("buffer size: " << d->buffer_size);
 
      d->mmaped = (char*)mmap(NULL, d->buffer_size * d->num_frame, 
 			     PROT_READ, MAP_SHARED, 
@@ -289,7 +291,7 @@ drv_juju_mmap(libcam1394_driver *ctx,
 	  goto err;
      }
 
-     *header_size = 0;//get_header_size(d);
+     *header_size = 0;
      return 0;
 err:
      drv_juju_close(ctx);
