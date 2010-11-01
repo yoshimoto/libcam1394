@@ -105,7 +105,6 @@ drv_video1394_mmap(libcam1394_driver *ctx,
      }
     
      struct video1394_mmap vmmap;
-     struct video1394_wait vwait;
 
      vmmap.channel = channel;  
      vmmap.sync_tag = 1;
@@ -122,28 +121,28 @@ drv_video1394_mmap(libcam1394_driver *ctx,
 	  goto err;
      }
 
-     channel = vmmap.channel;
+     d->channel = vmmap.channel;
      d->buffer_size = vmmap.buf_size;
      d->num_frame = vmmap.nb_buffers;
      d->offset_to_timeStamp = sz_packet + 4;
 
      /* QUEUE the buffers */
      for (i = 0; i < vmmap.nb_buffers; i++){
-	  vwait.channel = channel;
+	  struct video1394_wait vwait;
+	  vwait.channel = vmmap.channel;
 	  vwait.buffer = i;
 	  if (ioctl(d->fd,VIDEO1394_IOC_LISTEN_QUEUE_BUFFER,&vwait) < 0)
 	  {
 	       LOG("unlisten channel " << channel);
 	       ERR("VIDEO1394_IOC_LISTEN_QUEUE_BUFFER ioctl failed");
-	       ioctl(d->fd,VIDEO1394_IOC_UNLISTEN_CHANNEL,&channel);
+	       ioctl(d->fd,VIDEO1394_IOC_UNLISTEN_CHANNEL,&vwait.channel);
 	       goto err;
 	  }
      }
     
      /* allocate ring buffer  */
-     vwait.channel= vmmap.channel;
      d->buffer = (char*)mmap(0, vmmap.nb_buffers * vmmap.buf_size,
-			     PROT_READ,MAP_SHARED, d->fd, 0);
+			     PROT_READ, MAP_SHARED, d->fd, 0);
      if (d->buffer == MAP_FAILED) {
 	  ERR("video1394_mmap failed");
 	  ioctl(d->fd, VIDEO1394_IOC_UNLISTEN_CHANNEL, &vmmap.channel);
@@ -173,6 +172,7 @@ drv_video1394_updateFrameBuffer(libcam1394_driver *ctx,
      //result = ioctl(fd, VIDEO1394_IOC_LISTEN_POLL_BUFFER, &vwait);
     
      if (result!=0){
+	  ERR("VIDEO1394_IOC_LISTEN_WAIT_BUFFER failed." << strerror(errno));
 	  if (errno == EINTR){
 	       // !!FIXME!!
 	  }
@@ -209,7 +209,7 @@ static int
 drv_video1394_getFrameCount(libcam1394_driver *ctx,
 			    int *counter)
 {
-     ERR("video1394 doesn't supporte this function");
+     ERR("video1394 doesn't support this function");
      return -1;
 }
 
@@ -217,7 +217,7 @@ static int
 drv_video1394_setFrameCount(libcam1394_driver *ctx,
 			    int counter)
 {
-     ERR("video1394 doesn't supporte this function");
+     ERR("video1394 doesn't support this function");
      return -1;
 }
 
