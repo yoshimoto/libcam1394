@@ -426,7 +426,11 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt,
 
       BufferInfo info;
       memset(&info, 0, sizeof(info));
-      cam.UpdateFrameBuffer(C1394CameraNode::BUFFER_DEFAULT, &info);
+      void *p = cam.UpdateFrameBuffer(C1394CameraNode::BUFFER_DEFAULT, &info);
+      if (!p) {
+	  ABORT("UpdateFrameBuffer() failed.");
+      }
+
       switch (ch){
       case 3:
 	  cam.CopyIplImage(img);
@@ -435,15 +439,12 @@ display_live_image_on_X(C1394CameraNode &cam, const char *fmt,
 	  cam.CopyIplImageGray(img);
 	  break;
       }
-
       if (buf){
 	  cvCvtColor(img, buf, buf_option);
       }
       if (resize) {
 	  cvResize(buf?buf:img, resize);
       }
-
-      
 
       int diff = (info.timestamp - lastcycle)&0xffff;
       DBG("diff: "<< setw(5) << diff << " cycle " 

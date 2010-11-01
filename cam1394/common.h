@@ -25,6 +25,7 @@ extern int opt_debug_level;
 #define WRN(msg) do { if (opt_debug_level>1){ CAM1394_OUTPUT(msg);} } while(0)
 #define ERR(msg) do { if (opt_debug_level>0){ CAM1394_OUTPUT(msg);} } while(0)
 #define MSG(msg) do { if (opt_debug_level>=0){ CAM1394_OUTPUT(msg);} } while(0)
+#define ABORT(msg) do { CAM1394_OUTPUT(msg); exit(EXIT_FAILURE); } while(0)
 
 #define TRY(f) f
 
