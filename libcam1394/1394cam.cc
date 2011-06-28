@@ -1884,7 +1884,7 @@ static struct VideoImageInfo video_image_info[][8]=  // format / mode
 
 
 #define RESERVED  { -1, -1, SPD_100M}
-static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
+static struct VideoPacketInfo video_packet_info[][8][8]= // format / mode / fps
 {
     // format_0
     {
@@ -1894,57 +1894,73 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    {  15*4, 120*8, SPD_100M  },  // 7.5  fps
 	    {  30*4, 120*4, SPD_100M  },  // 15   fps
 	    {  60*4, 120*2, SPD_100M  },  // 30   fps
-	    RESERVED,                     // 60   fps
+	    { 120*4, 120*1, SPD_100M  },  // 60   fps
+	    { 240*4, 120/2, SPD_100M  },  // 120  fps
+	    { 480*4, 120/4, SPD_100M  },  // 240  fps
 	},
 	{ // format_0 mode_1 
-	    RESERVED,
+	    {  10*4, 240*16,SPD_100M},
 	    {  20*4, 240*8 ,SPD_100M},
 	    {  40*4, 240*4 ,SPD_100M},
 	    {  80*4, 240*2 ,SPD_100M},
-	    { 160*4, 240   ,SPD_100M},
-	    RESERVED,
+	    { 160*4, 240*1 ,SPD_100M},
+	    { 320*4, 240/2 ,SPD_100M},
+	    { 640*4, 240/4 ,SPD_400M},
+	    {1280*4, 240/8 ,SPD_800M},
 	},
 	{ // format_0 mode_2
-	    RESERVED,
+	    {  30*4, 480*8 ,SPD_100M},
 	    {  60*4, 480*4 ,SPD_100M},
 	    { 120*4, 480*2 ,SPD_100M},
 	    { 240*4, 480/1 ,SPD_100M},
 	    { 480*4, 480/2 ,SPD_200M},
-	    RESERVED,
+	    { 960*4, 480/4 ,SPD_400M},
+	    {1920*4, 480/8 ,SPD_800M},
+	    {3840*4, 480/16,SPD_1600M},
 	},
 	{  // format_0 mode_3
-	    RESERVED,
+	    {  40*4, 480*8 ,SPD_100M},
 	    {  80*4, 480*4 ,SPD_100M},
 	    { 160*4, 480*2 ,SPD_100M},
 	    { 320*4, 480/1 ,SPD_200M},
 	    { 640*4, 480/2 ,SPD_400M},
-	    RESERVED,
+	    {1280*4, 480/4 ,SPD_800M},
+	    {2560*4, 480/8 ,SPD_1600M},
+	    {5120*4, 480/16,SPD_3200M},
 	},
 	{ // format_0 mode_4
-	    RESERVED,
+	    {  60*4, 480*8 ,SPD_100M},
 	    { 120*4, 480*4 ,SPD_100M},
 	    { 240*4, 480*2 ,SPD_100M},
 	    { 480*4, 480*1 ,SPD_200M},
 	    { 960*4, 480/2 ,SPD_400M},
-	    RESERVED,
+	    {1920*4, 480/4 ,SPD_800M},
+	    {3840*4, 480/8 ,SPD_1600M},
+	    {7680*4, 480/16 ,SPD_3200M},
 	},
 	{ // format_0 mode_5
-	    RESERVED,
-	    {  40*4, 480*4 ,SPD_100M},
-	    {  80*4, 480*2 ,SPD_100M},
-	    { 160*4, 480/1 ,SPD_100M},
-	    { 320*4, 480/2 ,SPD_200M},
-	    { 640*4, 480/4 ,SPD_400M},
+	    {  20*4, 480*8 ,SPD_100M},  //   1.875fps
+	    {  40*4, 480*4 ,SPD_100M},  //   3.75fps
+	    {  80*4, 480*2 ,SPD_100M},  //   7.5fps
+	    { 160*4, 480/1 ,SPD_100M},  //  15fps
+	    { 320*4, 480/2 ,SPD_200M},  //  30fps
+	    { 640*4, 480/4 ,SPD_400M},  //  60fps
+	    {1280*4, 480/8 ,SPD_800M},  // 120fps
+	    {2560*4, 480/16,SPD_1600M}, // 240fps
 	},  
 	{  // format_0 mode_6
-	    RESERVED,
+	    {  40*4, 480*4 ,SPD_100M},
 	    {  80*4, 480*4 ,SPD_100M},
 	    { 160*4, 480*2 ,SPD_100M},
 	    { 320*4, 480/1 ,SPD_200M},
 	    { 640*4, 480/2 ,SPD_400M},
-	    RESERVED,
+	    {1280*4, 480/4 ,SPD_800M},
+	    {2560*4, 480/8 ,SPD_1600M},
+	    {5120*4, 480/16,SPD_3200M},
 	},
 	{ // format_0 mode_7
+	    RESERVED,
+	    RESERVED,
 	    RESERVED,
 	    RESERVED,
 	    RESERVED,
@@ -1957,20 +1973,24 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
     // format_1
     {
 	{ // format_1 mode_0
-	    RESERVED,                      // 1.875fps
-	    { 125*4, 600*16/5, SPD_100M }, // 3.75 fps
-	    { 250*4, 600*8/5,  SPD_100M }, // 7.5  fps
-	    { 500*4, 600*4/5,  SPD_200M }, // 15   fps
-	    {1000*4, 600*2/5,  SPD_400M }, // 30   fps
-	    RESERVED,                      // 60   fps
+	    RESERVED,                       // 1.875fps
+	    { 125*4, 600*16/5, SPD_100M },  // 3.75 fps
+	    { 250*4, 600*8/5,  SPD_100M },  // 7.5  fps
+	    { 500*4, 600*4/5,  SPD_200M },  // 15   fps
+	    {1000*4, 600*2/5,  SPD_400M },  // 30   fps
+	    {2000*4, 600*1/5,    SPD_800M },  // 60   fps
+	    {4000*4, 600/2/5,  SPD_1600M }, // 120   fps
+	    {8000*4, 600/4/5,  SPD_3200M }, // 240   fps
 	},
 	{ // format_1 mode_1
 	    RESERVED,                      // 1.875fps
 	    RESERVED,                      // 3.75 fps
 	    { 375*4, 600*8/5,  SPD_200M }, // 7.5  fps
 	    { 750*4, 600*4/5,  SPD_400M }, // 15   fps
-	    RESERVED,                      // 30   fps
-	    RESERVED,                      // 60   fps
+	    {1500*4, 600*2/5,  SPD_800M }, // 30   fps
+	    {3000*4, 600*1/5,  SPD_1600M }, // 60   fps
+	    {6000*4, 600/2/5,  SPD_3200M }, //120   fps
+	    RESERVED,                      // 240 fps
 	},
 	{ // format_1 mode_2
 	    RESERVED,
@@ -1979,20 +1999,26 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    { 250*4, 600* 4/5, SPD_100M }, // 15   fps
 	    { 500*4, 600* 2/5, SPD_200M }, // 30   fps	    
 	    {1000*4, 600* 1/5, SPD_400M }, // 60   fps	    
+	    {1000*8, 600/ 2/5, SPD_800M }, // 120   fps	    
+	    {1000*16, 600/4/5, SPD_1600M }, // 240   fps	    
 	},
 	{ // format_1 mode_3
 	    {  96*4, 768*16/3, SPD_100M }, // 1.875fps
 	    { 192*4, 768* 8/3, SPD_100M }, // 3.75 fps
 	    { 384*4, 768* 4/3, SPD_200M }, // 7.5  fps
 	    { 768*4, 768* 2/3, SPD_400M }, // 15   fps
-	    RESERVED,                      
+	    {1536*4, 768* 1/3, SPD_800M }, // 30   fps
+	    {3072*4, 768/ 2/3, SPD_1600M }, // 60   fps
+	    {6144*4, 768/ 4/3, SPD_3200M }, // 120   fps
 	    RESERVED,                      
 	},
 	{ // format_1 mode_4
 	    { 144*4, 768*16/3, SPD_100M }, // 1.875fps
 	    { 288*4, 768* 8/3, SPD_200M }, // 3.75 fps
 	    { 576*4, 768* 4/3, SPD_400M }, // 7.5  fps
-	    RESERVED,
+	    {1152*4, 768* 2/3, SPD_400M }, // 15  fps
+	    {2304*4, 768* 1/3, SPD_800M }, // 30  fps
+	    {4608*4, 768/ 2/3, SPD_1600M }, // 60  fps
 	    RESERVED,                      
 	    RESERVED,                      
 	},
@@ -2002,7 +2028,9 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    { 192*4, 768* 4/3, SPD_100M }, // 7.5  fps
 	    { 384*4, 768* 2/3, SPD_200M }, // 15   fps
 	    { 768*4, 768* 1/3, SPD_400M }, // 30   fps
-	    RESERVED,                      
+	    {1536*4, 768/ 2/3, SPD_800M }, // 60   fps
+	    {3072*4, 768/ 4/3, SPD_1600M }, // 120   fps
+	    {6144*4, 768/ 8/3, SPD_3200M }, // 240   fps
 	},
 	{ // format_1 mode_6
 	    RESERVED,                      // 1.875fps
@@ -2010,15 +2038,19 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    { 250*4, 600*8/5,  SPD_100M }, // 7.5  fps
 	    { 500*4, 600*4/5,  SPD_200M }, // 15   fps
 	    {1000*4, 600*2/5,  SPD_400M }, // 30   fps
-	    RESERVED,                      // 60   fps
+	    {2000*4, 600*1/5,    SPD_800M }, // 60   fps
+	    {4000*4, 600/2/5,  SPD_1600M }, // 120   fps
+	    {9000*4, 600/4/5,  SPD_3200M }, // 240   fps
 	},
 	{ // format_1 mode_7
 	    {  96*4, 768*16/3, SPD_100M }, // 1.875fps
 	    { 192*4, 768* 8/3, SPD_100M }, // 3.75 fps
 	    { 384*4, 768* 4/3, SPD_200M }, // 7.5  fps
 	    { 768*4, 768* 2/3, SPD_400M }, // 15   fps
-	    RESERVED,                      
-	    RESERVED,                      
+	    {1536*4, 768* 1/3, SPD_800M }, // 30   fps
+	    {3072*4, 768/ 2/3, SPD_1600M }, // 60   fps
+	    {6144*4, 768/ 4/3, SPD_3200M }, // 120   fps
+	    RESERVED,                      // 240   fps
 	},
     },
 
@@ -2028,33 +2060,41 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    { 160*4, 960* 4, SPD_100M }, // 1.875fps
 	    { 320*4, 960* 2, SPD_200M }, // 3.75 fps
 	    { 640*4, 960* 1, SPD_400M }, // 7.5  fps
-	    RESERVED,
-	    RESERVED,                      
-	    RESERVED,                      
+	    {1280*4, 960/ 2, SPD_800M }, // 15  fps
+	    {2560*4, 960/ 4, SPD_1600M }, // 30  fps
+	    {5120*4, 960/ 8, SPD_3200M }, // 60  fps
+	    RESERVED, // 120  fps
+	    RESERVED, // 240  fps
 	},
 	{ // format_2 mode_1
 	    { 240*4, 960* 4, SPD_100M }, // 1.875fps
 	    { 480*4, 960* 2, SPD_200M }, // 3.75 fps
 	    { 960*4, 960* 1, SPD_400M }, // 7.5  fps
-	    RESERVED,
-	    RESERVED,                      
-	    RESERVED,                      
+	    {1920*4, 960/ 2, SPD_800M }, // 15  fps
+	    {3840*4, 960/ 4, SPD_1600M }, // 30  fps
+	    {7680*4, 960/ 8, SPD_3200M }, // 60  fps
+	    RESERVED, // 120  fps
+	    RESERVED, // 240  fps
 	},
 	{ // format_2 mode_2
-	    {  80*4, 960* 4, SPD_100M }, // 1.875fps
-	    { 160*4, 960* 2, SPD_100M }, // 3.75 fps
-	    { 320*4, 960* 1, SPD_200M }, // 7.5  fps
-	    { 640*4,960*1/2, SPD_400M }, // 15   fps
-	    RESERVED,                      
-	    RESERVED,                      
+	    {  80*4, 960* 4,  SPD_100M }, // 1.875fps
+	    { 160*4, 960* 2,  SPD_100M }, // 3.75 fps
+	    { 320*4, 960* 1,  SPD_200M }, // 7.5  fps
+	    { 640*4, 960*1/2, SPD_400M }, // 15   fps
+	    {1280*4, 960/2/2, SPD_800M }, // 30   fps
+	    {2560*4, 960/4/2, SPD_1600M }, // 60   fps
+	    {5120*4, 960/8/2, SPD_3200M }, // 120   fps
+	    RESERVED, // 240 fps
 	},
 	{ // format_2 mode_3
 	    { 250*4,1200*16/5, SPD_100M }, // 1.875fps
 	    { 500*4,1200* 8/5, SPD_200M }, // 3.75 fps
 	    {1000*4,1200* 4/5, SPD_400M }, // 7.5  fps
-	    RESERVED,
-	    RESERVED,                      
-	    RESERVED,                      
+	    {2000*4,1200* 2/5, SPD_800M }, // 15  fps
+	    {4000*4,1200* 1/5, SPD_1600M }, // 30  fps
+	    {8000*4,1200/ 2/5, SPD_3200M }, // 60  fps
+	    RESERVED, // 120  fps
+	    RESERVED, // 240  fps
 	},
 	{ // format_2 mode_4
 	    { 375*4,1200*16/5, SPD_200M }, // 1.875fps
@@ -2070,13 +2110,17 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    { 500*4,1200* 4/5, SPD_200M }, // 7.5  fps
 	    {1000*4,1200* 2/5, SPD_400M }, // 15   fps
 	    {2000*4,1200* 1/5, SPD_800M }, // 30   fps
+	    {4000*4,1200/ 2/5, SPD_1600M }, // 60   fps
+	    {8000*4,1200/ 4/5, SPD_3200M }, // 120   fps
 	    RESERVED,                      
 	},
 	{ // format_2 mode_6
 	    { 160*4, 960* 4, SPD_100M }, // 1.875fps
 	    { 320*4, 960* 2, SPD_200M }, // 3.75 fps
 	    { 640*4, 960* 1, SPD_400M }, // 7.5  fps
-	    RESERVED,
+	    {1280*4, 960/ 2, SPD_800M }, // 15  fps
+	    {2560*4, 960/ 4, SPD_1600M }, // 30  fps
+	    {5120*4, 960/ 8, SPD_3200M }, // 60  fps
 	    RESERVED,                      
 	    RESERVED,                      
 	},
@@ -2084,8 +2128,10 @@ static struct VideoPacketInfo video_packet_info[][8][6]= // format / mode / fps
 	    { 250*4,1200*16/5, SPD_100M }, // 1.875fps
 	    { 500*4,1200* 8/5, SPD_200M }, // 3.75 fps
 	    {1000*4,1200* 4/5, SPD_400M }, // 7.5  fps
+	    {2000*4,1200* 2/5, SPD_800M }, // 15  fps
+	    {4000*4,1200* 1/5, SPD_1600M }, // 30  fps
+	    {8000*4,1200/ 2/5, SPD_3200M }, // 60  fps
 	    RESERVED,
-	    RESERVED,                      
 	    RESERVED,                   
 	},
     },
