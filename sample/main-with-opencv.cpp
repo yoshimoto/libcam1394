@@ -10,16 +10,11 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include <opencv/cv.h>          // for OpenCV
-#include <opencv/highgui.h> 
+#include <cv.h>          // for OpenCV
+#include <highgui.h> 
 
-#include <libraw1394/raw1394.h> // for libraw1394
-#include <libraw1394/csr.h>
-
-#include <linux/ohci1394_iso.h> // for libcam1394
 #include <libcam1394/1394cam.h>
 #include <libcam1394/yuv.h>
-
 
 using namespace std;
 
