@@ -1,8 +1,9 @@
 # $Id: Makefile.in,v 1.4 2005-08-10 04:13:06 yosimoto Exp $
-CPPFLAGS += -I@prefix@/include 
-LDFLAGS  += -L@prefix@/lib -lcam1394  @LIBRAW1394_LIBS@
+CPPFLAGS += `pkg-config libcam1394 --cflags`
+LDFLAGS  += `pkg-config libcam1394 --libs-only-L`
+LDLIBS   += `pkg-config libcam1394 --libs-only-l`
 CPPFLAGS += @X_CFLAGS@
-LDFLAGS  += @X_PRE_LIBS@ @X_LIBS@ -lX11
+LDLIBS   += @X_PRE_LIBS@ @X_LIBS@ -lX11
 
 CPPFLAGS += -g
 

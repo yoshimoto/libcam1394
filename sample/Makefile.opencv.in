@@ -3,9 +3,20 @@
 
 
 CPPFLAGS += -I@prefix@/include 
-LDFLAGS  += -L@prefix@/lib -lcam1394 @LIBRAW1394_LIBS@
+LDFLAGS  += -L@prefix@/lib
+LDLIBS   += -lcam1394 @LIBRAW1394_LIBS@
 CPPFLAGS += `pkg-config opencv  --cflags` 
-LDFLAGS  += `pkg-config opencv  --libs`
+LDFLAGS  += `pkg-config opencv  --libs-only-L`
+LDLIBS   += `pkg-config opencv  --libs-only-l`
+
+CPPFLAGS += -g
+
+TARGET    = main-with-opencv
+
+all: $(TARGET)
+
+clean: 
+	rm -f $(TARGET) *.o
 
 CPPFLAGS += -g
 
