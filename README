@@ -1,34 +1,30 @@
 
        libcam1394,  1394-based digital camera controll library.
 
-        WWW: http://limu.is.kyushu-u.ac.jp/~yoimoto/ieee1394/
+       http://www.ccm.media.kyoto-u.ac.jp/~yoshimoto/libcam1394
         
 FEATURES
 --------
 
 * general
-   - support for 1394-based digital camera specifaction 1.2
+   - support for 1394-based digital camera specifaction 1.4
    - multiple cameras support
-   - multiple OHIC1394 I/F boards support
+   - multiple OHCI 1394 I/F boards support
 
 * color conversation
    - support for IPL (Intel's image processing library) image
    structure
 
-There are some sample codes in the sample/ directory.
+* CUI 
+   - try "cam1394 --help" for details
+
+and there are some sample codes in the sample/ directory.
 
 
 RESTRICTIONS
 ------------
 
-To use this library, you'll need the custom 1394 driver.  It is not
-compatible with one in standard linux kernel-2.4.x. If you have not
-installed the driver, please refer to my web site:
-http://limu.is.kyushu-u.ac.jp/~yosimoto/ieee1394/.
+TBD.
 
-These library and driver will probably change radically in the future;
-weak attempts will be made to retain some level of source-file
-compatibility.
-
--- YOSHIMOTO, Hiromasa <yosimoto@limu.is.kyushu-u.ac.jp>
+-- Hiromasa YOSHIMOTO <hiromasa.yoshimoto@gmail.com>
 
