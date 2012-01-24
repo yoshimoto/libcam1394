@@ -2494,7 +2494,6 @@ int C1394CameraNode::SetFrameCount(int count)
  * 
  * @return ponter of latest caputered frame.
  *
- * @todo  AS_FIFO and WAIT_NEW_FRAME is not implemented yet.
  */
 void* C1394CameraNode::UpdateFrameBuffer(BUFFER_OPTION opt,BufferInfo* info)
 {
